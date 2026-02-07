@@ -7,7 +7,7 @@ import { auth } from '@/lib/auth';
 import { headers } from 'next/headers';
 
 // Allow streaming responses up to 5 minutes
-export const maxDuration = 60*5;
+export const maxDuration = 300;
 
 type NotebookRequestType = {
     topicWeights?: Record<string, number>;
