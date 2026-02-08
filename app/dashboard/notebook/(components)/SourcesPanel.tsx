@@ -75,9 +75,18 @@ export default function SourcesPanel(){
                 accept="image/*,.pdf"
                 className='absolute right-4 opacity-0 pointer-events-none w-20'
                 />
-                <Button size={'icon-sm'} className="absolute right-4 text-muted-foreground" onClick={(e) => {  fileInputRef.current?.click(); }} variant={'ghost'}>
-                    <Plus/>
-                </Button>
+                <Tooltip open={noteCtx?.isGenerating ? undefined : false}>
+                    <TooltipTrigger asChild>
+                        <span className="inline-block w-fit absolute right-4">
+                            <Button disabled={noteCtx?.isGenerating} size={'icon-sm'} className="text-muted-foreground" onClick={(e) => {  fileInputRef.current?.click(); }} variant={'ghost'}>
+                                <Plus/>
+                            </Button>
+                        </span>
+                    </TooltipTrigger>
+                    <TooltipContent side="bottom" align="end">
+                        <p>Sources can't be added while generating.</p>
+                    </TooltipContent>
+                </Tooltip>
             </CardHeader>
             <motion.div 
                 className="grid"
@@ -99,7 +108,7 @@ export default function SourcesPanel(){
                                 </p>
                                 {file.status == "uploaded" ? <DropdownMenu>
                                     <DropdownMenuTrigger asChild>
-                                        <Button size={'icon-sm'} className="text-muted-foreground" variant={'ghost'}>
+                                        <Button disabled={noteCtx?.isGenerating} size={'icon-sm'} className="text-muted-foreground" variant={'ghost'}>
                                             <MoreVertical/>
                                         </Button>
                                     </DropdownMenuTrigger>

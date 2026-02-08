@@ -1,6 +1,6 @@
-import { streamText, Output, generateText } from 'ai';
+import { streamText, Output } from 'ai';
 import { google } from "@ai-sdk/google";
-import { noteSchema, noteTopicSchema } from './schema';
+import { noteSchema } from '../schema';
 import { GetObjectCommand } from '@aws-sdk/client-s3';
 import { r2 } from '@/lib/r2';
 import { auth } from '@/lib/auth';
@@ -24,12 +24,19 @@ export async function POST(req: Request) {
     if (!session || !session.user) {
         throw new Error("Not authenticated");
     }
+    if (!context.topicWeights){
+        throw new Error("Missing topic weights");
+    }
+    const topicWeights = context.topicWeights!
 
-    var topicWeights = context.topicWeights ? {...context.topicWeights} : undefined;
     const imageUrls: {url: string, description: string}[] = []
 
+    if (!context.files || context.files.length === 0) {
+        throw new Error("No files provided");
+    }
     console.log("Received files: ", context.files);
 
+    // Retrieves the files and converts them into file parts
     const filesMap = context.files.map(async(fileKey) => {
         const command = new GetObjectCommand({
             Bucket: process.env.R2_BUCKET_NAME!,
@@ -50,74 +57,7 @@ export async function POST(req: Request) {
     });
     const files = await Promise.all(filesMap);
 
-    // If no topic weights provided, first extract topics from the files
-    if (!topicWeights){
-        console.log("No topic weights provided, extracting topics from files");
-        const { output: topicOutput, totalUsage: topicUsage } = await generateText({
-            model: google("gemini-3-flash-preview"),
-            output: Output.object({ schema: noteTopicSchema }),
-            messages: [
-                {
-                    role: "system",
-                    content: `
-                    ## Output Guidelines
-                        ### Topic Naming Rules
-                        - Use noun phrases or short descriptive titles
-                        - Be specific: "Mitigation Strategies" not "Strategies"
-                        - Match the terminology used in the source
-                        - Avoid generic names like "Introduction" or "Overview" unless truly distinct sections
-                        
-                    ## Examples
-                            Source about economics:
-                            - Title: "Macroeconomic Policy Fundamentals"
-                            - Topics: ["Fiscal Policy Tools", "Monetary Policy Mechanisms", "Inflation and Unemployment", "International Trade Effects"]
-                            Source about biology:
-                            - Title: "Cell Division and Reproduction"  
-                            - Topics: ["Mitosis Process", "Meiosis and Genetic Variation", "Cell Cycle Regulation", "Chromosomal Abnormalities"]
-                            Source about history:
-                            - Title: "Causes of World War I"
-                            - Topics: ["Alliance Systems in Europe", "Imperial Rivalries", "Nationalism and Militarism", "The Assassination Trigger"]
-                    
-                    ## Edge Cases
-                        ### If the document has clear section headers:
-                        - Use them as a starting point, but consolidate if there are too many
-                        - Rename if headers are vague or overly long
-                        ### If the document is unstructured:
-                        - Identify recurring themes and concepts
-                        - Group related ideas into logical topics
-                        ### If topics overlap significantly:
-                        - Merge into a broader topic
-                        - Prefer fewer, well-defined topics over many overlapping ones
-                        ### If the document covers one narrow subject:
-                        - Break down into subtopics or aspects
-                        - Example: A document only about photosynthesis → ["Light-Dependent Reactions", "Calvin Cycle", "Factors Affecting Rate", "Photosynthesis in Ecosystems"]
-                    `
-                },
-                {
-                    role: "user",
-                    content: [
-                        { 
-                            type: "text",
-                            text:"Use the provided documents as sources for generation."
-                        },
-                        ...files
-                    ]
-                }
-            ],
-            providerOptions: {
-                google: {
-                    thinkingConfig: {
-                        thinkingLevel: "low",
-                    }
-                }
-            }
-        });
-        console.log("tokens used for topic extraction: ",topicUsage.totalTokens);
-        topicWeights = topicOutput.topics.reduce((acc: Record<string, number>, topic) => {
-            acc[topic] = 100;
-            return acc;
-        }, {});
-    }
+
     console.log("Using topic weights:", topicWeights);
     console.log("Generating notes for user:", session.user.id);
 
@@ -198,6 +138,8 @@ export async function POST(req: Request) {
                     { 
                         type: "text",
                         text:`
+                        ## User instructions
+                        ${context.instructions}
                         ## Topic Focus & Weights
                         ${Object.entries(topicWeights).map(([topic, weight]) => `- ${topic}: ${weight}%`).join('\n')}
 

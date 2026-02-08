@@ -183,6 +183,39 @@
   transform: translateY(1px);
 } */
 
+  @keyframes pulse-lighter {
+    0% {
+      opacity: 0.15;
+    }
+    50% {
+      opacity: 0.3;
+    }
+    100% {
+      opacity: 0.15;
+    }
+  }
+
+.pulse-lighter {
+  animation: pulse-darker 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes pulse-darker {
+  0% {
+    opacity: 0.3;
+  }
+  50% {
+    opacity: 0.15;
+  }
+  100% {
+    opacity: 0.3;
+  }
+}
+
+.pulse-darker {
+  animation: pulse-lighter 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+
 @layer base {
   * {
     @apply border-border outline-ring/50;

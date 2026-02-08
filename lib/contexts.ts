@@ -18,5 +18,16 @@ export type NotebookContextType = {
     setFiles: (files: FileListType[] | ((files: FileListType[]) => FileListType[])) => void;
     activeSection: string | null;
     setActiveSection: (section: string | null) => void;
+    instructions: string;
+    setInstructions: (instructions: string) => void;
+    topicWeights: Record<string, number>;
+    setTopicWeights: (weights: Record<string, number>) => void;
+    generateTopics: (instructions: string, files: FileListType[]) => void;
+    generateNotes: (instructions: string, files: FileListType[], topicWeights: Record<string, number>) => void;
+    stopGeneration: () => void;
+    topicsObject: any;
+    isTopicsLoading: boolean;
+    isNotesLoading: boolean;
+    isGenerating: boolean;
 };
 export const NotebookContext = createContext<NotebookContextType | undefined>(undefined);
