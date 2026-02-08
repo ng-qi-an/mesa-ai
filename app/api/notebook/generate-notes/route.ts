@@ -155,7 +155,7 @@ export async function POST(req: Request) {
         providerOptions: {
             google: {
                 thinkingConfig: {
-                    thinkingLevel: "medium",
+                    thinkingLevel: "low",
                 }
             }
         }
