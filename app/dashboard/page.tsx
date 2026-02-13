@@ -1,18 +1,19 @@
 'use client';
+import CreateClassDialog from "@/components/CreateClassDialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuSub, DropdownMenuSubContent, DropdownMenuSubTrigger, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { authClient } from "@/lib/auth-client";
 import { cn } from "@/lib/utils";
-import { ChevronDown, Computer, DraftingCompass, Ellipsis, ExternalLink, Eye, Globe, LaptopMinimal, Moon, Plus, Scroll, Settings2, Sun, Trash } from "lucide-react";
+import { ChevronDown, Circle, Computer, DraftingCompass, Ellipsis, ExternalLink, Eye, Globe, LaptopMinimal, Moon, Plus, Presentation, Scroll, Settings2, Sun, Trash } from "lucide-react";
 import { useTheme } from "next-themes";
 import { useRouter } from "next/navigation";
-
+import { useState } from "react";
 export default function DashboardPage(){
     const router = useRouter()
     const { data:session } = authClient.useSession();
     const { theme, setTheme } = useTheme();
+    const [showCreate, setShowCreate] = useState(false);
     const classes = [
         {
             name: 'Geography',
@@ -97,37 +98,17 @@ export default function DashboardPage(){
                         </CardHeader>
                     </Card>
                 })}
-                <Dialog>
-                    <DialogTrigger asChild>
-                        <Card className="relative hover:bg-secondary/40 dark:hover:bg-secondary/30 dark:hover:shadow-none hover:shadow-sm hover:-translate-y-1 active:translate-y-0 active:scale-[0.99] transition-all cursor-pointer rounded-md justify-center">
-                            <CardHeader>
-                                <div className="p-4 bg-secondary w-max rounded-lg">
-                                    <Plus/>
-                                </div>
-                                <CardTitle className="mt-2 text-lg">Add a class</CardTitle>
-                            </CardHeader>
-                        </Card>
-                    </DialogTrigger>
-                    <DialogContent className="flex w-full sm:max-w-[600px] h-[300px] overflow-auto">
-                        <div className="w-30 h-full bg-red-500"/>
-                        <div className="flex flex-col">
-                            <DialogHeader>
-                                <DialogTitle>Add class</DialogTitle>
-                                <DialogDescription>Add a new class to your dashboard.</DialogDescription>
-                            </DialogHeader>
-                            <p>hey</p>
+                <Card onClick={()=> setShowCreate(true)} className="relative hover:bg-secondary/40 dark:hover:bg-secondary/30 dark:hover:shadow-none hover:shadow-sm hover:-translate-y-1 active:translate-y-0 active:scale-[0.99] transition-all cursor-pointer rounded-md justify-center">
+                    <CardHeader>
+                        <div className="p-4 bg-secondary w-max rounded-lg">
+                            <Plus/>
                         </div>
-                    </DialogContent>
-                    {/* <DialogContent>
-                        <DialogHeader>
-                            <DialogTitle>Add class</DialogTitle>
-                            <DialogDescription>Add a new class to your dashboard.</DialogDescription>
-                        </DialogHeader>
-                        <p>hey</p>
-                    </DialogContent> */}
-                </Dialog>
+                        <CardTitle className="mt-2 text-lg">Add a class</CardTitle>
+                    </CardHeader>
+                </Card>
             </div>
         </div>
+        <CreateClassDialog showCreate={showCreate} setShowCreate={setShowCreate}/>
         {/* <Button onClick={async ()=>{
             await authClient.signOut({
                 fetchOptions: {
