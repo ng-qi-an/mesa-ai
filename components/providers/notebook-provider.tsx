@@ -1,8 +1,9 @@
 'use client';
-import { NoteContentType, noteSchema, noteTopicSchema } from "@/app/api/notebook/schema";
+import { NoteContentType, NoteMetaType, noteSchema, noteTopicSchema } from "@/app/api/notebook/schema";
 import { NotebookContext, NotebookContextType } from "@/lib/contexts";
 import { FileListType } from "@/lib/r2actions/getUserFiles";
-import { experimental_useObject } from "@ai-sdk/react";
+import { experimental_useObject, useChat } from "@ai-sdk/react";
+import { DefaultChatTransport } from "ai";
 import { useEffect, useState } from "react";
 
 export default function NotebookProvider({children, value}: {children: React.ReactNode, value?: NotebookContextType}) {
@@ -14,13 +15,14 @@ export default function NotebookProvider({children, value}: {children: React.Rea
     const [activeSection, setActiveSection] = useState<string | null>(null);
 
     // Content States
-    const [noteContent, setNoteContent] = useState<NoteContentType | null>(null);
+    const [notesMeta, setNotesMeta] = useState<NoteMetaType | null>(null);
+    // const [noteContent, setNoteContent] = useState<NoteContentType | null>(null);
     const [files, setFiles] = useState<FileListType[]>([]);
     const [instructions, setInstructions] = useState<string>("");
     const [topicWeights, setTopicWeights] = useState<Record<string, number>>({});
 
-    const { object:topicsObject, submit:topicsSubmit, isLoading:isTopicsLoading, clear:topicsClear, stop:topicsStop } = experimental_useObject({
-        api: '/api/notebook/generate-topics',
+    const { object:metaObject, submit:metaSubmit, isLoading:isMetaLoading, clear:metaClear, stop:metaStop } = experimental_useObject({
+        api: '/api/notebook/generate-meta',
         schema: noteTopicSchema,
         onFinish: (res)=>{
             console.log("Finished generating topics: ", res);
@@ -41,50 +43,58 @@ export default function NotebookProvider({children, value}: {children: React.Rea
             console.error("Error generating topics: ", err);
         }
     });
-    const { object:notesObject, submit:notesSubmit, isLoading:isNotesLoading, clear:notesClear, stop:notesStop } = experimental_useObject({
-        api: '/api/notebook/generate-notes',
-        schema: noteSchema,
+    const { messages:notesHistory, setMessages: setNotesHistory, sendMessage:sendNotesFollowup, status:notesStatus } = useChat({
+        transport: new DefaultChatTransport({
+            api: '/api/generate-notes',
+        }),
         onFinish: (res)=>{
             console.log("Finished generating notes: ", res);
-            if (res.error){
-                console.error("Error generating notes: ", res.error);
+            if (res.isError){
+                console.error("Error generating notes: ", res);
                 return;
             }
         },
         onError: (err)=>{
             console.error("Error generating notes: ", err);
         }
-    });
+    }); 
+    // const { object:notesObject, submit:notesSubmit, isLoading:isNotesLoading, clear:notesClear, stop:notesStop } = experimental_useObject({
+    //     api: '/api/notebook/generate-notes',
+    //     schema: noteSchema,
+    //     onFinish: (res)=>{
+    //         console.log("Finished generating notes: ", res);
+    //         if (res.error){
+    //             console.error("Error generating notes: ", res.error);
+    //             return;
+    //         }
+    //     },
+    //     onError: (err)=>{
+    //         console.error("Error generating notes: ", err);
+    //     }
+    // });
 
     
     useEffect(()=>{
-        if (notesObject && notesObject.header && notesObject.subtitle && notesObject.content){
+        if (notesStatus == "streaming"){
             setCollapseSections(false);
-            setNoteContent({
-                header: notesObject.header,
-                subtitle: notesObject.subtitle,
-                content: notesObject.content,
-            })
         }
-    }, [notesObject])
+    }, [notesStatus])
 
     // Actions
-    function generateTopics(instructions: string, files: FileListType[]){
+    function generateMeta(instructions: string, files: FileListType[]){
         console.log("Generating topics with instructions:", instructions, "and files:", files);
-        notesClear();
+        setNotesHistory([]);
         setTopicWeights({});
-        setNoteContent(null);
         setCollapseSections(true);
-        topicsClear();
-        topicsSubmit({
+        metaClear();
+        metaSubmit({
             files: files.map(f=>f.name),
             instructions: instructions
         })
     }
     function generateNotes(instructions: string, files: FileListType[], topicWeights: Record<string, number>){
-        notesClear();
+        setNotesHistory([]);
         console.log("Received generating notes request with instructions:", instructions, "files:", files.map(f=>f.name), "and weights:", topicWeights);
-        setNoteContent(null);
         setCollapseSections(true);
         if (topicWeights && Object.keys(topicWeights).length !== 0){
             notesSubmit({

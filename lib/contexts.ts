@@ -1,6 +1,7 @@
 import { NoteContentType } from "@/app/api/notebook/schema";
 import { createContext } from "react";
 import { FileListType } from "./r2actions/getUserFiles";
+import { UIMessage } from "ai";
 
 export type NotebookContextType = {
     // Define any context properties here
@@ -12,8 +13,9 @@ export type NotebookContextType = {
     setCollapsedTools: (tools: boolean) => void;
     collapsedRightSidebar: boolean;
     setCollapsedRightSidebar: (collapsed: boolean) => void;
-    noteContent: NoteContentType | null;
-    setNoteContent: (content: NoteContentType | null) => void;
+    // noteContent: NoteContentType | null;
+    // setNoteContent: (content: NoteContentType | null) => void;
+    notesMessages: UIMessage[],
     files: FileListType[];
     setFiles: (files: FileListType[] | ((files: FileListType[]) => FileListType[])) => void;
     activeSection: string | null;
