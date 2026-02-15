@@ -10,8 +10,8 @@ import createOrExtendCache from '@/lib/cache-actions/createOrExtendCache';
 export const maxDuration = 300;
 
 type NotebookRequestType = {
-    topicWeights?: Record<string, number>;
     cacheName: string;
+    thinkingLevel: "minimal" | "low" | "medium";
     messages: UIMessage[];
 }
 
@@ -24,14 +24,10 @@ export async function POST(req: Request) {
     if (!session || !session.user) {
         throw new Error("Not authenticated");
     }
-    if (!context.topicWeights){
-        throw new Error("Missing topic weights");
+    if (!context.cacheName){
+        throw new Error("Missing cache name");
     }
-    const topicWeights = context.topicWeights!
-
-    console.log("Using topic weights:", topicWeights);
-    console.log("Using cache:", context.cacheName);
-    console.log("Generating notes for user:", session.user.id);
+    console.log("Chatting on notebook with user:", session.user.id, "with cache:", context.cacheName, "and thinking level:", context.thinkingLevel);
 
     const result = streamText({
         model: google("gemini-3-flash-preview"),
@@ -39,7 +35,7 @@ export async function POST(req: Request) {
         providerOptions: {
             google: {
                 thinkingConfig: {
-                    thinkingLevel: "low",
+                    thinkingLevel: context.thinkingLevel,
                 },
                 cachedContent: context.cacheName,
             }

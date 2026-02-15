@@ -16,7 +16,7 @@ export default function NoteSettings({open, onOpenChange}: {open: boolean, onOpe
         console.log("Updating topic weights in NoteSettings: ", noteCtx?.topicWeights);
         setTopicWeights({...noteCtx?.topicWeights});
         setInstructions(noteCtx?.instructions || "");
-    }, [noteCtx])
+    }, [noteCtx?.topicWeights])
     return <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent className=" h-[calc(100%-2rem)] md:max-h-[800px] sm:max-w-[calc(100%-2rem)] md:max-w-3xl lg:max-w-3xl">
             <DialogHeader>
@@ -80,10 +80,9 @@ export default function NoteSettings({open, onOpenChange}: {open: boolean, onOpe
                 }}>Cancel</Button>
                 <Button onClick={() => {
                     onOpenChange(false);
-                    noteCtx?.setNoteContent(null);
                     noteCtx?.setTopicWeights(topicWeights);
                     noteCtx?.setInstructions(instructions);
-                    noteCtx?.generateNotes(instructions, noteCtx.files, topicWeights);
+                    noteCtx?.generateNotes(instructions, noteCtx.files, topicWeights, noteCtx.cache);
                 }}>Save settings</Button>
             </DialogFooter>
         </DialogContent>

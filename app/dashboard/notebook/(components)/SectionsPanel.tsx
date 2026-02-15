@@ -38,7 +38,7 @@ export default function SectionsPanel(){
             </div>
             {/* <Separator className="mb-2"/> */}
             <motion.div layout="position" transition={{type: "spring", bounce: 0.3, duration: 0.4}} animate={{x: !noteCtx?.collapseSections ? 0 : "-100%", opacity: !noteCtx?.collapseSections ? 1 : 0}} className="flex flex-col overflow-y-auto h-full">
-            {noteCtx?.noteContent ? ["## "+ noteCtx.noteContent.header, ...noteCtx.noteContent.content.split("\n").filter((x)=> x.split(" ")[0] === "##")].map((section, index) => {
+            {noteCtx?.metaObject ? ["## "+ noteCtx.metaObject.header, ...noteCtx.getActualNotes(noteCtx.notesHistory).split("\n").filter((x)=> x.split(" ")[0] === "##")].map((section, index) => {
                 const sectionTitle = section.replace("##", "").trim();
                 const slug = slugify(sectionTitle);
                 const isActive = noteCtx?.activeSection === slug;

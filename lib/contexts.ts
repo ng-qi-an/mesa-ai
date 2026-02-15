@@ -1,7 +1,7 @@
-import { NoteContentType } from "@/app/api/notebook/schema";
+import { NoteMetaType } from "@/app/api/notebook/schema";
 import { createContext } from "react";
 import { FileListType } from "./r2actions/getUserFiles";
-import { UIMessage } from "ai";
+import { DeepPartial, UIMessage } from "ai";
 
 export type NotebookContextType = {
     // Define any context properties here
@@ -13,10 +13,13 @@ export type NotebookContextType = {
     setCollapsedTools: (tools: boolean) => void;
     collapsedRightSidebar: boolean;
     setCollapsedRightSidebar: (collapsed: boolean) => void;
-    // noteContent: NoteContentType | null;
-    // setNoteContent: (content: NoteContentType | null) => void;
-    notesMessages: UIMessage[],
+    showGenerateNotesDialog: boolean;
+    setShowGenerateNotesDialog: (show: boolean) => void;
+    // Content States
+    notesHistory: UIMessage[],
     files: FileListType[];
+    setCache: (name: string, files: FileListType[]) => void;
+    cache: {name: string, files: FileListType[]} | null;
     setFiles: (files: FileListType[] | ((files: FileListType[]) => FileListType[])) => void;
     activeSection: string | null;
     setActiveSection: (section: string | null) => void;
@@ -24,12 +27,17 @@ export type NotebookContextType = {
     setInstructions: (instructions: string) => void;
     topicWeights: Record<string, number>;
     setTopicWeights: (weights: Record<string, number>) => void;
-    generateTopics: (instructions: string, files: FileListType[]) => void;
-    generateNotes: (instructions: string, files: FileListType[], topicWeights: Record<string, number>) => void;
+    checkCacheMatch: (cacheFiles: FileListType[], files: FileListType[]) => boolean;
+    generateMeta: (instructions: string, files: FileListType[], cacheName?: string) => void;
+    generateNotes: (instructions: string, files: FileListType[], topicWeights: Record<string, number>, cache: {name: string, files: FileListType[]} | null) => void;
+    getActualNotes: (history: UIMessage[]) => string;
     stopGeneration: () => void;
-    topicsObject: any;
-    isTopicsLoading: boolean;
+    metaObject: DeepPartial<NoteMetaType> | undefined;
     isNotesLoading: boolean;
+    isMetaLoading: boolean;
+    isEmbeddingImages: boolean;
+    isCacheLoading: boolean;
+    notesStatus: string;
     isGenerating: boolean;
 };
 export const NotebookContext = createContext<NotebookContextType | undefined>(undefined);

@@ -1,11 +1,10 @@
 'use server';
 
-import { createPartFromUri, createUserContent, GoogleGenAI } from '@google/genai';
+import { GoogleGenAI } from '@google/genai';
 import { headers } from 'next/headers';
 import { auth } from '../auth';
-import getUserFile from '../r2actions/getUserFile';
 
-export default async function extendCache(cacheName: string, timeToAdd: number = 900){
+export default async function extendCache(cacheName: string, timeToAdd: number = 720){
     const session = await auth.api.getSession({
         headers: await headers()
     })

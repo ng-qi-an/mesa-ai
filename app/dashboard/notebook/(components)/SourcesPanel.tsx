@@ -8,6 +8,7 @@ import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Spinner } from "@/components/ui/spinner";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import createCache from "@/lib/cache-actions/createCache";
 import { NotebookContext } from "@/lib/contexts";
 import addUserFileClient from "@/lib/r2actions/addUserFileClient";
 import deleteUserFiles from "@/lib/r2actions/deleteUserFiles";
@@ -35,7 +36,7 @@ export default function SourcesPanel(){
         loadSources();
     }, [])
 
-    return <Card size="sm" className={`shrink-0 rounded-md ring-neutral-900 overflow-hidden ${isCollapsed && "gap-0!"}`}>
+    return <Card size="sm" className={`${isCollapsed ? "h-max" : noteCtx?.collapsedTools ? "h-full max-h-full" : "shrink-0  h-full max-h-[230px]"} rounded-md ring-neutral-900 overflow-hidden ${isCollapsed && "gap-0!"}`}>
             <CardHeader className="items-center group flex cursor-pointer relative">
                 <motion.div
                     animate={{ rotate: !isCollapsed ? 0 : -90 }}
@@ -62,14 +63,24 @@ export default function SourcesPanel(){
                 type="file"
                 multiple
                 onChange={async(e)=>{
-                    if (e.target.files) {
+                    if (e.target.files && noteCtx) {
                         const filesArray = Array.from(e.target.files)
                         console.log("Files uploaded:", filesArray)
-                        const urls = await AddUserFile(filesArray.map((file)=> ({ name: file.name, type: file.type })));
-                        noteCtx!.setFiles((x)=> [...x.filter((f)=> f.status != "failed")]);
-                        const result = await addUserFileClient(filesArray, urls, noteCtx!.setFiles);
-                        console.log("File upload result:", result);
-                        fileInputRef.current!.value = "";
+                        try {
+                            const urls = await AddUserFile(filesArray.map((file)=> ({ name: file.name, type: file.type })));
+                            noteCtx!.setFiles((x)=> [...x.filter((f)=> f.status != "failed")]);
+                            console.log("urls", urls)
+                            const result = await addUserFileClient(filesArray, urls, noteCtx!.setFiles);
+                            console.log("result", result)
+                            if (result.every(r=> r.status === "uploaded")){
+                                noteCtx?.setShowGenerateNotesDialog(true)
+                            }
+                            console.log("File upload result:", result);
+                            fileInputRef.current!.value = "";
+                        } catch (error) {
+                            console.error("Error uploading files:", error);
+                        }
+                        
                     }
                 }}
                 accept="image/*,.pdf"
@@ -95,7 +106,7 @@ export default function SourcesPanel(){
                 transition={{ type: "spring", bounce: 0.15, duration: 0.4 }}
             >
                 <div className="overflow-hidden">
-                    <div className={`gap-3 flex flex-col px-2 pb-2 ${(noteCtx?.collapsedTools ? "max-h-full" : "h-[230px]")} overflow-y-auto`}>
+                    <div className={`gap-3 flex flex-col px-2 pb-2 h-full overflow-y-auto`}>
                         {!isCollapsed && <Separator className="mb-2" />}
                         {loading ? [...Array(3)].map((_, index) => (
                             <Skeleton key={index} className="h-10 w-full"/>
@@ -136,10 +147,11 @@ export default function SourcesPanel(){
                                 : file.status == "failed" && 
                                     <Tooltip>
                                         <TooltipTrigger asChild>
-                                            <div className="size-8 shrink-0 flex items-center justify-center text-destructive">
+                                            <div onClick={()=>{
+                                                noteCtx!.setFiles((x) => x.filter((f) => f.name !== file.name));
+                                            }} className="size-8 shrink-0 flex items-center justify-center text-destructive">
                                                 <X className="size-4"/>
                                             </div>
-                                            
                                         </TooltipTrigger>
                                         <TooltipContent side="bottom" align="end">
                                             <p>Upload failed. Please try uploading the file again.</p>

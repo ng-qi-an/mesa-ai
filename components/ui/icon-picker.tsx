@@ -80,7 +80,9 @@ export default function IconPicker({
                         className="h-8 text-sm"
                     />
                     {filteredNames.length > 0 ?<Grid
+                        // @ts-ignore
                         cellComponent={IconCell}
+                        // @ts-ignore
                         cellProps={cellProps}
                         columnCount={COLUMN_COUNT}
                         columnWidth={CELL_SIZE}

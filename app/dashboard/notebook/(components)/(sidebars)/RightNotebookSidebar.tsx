@@ -1,11 +1,13 @@
 import { motion } from "motion/react";
 import SourcesPanel from "../SourcesPanel";
 import ToolsPanel from "../ToolsPanel";
-import { useContext } from "react";
+import { useContext, useState } from "react";
 import { NotebookContext } from "@/lib/contexts";
+import ChatsPanel from "../(tools)/ChatsPanel";
 
 export default function RightNotebookSidebar(){
     const noteCtx = useContext(NotebookContext);
+    const [sidebarTool, setSidebarTool] = useState("");
     return <motion.div 
         layout
         animate={{
@@ -16,8 +18,13 @@ export default function RightNotebookSidebar(){
         className="h-full flex flex-col gap-3 shrink-0 overflow-hidden">
         <div className="w-[350px] h-full flex flex-col gap-3">
             
-            <SourcesPanel/>
-            <ToolsPanel/>
+            {sidebarTool == "Chat" ?
+                <ChatsPanel setSidebarTool={setSidebarTool}/>
+            : <>
+                <SourcesPanel/>
+                <ToolsPanel setSidebarTool={setSidebarTool}/>
+            </>
+            }
         </div>
     </motion.div>
 }
