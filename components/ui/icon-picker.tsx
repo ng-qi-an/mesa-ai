@@ -1,9 +1,10 @@
 import { Popover, PopoverContent, PopoverTrigger } from "./popover";
-import { DynamicIcon, type IconName, iconNames as rawIcons } from 'lucide-react/dynamic';
+import { DynamicIcon, type IconName } from 'lucide-react/dynamic';
 import { Button } from "./button";
 import { Grid } from "react-window";
-import { useState, useMemo, useCallback, memo } from "react";
+import { useState, useMemo, memo } from "react";
 import { Input } from "./input";
+import searchIcons from "@/lib/actions/searchIcons";
 
 const COLUMN_COUNT = 6;
 const CELL_SIZE = 48; // px per cell
@@ -50,14 +51,12 @@ export default function IconPicker({
     children?: React.ReactNode;
     onSelect?: (name: IconName) => void;
 }) {
-    const specialIcons = ['presentation', 'globe', 'scroll', 'drafting-compass', 'ruler-dimension-line', 'atom', 'stethoscope', 'book-open-text'];
-    const iconNames = [...specialIcons, ...rawIcons.filter(name => !specialIcons.includes(name))];
     const [search, setSearch] = useState("");
 
     const filteredNames = useMemo(() => {
-        if (!search) return iconNames;
         const lower = search.toLowerCase();
-        return iconNames.filter((name) => name.toLowerCase().includes(lower));
+        // return iconNames.filter((name) => name.toLowerCase().includes(lower));
+        return searchIcons(lower);
     }, [search]);
 
     const rowCount = Math.ceil(filteredNames.length / COLUMN_COUNT);

@@ -1,6 +1,6 @@
 import { User } from "better-auth";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from "@/components/ui/sidebar";
+import { SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem, useSidebar } from "@/components/ui/sidebar";
 import { ClassSelect } from "@/lib/schemas/schema";
 import { cn } from "@/lib/utils";
 import { ArrowLeft, ChevronsUpDown } from "lucide-react";
@@ -9,6 +9,7 @@ import { useRouter } from "next/navigation";
 
 export default function MainSidebarHeader({_class, classes}: {_class: ClassSelect, classes: ClassSelect[]}) {
     const router = useRouter();
+    const { isMobile, state } = useSidebar()
     return <SidebarHeader className="pt-3">
         <SidebarMenu>
             <SidebarMenuItem>
@@ -16,20 +17,23 @@ export default function MainSidebarHeader({_class, classes}: {_class: ClassSelec
                     <DropdownMenuTrigger asChild>
                     <SidebarMenuButton
                         size="lg"
+                        tooltip={_class.name}
                         className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
                     >
                         <div className={cn(_class.theme, "bg-primary text-primary-foreground flex size-8 items-center justify-center rounded-lg")}>
                             <DynamicIcon name={_class.icon as any} className="size-4" />
                         </div>
-                        <div className="flex flex-col gap-0.5 leading-none">
+                        <div className="flex flex-col gap-0.5 leading-none group-data-[collapsible=icon]:hidden">
                             <span className="font-medium">{_class.name}</span>
                             <span className="text-xs text-muted-foreground">Mesa ai</span>
                         </div>
-                        <ChevronsUpDown className="ml-auto" />
+                        <ChevronsUpDown className="ml-auto group-data-[collapsible=icon]:hidden" />
                         </SidebarMenuButton>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent
-                        className="w-(--radix-dropdown-menu-trigger-width) space-y-1 py-2"
+                        className="w-(--radix-dropdown-menu-trigger-width) min-w-60 space-y-1 py-2"
+                        side={isMobile ? "bottom" : state == "collapsed" ? "right" : "bottom"}
+                        sideOffset={isMobile ? 4 : state == "collapsed"? 14 : 4}
                         align="start"
                     >
                         <DropdownMenuItem

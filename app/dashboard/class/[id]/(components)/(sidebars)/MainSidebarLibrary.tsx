@@ -1,37 +1,37 @@
 import { SidebarGroupLabel, SidebarGroup, SidebarGroupContent, SidebarMenuItem, SidebarMenuButton, SidebarMenu } from "@/components/ui/sidebar";
-import { BookOpen, Home, MessageSquare, Settings2 } from "lucide-react";
+import { FolderOpen, ListTodo, Map, WalletCards } from "lucide-react";
 import { useParams, usePathname, useRouter } from "next/navigation";
 
-export default function MainSidebarNavigation(){
+export default function MainSidebarLibrary(){
     const links = [{
-        name: "Dashboard",
-        href: "",
-        icon: Home
+        name: "Drive",
+        href: "/drive",
+        icon: FolderOpen
     }, {
-        name: "Chat",
-        href: "/chat",
-        icon: MessageSquare
+        name: "Flashcards",
+        href: "/flashcards",
+        icon: WalletCards
     }, {
-        name: "Guided Study",
-        href: "/guided-study",
-        icon: BookOpen
+        name: "Mindmaps",
+        href: "/mindmaps",
+        icon: Map
     }, {
-        name: "Preferences",
-        href: "/preferences",
-        icon: Settings2
+        name: "Quizzes",
+        href: "/quizzes",
+        icon: ListTodo
     }]
     const {id} = useParams();
     const pathname = usePathname();
     const router = useRouter();
     return <SidebarGroup>
-        <SidebarGroupLabel>Navigation</SidebarGroupLabel>
+        <SidebarGroupLabel>Library</SidebarGroupLabel>
         <SidebarGroupContent>
             <SidebarMenu>
                 {links.map((link)=>{
                     return <SidebarMenuItem key={link.name}>
                         <SidebarMenuButton onClick={()=> router.push(`/dashboard/class/${id}${link.href}`)} tooltip={link.name} isActive={`/dashboard/class/${id}${link.href}` === pathname}>
-                                <link.icon/>
-                                {link.name}
+                            <link.icon/>
+                            {link.name}
                         </SidebarMenuButton>
                     </SidebarMenuItem>
                 })}

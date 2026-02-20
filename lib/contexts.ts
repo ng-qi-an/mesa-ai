@@ -40,4 +40,7 @@ export type NotebookContextType = {
     notesStatus: string;
     isGenerating: boolean;
 };
+
+
+
 export const NotebookContext = createContext<NotebookContextType | undefined>(undefined);
