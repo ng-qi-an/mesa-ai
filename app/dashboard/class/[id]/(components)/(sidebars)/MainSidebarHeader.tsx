@@ -1,9 +1,9 @@
 import { User } from "better-auth";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem, useSidebar } from "@/components/ui/sidebar";
+import { SidebarHeader, SidebarInput, SidebarMenu, SidebarMenuButton, SidebarMenuItem, useSidebar } from "@/components/ui/sidebar";
 import { ClassSelect } from "@/lib/schemas/schema";
 import { cn } from "@/lib/utils";
-import { ArrowLeft, ChevronsUpDown } from "lucide-react";
+import { ArrowLeft, ChevronsUpDown, Search } from "lucide-react";
 import { DynamicIcon } from "lucide-react/dynamic";
 import { useRouter } from "next/navigation";
 
@@ -65,6 +65,15 @@ export default function MainSidebarHeader({_class, classes}: {_class: ClassSelec
                         })}
                     </DropdownMenuContent>
                 </DropdownMenu>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+                {state == "expanded" ? 
+                    <SidebarInput placeholder="Type to search..." />
+                : 
+                    <SidebarMenuButton className="mt-2" tooltip={"Search"}>
+                        <Search/>
+                    </SidebarMenuButton>
+                }
             </SidebarMenuItem>
         </SidebarMenu>
     </SidebarHeader>

@@ -25,7 +25,7 @@ export default function MainSidebarTopics(){
             <SidebarMenu>
                 {_class.topics.map((topic)=>{
                     return <SidebarMenuItem key={topic.id} className="group">
-                        <SidebarMenuButton onClick={()=> router.push(`/dashboard/class/${id}/topic/${topic.id}`)} isActive={`/dashboard/class/${id}/topic/${topic.id}` === pathname}>
+                        <SidebarMenuButton tooltip={topic.name} onClick={()=> router.push(`/dashboard/class/${id}/topic/${topic.id}`)} isActive={`/dashboard/class/${id}/topic/${topic.id}` === pathname}>
                             <DynamicIcon name={topic.icon as any} className="size-4"/>
                             {topic.name}
                         </SidebarMenuButton>

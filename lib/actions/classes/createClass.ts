@@ -18,7 +18,7 @@ export default async function createClassServer( name: string, subject: string, 
         throw new Error("already_exists")
     }
     return await db.insert(classes).values({
-        id: generateId(),
+        id: generateId(9),
         name: name,
         subject: subject,
         theme: theme,

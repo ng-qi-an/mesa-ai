@@ -22,7 +22,7 @@ export default async function createTopicServer(name: string, icon: string, clas
         throw new Error("Unauthorized")
     }
     return await db.insert(topics).values({
-        id: generateId(),
+        id: generateId(9),
         name: name,
         icon: icon,
         userId: session.user.id,
