@@ -35,8 +35,12 @@ export default function FileRowActions({file}: {file: FileSelect}) {
             <DropdownMenuItem>Move</DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem variant="destructive" onClick={async()=>{
-                await deleteUserFolder(file.id, true)
-                await revalidateData(pathname)
+                if (file.contentType == "application/x-directory"){
+                    await deleteUserFolder(file.id, true)
+                    await revalidateData(pathname)
+                } else {
+
+                }
             }}>Delete</DropdownMenuItem>
         </DropdownMenuContent>
     </DropdownMenu>

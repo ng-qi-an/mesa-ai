@@ -36,13 +36,13 @@ export default async function addUserFolder(name: string, parent: string){
             console.log("Folder with the same name already exists in the database for this user.");
             throw new Error("already_exists");
         }
-        await db.insert(files).values({
+        return await db.insert(files).values({
             id: folderId,
             parentId: parent || null,
             name: name,
             contentType: "application/x-directory",
             userId: session.user.id
-        })
+        }).returning();
     } catch (error) {
         console.log("Error creating folder in R2:", error);
         throw error;

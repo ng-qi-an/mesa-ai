@@ -5,11 +5,11 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
 
-export const allowedMineTypes = ["application/x-directory", "text/html", "text/css", "text/plain", "text/xml", "text/csv", "text/rtf", "text/javascript", "application/json", "application/pdf", "image/bmp", "image/jpeg", "image/png", "image/webp"]
+export const allowedMimeTypes = ["text/html", "text/css", "text/plain", "text/xml", "text/csv", "text/rtf", "text/javascript", "application/json", "application/pdf", "image/bmp", "image/jpeg", "image/png", "image/webp"]
 
 export function mimeToReadable(mime: string) {
-  if (!allowedMineTypes.includes(mime)) return "Unknown";
   if (mime === "application/x-directory") return "Folder";
+  if (!allowedMimeTypes.includes(mime)) return "Unknown";
   if (mime === "application/pdf") return "PDF Document";
   if (mime === "text/plain") return "Text Document";
   const parts = mime.split("/");

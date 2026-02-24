@@ -14,6 +14,7 @@ import addUserFileClient from "@/lib/r2actions/addUserFileClient";
 import deleteUserFiles from "@/lib/r2actions/deleteUserFiles";
 import AddUserFile from "@/lib/r2actions/getAddUserFileURL";
 import getUserFiles, { FileListType } from "@/lib/r2actions/getUserFiles";
+import { allowedMimeTypes } from "@/lib/utils";
 import { ChevronDown, ChevronRight, File, FileText, MoreVertical, Pen, Plus, Trash2, X } from "lucide-react";
 import { motion } from "motion/react";
 import { useContext, useEffect, useRef, useState } from "react";
@@ -83,7 +84,7 @@ export default function SourcesPanel(){
                         
                     }
                 }}
-                accept="image/*,.pdf"
+                accept={allowedMimeTypes.join(",")}
                 className='absolute right-4 opacity-0 pointer-events-none w-20'
                 />
                 <Tooltip open={noteCtx?.isGenerating ? undefined : false}>
