@@ -30,7 +30,7 @@ export default async function addUserFileClient(files: File[], urls: {url: strin
             }
         } catch (error) {
             console.log("Error uploading file to R2:", error);
-                return { name: files[index].name, status: "failed" };
+            return { name: files[index].name, status: "failed" };
         }
     });
     return await Promise.all(uploadPromises);

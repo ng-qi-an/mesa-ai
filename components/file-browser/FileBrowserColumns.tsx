@@ -9,52 +9,54 @@ import { Checkbox } from "@/components/ui/checkbox"
 import FileRowActions from "./FileRowActions"
 
 
-export const fileColumns: ColumnDef<FileSelect>[] = [
+export const fileColumns: ColumnDef<FileBrowserItem>[] = [
+    // {
+    //     id: "select",
+    //     header: ({ table }) => (
+    //     <Checkbox
+    //         checked={
+    //         table.getIsAllPageRowsSelected() ||
+    //         (table.getIsSomePageRowsSelected() && "indeterminate")
+    //         }
+    //         onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
+    //         aria-label="Select all"
+    //     />
+    //     ),
+    //     cell: ({ row }) => (
+    //     <Checkbox
+    //         checked={row.getIsSelected()}
+    //         onCheckedChange={(value) => row.toggleSelected(!!value)}
+    //         aria-label="Select row"
+    //     />
+    //     ),
+    //     enableSorting: false,
+    //     enableHiding: false,
+    // },
     {
-        id: "select",
-        header: ({ table }) => (
-        <Checkbox
-            checked={
-            table.getIsAllPageRowsSelected() ||
-            (table.getIsSomePageRowsSelected() && "indeterminate")
-            }
-            onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
-            aria-label="Select all"
-        />
-        ),
-        cell: ({ row }) => (
-        <Checkbox
-            checked={row.getIsSelected()}
-            onCheckedChange={(value) => row.toggleSelected(!!value)}
-            aria-label="Select row"
-        />
-        ),
-        enableSorting: false,
-        enableHiding: false,
-    },
-    {
+        id: "name",
         accessorKey: "name",
         header: ({ column }) => {
             return (
                 <Button
                     variant="ghost"
-                    className="-ml-3"
+                    className="-ml-1"
                     onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
                 >
                     Name
-                    {column.getIsSorted() && (column.getIsSorted() === "asc" ?  <ArrowDown className="ml-1 h-4 w-4" /> : <ArrowUp className="ml-1 h-4 w-4" />)}
+                    {column.getIsSorted() && (column.getIsSorted() === "desc" ?  <ArrowDown className="ml-1 h-4 w-4" /> : <ArrowUp className="ml-1 h-4 w-4" />)}
                 </Button>
             )
         },
         cell: ({ row }) => {
             const file = row.original
-            return <div className="flex items-center gap-3">
+            return <div className="flex items-center gap-3 pl-2">
                 {file.contentType == "application/x-directory" ? <Folder className="size-4" fill="var(--foreground)"/> : <File className="size-4" fill="var(--foreground)"/>}
                 {file.name}
             </div>
         }
     },
     {
+        id: "contentType",
         accessorKey: "contentType",
         header: "Type",
         cell: ({ getValue }) => {
@@ -62,6 +64,7 @@ export const fileColumns: ColumnDef<FileSelect>[] = [
         }
     },
     {
+        id: "dateModified",
         accessorKey: "dateModified",
         header: ({ column }) => {
             return (
@@ -70,11 +73,7 @@ export const fileColumns: ColumnDef<FileSelect>[] = [
                     onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
                 >
                     Date Modified
-                    {column.getIsSorted() === "asc" ? (
-                        <ArrowDown className="ml-1 h-4 w-4" />
-                    ) : (
-                        <ArrowUp className="ml-1 h-4 w-4" />
-                    )}
+                    {column.getIsSorted() && (column.getIsSorted() === "desc" ?  <ArrowDown className="ml-1 h-4 w-4" /> : <ArrowUp className="ml-1 h-4 w-4" />)}
                 </Button>
             )
         },

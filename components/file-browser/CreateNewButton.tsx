@@ -3,19 +3,20 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSepara
 import { Button } from "@/components/ui/button";
 import { ChevronDown, CloudUpload, FolderPlus, Upload } from "lucide-react";
 import { useRef, useState } from "react";
-import CreateFolderDialog from "./CreateFolderDialog";
+import CreateFolderDialog from "./dialogs/CreateFolderDialog";
 import { FileSelect } from "@/lib/schemas/schema";
 import { allowedMimeTypes } from "@/lib/utils";
 import { toast } from "sonner";
 import addUserFileClient from "@/lib/r2actions/files/addUserFileClient";
-import revalidateData from "@/lib/r2actions/revalidateData";
 import { usePathname } from "next/navigation";
 import getAddUserFileURL from "@/lib/r2actions/files/getAddUserFileUrl";
+import { useFileBrowser } from "../providers/file-browser-provider";
 
 export default function CreateNewButton({nests}: {nests: FileSelect[]}) {
     const [createFolderOpen, setCreateFolderOpen] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const pathname = usePathname();
+    const { revalidateData } = useFileBrowser();
 
     return <>
         <input
@@ -35,6 +36,7 @@ export default function CreateNewButton({nests}: {nests: FileSelect[]}) {
                             if (result.every(r=> !r || r.status === "uploaded")){
                                 resolve({ files: result });
                             } else {
+                                
                                 reject("Some files failed to upload");
                             }
                             console.log("File upload result:", result);

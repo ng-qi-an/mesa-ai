@@ -1,4 +1,5 @@
 'use client';
+import { useFileBrowser } from "@/components/providers/file-browser-provider";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Field, FieldGroup } from "@/components/ui/field";
@@ -6,7 +7,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Spinner } from "@/components/ui/spinner";
 import addUserFolder from "@/lib/r2actions/folders/addUserFolder";
-import revalidateData from "@/lib/r2actions/revalidateData";
 import { FileSelect } from "@/lib/schemas/schema";
 import { FolderPlus } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
@@ -16,6 +16,8 @@ import { toast } from "sonner";
 export default function CreateFolderDialog({ open, setOpen, nests }: { open: boolean, setOpen: (open: boolean) => void, nests: FileSelect[] }) {
     const [creating, setCreating] = useState(false);
     const pathname = usePathname()
+    
+    const { revalidateData } = useFileBrowser();
     return <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent>
             <form onSubmit={async(e)=>{

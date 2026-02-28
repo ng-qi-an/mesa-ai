@@ -8,7 +8,6 @@ import { DeleteObjectCommand } from "@aws-sdk/client-s3";
 import { r2 } from "@/lib/r2";
 
 
-
 export default async function deleteUserFile(fileId: string, parent: string){
     const session = await auth.api.getSession({
         headers: await headers()

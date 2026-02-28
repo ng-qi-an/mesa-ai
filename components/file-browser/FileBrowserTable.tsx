@@ -18,21 +18,35 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import { useState } from "react"
+import { useEffect, useState } from "react"
+import { cn } from "@/lib/utils"
+import { FileBrowserItem } from "./FileBrowserColumns"
 
-interface DataTableProps<TData, TValue> {
+export interface FileBrowserTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[]
   data: TData[]
+}
+
+export interface FileBrowserTableMiscProps<TData, TValue> {
   onItemSelect: (item: TData) => void
+  onSecondaryItemSelect?: (item: TData) => void,
+  selected?: string[],
+  className?: string
 }
 
 export function FileBrowserTable<TData, TValue>({
   columns,
   data,
   onItemSelect,
-}: DataTableProps<TData, TValue>) {
+  onSecondaryItemSelect,
+  selected,
+  className
+}: FileBrowserTableProps<TData, TValue> & FileBrowserTableMiscProps<TData, TValue>) {
   const [rowSelection, setRowSelection] = useState({})
-  const [sorting, setSorting] = useState<SortingState>([])
+  const [sorting, setSorting] = useState<SortingState>([{
+    id: 'name',
+    desc: false
+  }])
   const table = useReactTable({
     data,
     columns,
@@ -47,7 +61,7 @@ export function FileBrowserTable<TData, TValue>({
   })
 
   return (
-    <div className="overflow-hidden rounded-md border overflow-y-auto max-h-full">
+    <div className={cn("overflow-hidden rounded-md border overflow-y-auto max-h-full", className)}>
       <Table>
         <TableHeader>
           {table.getHeaderGroups().map((headerGroup) => (
@@ -73,10 +87,22 @@ export function FileBrowserTable<TData, TValue>({
               <TableRow
                 key={row.id}
                 className="cursor-pointer"
-                onClick={()=> row.toggleSelected()}
-                data-state={row.getIsSelected() && "selected"}
-                onDoubleClick={()=>{
+                // onClick={()=> row.toggleSelected()}
+                // data-state={row.getIsSelected() && "selected"}
+                data-state={selected?.includes((row.original as FileBrowserItem).id) ? "selected" : undefined}
+                onClick={(e)=>{
+                  if (!(e.target as HTMLDivElement).classList.contains("triggerPrimary") && !e.currentTarget.contains(e.target as Node)) {
+                    return;
+                  }
                   onItemSelect(row.original)
+                }}
+                onDoubleClick={(e)=>{
+                  if (onSecondaryItemSelect){
+                    if (!(e.target as HTMLDivElement).classList.contains("triggerSecondary") && !e.currentTarget.contains(e.target as Node)) {
+                      return;
+                    }
+                    onSecondaryItemSelect(row.original)
+                  }
                 }}
               >
                 {row.getVisibleCells().map((cell) => (
