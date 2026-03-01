@@ -37,7 +37,6 @@ export default function FileRowActions({file}: {file: FileSelect}) {
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
             <DropdownMenuLabel>Actions</DropdownMenuLabel>
-            <DropdownMenuItem className="triggerPrimary">{file.contentType == "application/x-directory" ? "Open" : "View"}</DropdownMenuItem> 
             <DropdownMenuItem onClick={()=>{
                 setOpenRename(true);
             }}>Rename</DropdownMenuItem>

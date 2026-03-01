@@ -10,6 +10,7 @@ import { FileSelect } from "@/lib/schemas/schema";
 import { useRouter } from "next/navigation";
 import { useClass } from "@/components/providers/class-provider";
 import FileBrowserBreadcrumbs from "@/components/file-browser/FileBrowserBreadcrumbs";
+import { Search } from "lucide-react";
 
 export default function NestPage({nests, files, revalidateData}: {nests: FileSelect[], files: FileSelect[], revalidateData: (...args: any[]) => Promise<void>}) {
     const router = useRouter();
@@ -19,9 +20,15 @@ export default function NestPage({nests, files, revalidateData}: {nests: FileSel
     }
     return <FileBrowserProvider nests={nests} setNests={setNests} files={files} revalidateData={revalidateData}>
         <PageHeader pages={[{name: "Drive"}]} actionsClassName="ml-0 w-full">
-            <div className="absolute left-0 flex items-center justify-center w-full">
-                <Input className="w-full max-w-[500px] px-4" placeholder="Search for files"/>
+            <div className="opacity-0 pointer-events-none lg:opacity-100 lg:pointer-events-auto absolute left-0 flex items-center justify-center w-full">
+                <Input className="w-full lg:max-w-[400px] xl:max-w-[500px] px-4" placeholder="Search for files"/>
             </div>
+            <div className="flex-1"/>
+            <Button variant="outline" className="lg:hidden" onClick={()=>{
+                router.push(`/dashboard/class/${_class.id}/drive/search`);
+            }}>
+                <Search/>
+            </Button>
             <CreateNewButton nests={nests}/>
         </PageHeader>
         <div className="w-full h-full flex flex-col px-8 py-6">

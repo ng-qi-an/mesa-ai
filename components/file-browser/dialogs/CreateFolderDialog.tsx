@@ -1,4 +1,5 @@
 'use client';
+import { useClass } from "@/components/providers/class-provider";
 import { useFileBrowser } from "@/components/providers/file-browser-provider";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -16,6 +17,7 @@ import { toast } from "sonner";
 export default function CreateFolderDialog({ open, setOpen, nests }: { open: boolean, setOpen: (open: boolean) => void, nests: FileSelect[] }) {
     const [creating, setCreating] = useState(false);
     const pathname = usePathname()
+    const {_class} = useClass();
     
     const { revalidateData } = useFileBrowser();
     return <Dialog open={open} onOpenChange={setOpen}>
@@ -28,7 +30,7 @@ export default function CreateFolderDialog({ open, setOpen, nests }: { open: boo
                 }
                 setCreating(true);
                 try {
-                    await addUserFolder(name, nests[nests.length - 1] ? nests[nests.length - 1].id : '');
+                    await addUserFolder(name, nests[nests.length - 1] ? nests[nests.length - 1].id : '', _class.id);
                     setOpen(false);
                     await revalidateData(pathname);
                 } catch (error) {

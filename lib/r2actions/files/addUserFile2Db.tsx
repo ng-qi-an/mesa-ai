@@ -8,7 +8,7 @@ import { and, eq } from "drizzle-orm";
 
 
 
-export default async function addUserFile2Db(fileId: string, fileName: string, fileType: string, parent: string){
+export default async function addUserFile2Db(fileId: string, fileName: string, fileType: string, parent: string, classId: string){
     const session = await auth.api.getSession({
         headers: await headers()
     })
@@ -26,7 +26,8 @@ export default async function addUserFile2Db(fileId: string, fileName: string, f
             parentId: parent || null,
             name: fileName,
             contentType: fileType,
-            userId: session.user.id
+            userId: session.user.id,
+            classId
         }).returning();
     } catch (error) {
         console.log("Error creating file in database:", error);

@@ -14,7 +14,6 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import FileBrowser from "../FileBrowser";
 import { FileBrowserItem } from "../FileBrowserColumns";
-import revalidateMoveAction from "./revalidateMoveAction";
 import { Breadcrumb, BreadcrumbEllipsis, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from "@/components/ui/breadcrumb";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import FileBrowserBreadcrumbs from "../FileBrowserBreadcrumbs";
@@ -22,20 +21,20 @@ import { allowedMimeTypes } from "@/lib/utils";
 import moveUserFile from "@/lib/r2actions/files/moveUserFile";
 import { useClass } from "@/components/providers/class-provider";
 import CreateFolderDialog from "./CreateFolderDialog";
+import revalidateBrowserInnerAction from "./revalidateMoveAction";
 
-export default function MoveFileFolderDialog({ open, setOpen, isFolder, itemId, itemName }: { open: boolean, setOpen: (open: boolean) => void, isFolder: boolean, itemId: string, itemName: string }) {
-    const [moving, setMoving] = useState(false);
+export default function FileSelectorDialog({ open, setOpen, onConfirm }: { open: boolean, setOpen: (open: boolean) => void, onConfirm: (files: FileBrowserItem[]) => void }) {
     const pathname = usePathname()
     const [nests, setNests] = useState<FileSelect[]>([]);
     const [files, setFiles] = useState<FileBrowserItem[]>([]);
     const [createFolderOpen, setCreateFolderOpen] = useState(false);
-    const [selectedFolder, setSelectedFolder] = useState<FileSelect | null>(null);
+    const [selectedFiles, setSelectedFiles] = useState<FileBrowserItem[]>([]);
     const [loading, setLoading] = useState(true);
     const { _class } = useClass();
 
     useEffect(()=>{
         async function fetchData(nests: FileSelect[]) {
-            const r = await revalidateMoveAction(nests, _class.id)
+            const r = await revalidateBrowserInnerAction(nests, _class.id)
             setFiles(r.map((f)=> ({...f, key: f.id})))
             setLoading(false);
         }
@@ -43,28 +42,26 @@ export default function MoveFileFolderDialog({ open, setOpen, isFolder, itemId, 
             setLoading(true);
             fetchData(nests);
         } else {
-            setSelectedFolder(null);
+            setSelectedFiles([]);
         }
     }, [open, nests])
-    
-    const { revalidateData } = useFileBrowser();
     return <FileBrowserProvider nests={nests} setNests={setNests} files={files} 
         revalidateData={async()=> {
-            const r = await revalidateMoveAction(nests, _class.id)
+            const r = await revalidateBrowserInnerAction(nests, _class.id)
             setFiles(r.map((f)=> ({...f, key: f.id})))
         }
     }> 
         <Dialog open={open} onOpenChange={(x)=>{
             if (!x){
                 setNests([]);
-                setSelectedFolder(null);
+                setSelectedFiles([]);
             }
             setOpen(x)
         }}>
             <DialogContent>
                 <DialogHeader>
-                    <DialogTitle>Move {isFolder ? "Folder" : "File"}</DialogTitle>
-                    <DialogDescription>Folders help to organise files into distinct sections.</DialogDescription>
+                    <DialogTitle>Mesa Drive</DialogTitle>
+                    <DialogDescription>Select files from Mesa Drive to add.</DialogDescription>
                 </DialogHeader>
                 <div className="flex flex-col overflow-auto w-full">
                     <div className="flex items-center justify-between">
@@ -77,20 +74,20 @@ export default function MoveFileFolderDialog({ open, setOpen, isFolder, itemId, 
                         <div className="flex items-center justify-center w-full py-13"><Spinner className="text-2xl"/></div>
                     : <>                   
                         <div className="flex w-full overflow-auto mt-3">
-                            <FileBrowser hideFileTypes={allowedMimeTypes.filter((x)=> x != "application/x-directory")} selected={selectedFolder ? [selectedFolder.id]: []} className="w-full" files={files.filter((x)=> x.id != itemId)} hideColumns={["dateModified"]} onItemSelect={(file) => {
-                                if (selectedFolder?.id == file.id){
-                                    setSelectedFolder(null);
-                                } else {
-                                    setSelectedFolder(file);
+                            <FileBrowser selected={selectedFiles.map(f=>f.id)} className="w-full" files={files} hideColumns={["dateModified"]} enableCheckbox onItemSelect={(file) => {
+                                if (file.contentType != "application/x-directory") {
+                                    if (selectedFiles.some(f=>f.id == file.id)){
+                                        setSelectedFiles(selectedFiles.filter(f=>f.id != file.id && f.contentType != "application/x-directory"));
+                                    } else {
+                                        setSelectedFiles([...selectedFiles.filter(f=>f.contentType != "application/x-directory"), file]);
+                                    }
                                 }
                             }} onSecondaryItemSelect={async (file)=>{
                                 if (file.contentType == "application/x-directory") {
-                                    setSelectedFolder(file);
                                     setNests([...nests, file])
                                 }
                             }}/>
                         </div>
-                        <p className="mt-3 text-muted-foreground">Moving {isFolder ? "folder": "file"} into <b>{selectedFolder?.name || "Drive"}</b>. Select to change folder, double-click to open it.</p>
                     </>
                     }
                 </div>
@@ -98,27 +95,7 @@ export default function MoveFileFolderDialog({ open, setOpen, isFolder, itemId, 
                     <DialogClose asChild>
                         <Button variant="outline">Cancel</Button>
                     </DialogClose>
-                    <Button type="submit" disabled={moving || loading} onClick={async ()=>{
-                        setMoving(true);                 
-                        try {
-                            await moveUserFile(itemId, itemName, selectedFolder ? selectedFolder!.id : null);
-                            setOpen(false)
-                            await revalidateData(pathname);
-                        } catch (error) {
-                            if (error instanceof Error){
-                                if (error.message === "already_exists") {
-                                    toast.error(`An item with the same name already exists in the destination folder.`);
-                                } else if (error.message === "same_parent") {
-                                    setOpen(false)
-                                }
-                            } else {
-                                console.log("Error moving file:", error);
-                                toast.error("Failed to move item. Please try again.")
-                            }
-                        } finally {
-                            setMoving(false)
-                        }
-                    }}>{moving ? <Spinner/> : <><FolderInput/> Move here</>}</Button>
+                    <Button type="submit" disabled={loading} onClick={()=> onConfirm(selectedFiles)}>Select {selectedFiles.length} file{selectedFiles.length != 1 ? "s" : ""}</Button>
                 </DialogFooter>
             </DialogContent>
         </Dialog>

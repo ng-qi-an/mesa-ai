@@ -9,7 +9,7 @@ import { Spinner } from "@/components/ui/spinner";
 import renameUserFile from "@/lib/r2actions/files/renameUserFile";
 import addUserFolder from "@/lib/r2actions/folders/addUserFolder";
 import { FileSelect } from "@/lib/schemas/schema";
-import { FolderPlus } from "lucide-react";
+import { FilePen, FolderPen, FolderPlus } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -56,7 +56,7 @@ export default function RenameFileFolderDialog({ open, setOpen, itemId, original
                     <DialogClose asChild>
                         <Button variant="outline">Cancel</Button>
                     </DialogClose>
-                        <Button type="submit" disabled={renaming}>{renaming ? <Spinner/> : <><FolderPlus/> Rename {isFolder ? "Folder" : "File"}</>}</Button>
+                        <Button type="submit" disabled={renaming}>{renaming ? <Spinner/> : <>{isFolder ? <FolderPen/> : <FilePen/>} Rename {isFolder ? "folder" : "file"}</>}</Button>
                 </DialogFooter>
             </form>
         </DialogContent>

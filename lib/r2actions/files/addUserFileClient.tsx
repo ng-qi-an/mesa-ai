@@ -3,7 +3,7 @@
 import addUserFile2Db from "./addUserFile2Db";
 import deleteUserFile from "./deleteUserFile";
 
-export default async function addUserFileClient(files: File[], urls: {url: string, id: string}[], parent: string) {
+export default async function addUserFileClient(files: File[], urls: {url: string, id: string}[], parent: string, classId: string) {
     const uploadPromises = urls.map(async(url, index) => {
         console.log("Uploading file to R2:", files[index].name, "to URL:", url.url);
         try {
@@ -13,7 +13,7 @@ export default async function addUserFileClient(files: File[], urls: {url: strin
             });
             if (r.ok){
                 try {
-                    const res2 = await addUserFile2Db(url.id,files[index].name, files[index].type, parent);
+                    const res2 = await addUserFile2Db(url.id,files[index].name, files[index].type, parent, classId);
                     if (res2){
                         console.log("Successfully added file to database after R2 upload:", files[index].name);
                         return { name: files[index].name, status: "uploaded" };

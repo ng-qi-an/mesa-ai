@@ -11,12 +11,14 @@ import addUserFileClient from "@/lib/r2actions/files/addUserFileClient";
 import { usePathname } from "next/navigation";
 import getAddUserFileURL from "@/lib/r2actions/files/getAddUserFileUrl";
 import { useFileBrowser } from "../providers/file-browser-provider";
+import { useClass } from "../providers/class-provider";
 
 export default function CreateNewButton({nests}: {nests: FileSelect[]}) {
     const [createFolderOpen, setCreateFolderOpen] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const pathname = usePathname();
     const { revalidateData } = useFileBrowser();
+    const {_class} = useClass();
 
     return <>
         <input
@@ -31,7 +33,7 @@ export default function CreateNewButton({nests}: {nests: FileSelect[]}) {
                         try {
                             const urls = await getAddUserFileURL(filesArray.map((file)=> ({ name: file.name, type: file.type })));
                             console.log("urls", urls)
-                            const result = await addUserFileClient(filesArray, urls, nests[nests.length - 1] ? nests[nests.length - 1].id : '');
+                            const result = await addUserFileClient(filesArray, urls, nests[nests.length - 1] ? nests[nests.length - 1].id : '', _class.id);
                             console.log("result", result)
                             if (result.every(r=> !r || r.status === "uploaded")){
                                 resolve({ files: result });
@@ -63,7 +65,7 @@ export default function CreateNewButton({nests}: {nests: FileSelect[]}) {
         />
         <DropdownMenu>
             <DropdownMenuTrigger asChild>
-                <Button variant={'secondary'} className="ml-auto absolute right-6 z-10">
+                <Button variant={'secondary'} className="mr-2">
                     Create new
                     <ChevronDown/>
                 </Button>

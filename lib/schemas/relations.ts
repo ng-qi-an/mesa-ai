@@ -53,6 +53,10 @@ export const filesRelations = relations(files, ({ one, many }) => ({
         fields: [files.parentId],
         references: [files.id],
     }),
+    class: one(classes, {
+        fields: [files.classId],
+        references: [classes.id],
+    }),
     children: many(files),
     topics: many(topicFiles)
 }))

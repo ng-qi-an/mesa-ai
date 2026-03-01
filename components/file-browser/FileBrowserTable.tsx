@@ -20,7 +20,9 @@ import {
 } from "@/components/ui/table"
 import { useEffect, useState } from "react"
 import { cn } from "@/lib/utils"
-import { FileBrowserItem } from "./FileBrowserColumns"
+import { checkboxColumn, FileBrowserItem } from "./FileBrowserColumns"
+import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "../ui/empty"
+import { FileSearchCorner } from "lucide-react"
 
 export interface FileBrowserTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[]
@@ -31,6 +33,8 @@ export interface FileBrowserTableMiscProps<TData, TValue> {
   onItemSelect: (item: TData) => void
   onSecondaryItemSelect?: (item: TData) => void,
   selected?: string[],
+  setSelected? : (selected: string[]) => void,
+  enableCheckbox?: boolean,
   className?: string
 }
 
@@ -40,6 +44,8 @@ export function FileBrowserTable<TData, TValue>({
   onItemSelect,
   onSecondaryItemSelect,
   selected,
+  setSelected,
+  enableCheckbox,
   className
 }: FileBrowserTableProps<TData, TValue> & FileBrowserTableMiscProps<TData, TValue>) {
   const [rowSelection, setRowSelection] = useState({})
@@ -47,13 +53,19 @@ export function FileBrowserTable<TData, TValue>({
     id: 'name',
     desc: false
   }])
+  const finalColumns = enableCheckbox ? [checkboxColumn as ColumnDef<TData, TValue>, ...columns] : columns;
   const table = useReactTable({
     data,
-    columns,
+    columns: finalColumns,
     getCoreRowModel: getCoreRowModel(),
     onSortingChange: setSorting,
     getSortedRowModel: getSortedRowModel(),
     onRowSelectionChange: setRowSelection,
+    meta: {
+      onItemSelect,
+      selected,
+      setSelected
+    },
     state: {
       sorting,
       rowSelection,
@@ -115,7 +127,15 @@ export function FileBrowserTable<TData, TValue>({
           ) : (
             <TableRow className="hover:bg-transparent">
               <TableCell colSpan={columns.length} className="h-24 text-center">
-                No results.
+                <Empty>
+                  <EmptyHeader>
+                    <EmptyMedia variant={"icon"}>
+                      <FileSearchCorner/>
+                    </EmptyMedia>
+                    <EmptyTitle>Nothing here yet...</EmptyTitle>
+                    <EmptyDescription>Add a file or folder using the "Create new" button.</EmptyDescription>
+                  </EmptyHeader>
+                </Empty>
               </TableCell>
             </TableRow>
           )}

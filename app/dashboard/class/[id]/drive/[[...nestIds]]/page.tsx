@@ -21,7 +21,7 @@ export default async function DrivePage({params}: {params: Promise<{nestIds: str
     if (nestIds && (nests.length == 0 || !nests.find((n)=> n.id == nestIds[nestIds.length - 1]))){
         return redirect(`/dashboard/class/${id}/drive`)
     }
-    const userFiles = await db.select().from(files).where(and(eq(files.userId, session.user.id), nestIds ? eq(files.parentId, nestIds[nestIds.length - 1]) : isNull(files.parentId)));
+    const userFiles = await db.select().from(files).where(and(eq(files.userId, session.user.id), eq(files.classId, id), nestIds ? eq(files.parentId, nestIds[nestIds.length - 1]) : isNull(files.parentId)));
 
     return <NestPage nests={nests} files={userFiles} revalidateData={async(pathname: string)=> {
         "use server";

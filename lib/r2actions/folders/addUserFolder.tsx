@@ -11,7 +11,7 @@ import { revalidatePath } from "next/cache";
 
 
 
-export default async function addUserFolder(name: string, parent: string){
+export default async function addUserFolder(name: string, parent: string, classId: string){
     const session = await auth.api.getSession({
         headers: await headers()
     })
@@ -39,7 +39,8 @@ export default async function addUserFolder(name: string, parent: string){
         return await db.insert(files).values({
             id: folderId,
             parentId: parent || null,
-            name: name,
+            classId,
+            name,
             contentType: "application/x-directory",
             userId: session.user.id
         }).returning();

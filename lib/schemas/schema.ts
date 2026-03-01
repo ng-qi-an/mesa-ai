@@ -28,6 +28,7 @@ export const files = pgTable("files", {
     id: text("id").primaryKey(),
     userId: text("user_id").notNull().references(() => user.id, { onDelete: "cascade" }),
     parentId: text("parent_id").references(():AnyPgColumn => files.id, { onDelete: "cascade"}),
+    classId: text("class_id").notNull().references(() => classes.id, { onDelete: "cascade" }),
     name: text("name").notNull(),
     contentType: text("content_type").notNull(),
     dateCreated: timestamp("date_created").notNull().defaultNow(),

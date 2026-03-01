@@ -8,30 +8,23 @@ import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
 import FileRowActions from "./FileRowActions"
 
+export const checkboxColumn:ColumnDef<FileBrowserItem> = {
+    id: "select",
+    cell: ({ row, table }) => {
+        const meta = table.options.meta as { selected: string[], setSelected: (selected: string[]) => void }
+        const file = row.original    
+        return file.contentType != "application/x-directory" && <Checkbox
+            checked={meta.selected.includes(file.id)}
+            onCheckedChange={(value) => value ? meta.setSelected([...meta.selected, file.id]) : meta.setSelected(meta.selected.filter(id => id !== file.id))}
+            aria-label="Select row"
+        />
+    },
+    enableSorting: false,
+    enableHiding: false,
+}
 
 export const fileColumns: ColumnDef<FileBrowserItem>[] = [
-    // {
-    //     id: "select",
-    //     header: ({ table }) => (
-    //     <Checkbox
-    //         checked={
-    //         table.getIsAllPageRowsSelected() ||
-    //         (table.getIsSomePageRowsSelected() && "indeterminate")
-    //         }
-    //         onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
-    //         aria-label="Select all"
-    //     />
-    //     ),
-    //     cell: ({ row }) => (
-    //     <Checkbox
-    //         checked={row.getIsSelected()}
-    //         onCheckedChange={(value) => row.toggleSelected(!!value)}
-    //         aria-label="Select row"
-    //     />
-    //     ),
-    //     enableSorting: false,
-    //     enableHiding: false,
-    // },
+    
     {
         id: "name",
         accessorKey: "name",
