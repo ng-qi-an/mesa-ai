@@ -1,11 +1,7 @@
 'use client';
-import { Button } from "@/components/ui/button";
-import { Card, CardHeader, CardTitle } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
-import { NotebookContext } from "@/lib/contexts";
-import { ArrowLeft, ChevronLeft, FileText, Minus, MoreVertical } from "lucide-react";
-import { useContext } from "react";
+import { ChevronLeft, Minus } from "lucide-react";
 import { motion } from 'motion/react'
+import { useNotebook } from "@/components/providers/notebook-provider";
 
 // Generate slug matching rehype-slug's algorithm
 export function slugify(text: string): string {
@@ -18,8 +14,8 @@ export function slugify(text: string): string {
 }
 
 export default function SectionsPanel(){
-    const noteCtx = useContext(NotebookContext)
-    const isCollapsed = noteCtx?.collapseSections
+    const noteCtx = useNotebook();
+    const isCollapsed = noteCtx.collapseSections
     
     return <motion.div 
         layout

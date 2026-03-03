@@ -1,10 +1,10 @@
 'use server';
 import { headers } from "next/headers";
-import { auth } from "../auth";
-import { r2 } from "../r2";
+import { auth } from "../../auth";
+import { r2 } from "../../r2";
 import { GetObjectCommand } from "@aws-sdk/client-s3";
 
-export default async function getUserFile(key: string){
+export default async function getUserFileContent(id: string){
     const session = await auth.api.getSession({
         headers: await headers()
     })
@@ -13,7 +13,7 @@ export default async function getUserFile(key: string){
     }
     const command = new GetObjectCommand({
         Bucket: process.env.R2_BUCKET_NAME!,
-        Key: `user-files/${session.user.id}/${key}`,
+        Key: `user-files/${session.user.id}/${id}`,
     })
     const response = await r2.send(command);
     const byteArray = await response.Body?.transformToByteArray();

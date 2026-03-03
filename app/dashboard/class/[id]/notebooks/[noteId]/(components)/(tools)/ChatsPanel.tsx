@@ -2,14 +2,14 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { NotebookContext } from "@/lib/contexts";
 import { ChevronDown, ChevronLeft, ListTodo, MessageSquare, MessageSquarePlus, Mic, MoreVertical, Plus, WalletCards } from "lucide-react";
 import { useContext, useState } from "react";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import ChatMessagesPanel from "./ChatMessagesPanel";
+import { useNotebook } from "@/components/providers/notebook-provider";
 
 export default function ChatsPanel({setSidebarTool}: {setSidebarTool: (tool: string) => void}){
-    const noteCtx = useContext(NotebookContext);
+    const noteCtx = useNotebook();
     const [selectedChat, setSelectedChat] = useState("");
     if (!noteCtx) return null;
 

@@ -1,4 +1,4 @@
-import { text, pgTable, serial, date, timestamp, AnyPgColumn } from "drizzle-orm/pg-core";
+import { text, pgTable, serial, date, timestamp, AnyPgColumn, jsonb } from "drizzle-orm/pg-core";
 import { user } from "./auth-schema";
 
 export const classes = pgTable("classes", {
@@ -38,11 +38,30 @@ export const files = pgTable("files", {
 export type FileInsert = typeof files.$inferInsert
 export type FileSelect = typeof files.$inferSelect
 
-export const topicFiles = pgTable("topic_files", {
-    id: serial("id").primaryKey(),
-    topicId: text("topic_id").notNull().references(() => topics.id, { onDelete: "cascade" }),
+export const notebook = pgTable("notebook", {
+    id: text("id").primaryKey(),
+    userId: text("user_id").notNull().references(() => user.id, { onDelete: "cascade" }),
+    classId: text("class_id").notNull().references(() => classes.id, { onDelete: "cascade" }),
+    topicId: text("topic_id").references(() => topics.id, { onDelete: "cascade" }),
+    name: text("name").notNull(),
+    title: text("title"),
+    subtitle: text("subtitle"),
+    topicWeights: jsonb("topic_weights").$type<{[key: string]: number}>(),
+    instructions: text("instructions"),
+    cache: jsonb("cache").$type<{name: string, fileIds: string[]}>(),
+    content: text("content"),
+    dateCreated: timestamp("date_created").notNull().defaultNow(),
+    dateModified: timestamp("date_modified").notNull().defaultNow(),
+})
+
+export type NotebookInsert = typeof notebook.$inferInsert
+export type NotebookSelect = typeof notebook.$inferSelect
+
+export const notebookFiles = pgTable("notebook_files", {
+    notebookFilesConnectorid: serial("notebook_files_connector_id").primaryKey(),
+    notebookId: text("notebook_id").notNull().references(() => notebook.id, { onDelete: "cascade" }),
     fileId: text("file_id").notNull().references(() => files.id, { onDelete: "cascade" }),
 })
 
-export type TopicFileInsert = typeof topicFiles.$inferInsert
-export type TopicFileSelect = typeof topicFiles.$inferSelect
+export type NotebookFileInsert = typeof notebookFiles.$inferInsert
+export type NotebookFileSelect = typeof notebookFiles.$inferSelect

@@ -5,7 +5,7 @@ import { headers } from 'next/headers';
 import { auth } from '../auth';
 import extendCache from './extendCache';
 import createCache from './createCache';
-export default async function createOrExtendCache(cacheName: string, files: string[], ttl: number = 720){
+export default async function createOrExtendCache(cacheName: string, fileIds: string[], ttl: number = 720){
     const session = await auth.api.getSession({
         headers: await headers()
     })
@@ -23,7 +23,7 @@ export default async function createOrExtendCache(cacheName: string, files: stri
         cache = await extendCache(cacheName, ttl);
     } catch (e) {
         console.log("Creating new cache as cache not found or expired:", cacheName);
-        cache = await createCache(files, ttl);
+        cache = await createCache(fileIds, ttl);
     }
     return cache;
 }

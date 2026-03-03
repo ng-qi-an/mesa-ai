@@ -1,3 +1,4 @@
+import { useNotebook } from "@/components/providers/notebook-provider";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Field, FieldDescription, FieldGroup, FieldLabel, FieldLegend, FieldSet, FieldTitle } from "@/components/ui/field";
@@ -5,13 +6,14 @@ import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import { Slider } from "@/components/ui/slider";
 import { Textarea } from "@/components/ui/textarea";
-import { NotebookContext } from "@/lib/contexts";
 import { useContext, useEffect, useState } from "react";
+import { useGenerateNotes } from "../(actions)/generateNotes";
 
 export default function NoteSettings({open, onOpenChange}: {open: boolean, onOpenChange: (open: boolean) => void}){
-    const noteCtx = useContext(NotebookContext);
+    const noteCtx = useNotebook();
     const [topicWeights, setTopicWeights] = useState<Record<string, number>>({});
     const [instructions, setInstructions] = useState<string>("");
+    const { generateNotes } = useGenerateNotes();
     useEffect(()=>{
         console.log("Updating topic weights in NoteSettings: ", noteCtx?.topicWeights);
         setTopicWeights({...noteCtx?.topicWeights});
@@ -78,11 +80,11 @@ export default function NoteSettings({open, onOpenChange}: {open: boolean, onOpe
                     setTopicWeights({...noteCtx?.topicWeights});
                     setInstructions(noteCtx?.instructions || "");
                 }}>Cancel</Button>
-                <Button onClick={() => {
+                <Button onClick={async() => {
                     onOpenChange(false);
                     noteCtx?.setTopicWeights(topicWeights);
                     noteCtx?.setInstructions(instructions);
-                    noteCtx?.generateNotes(instructions, noteCtx.files, topicWeights, noteCtx.cache);
+                    await generateNotes({instructions: instructions, topicWeights: topicWeights});
                 }}>Save settings</Button>
             </DialogFooter>
         </DialogContent>

@@ -1,11 +1,13 @@
+import { useNotebook } from "@/components/providers/notebook-provider";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
-import { NotebookContext } from "@/lib/contexts";
 import { useContext, useState } from "react";
+import { useGenerateMeta } from "../../(actions)/useGenerateMeta";
 
 export default function GenerateNotesDialog(){
-    const noteCtx = useContext(NotebookContext);
+    const noteCtx = useNotebook();
+    const {generateMeta} = useGenerateMeta();
     const [instructions, setInstructions] = useState(noteCtx?.instructions || "");
 
     return noteCtx && <Dialog open={noteCtx?.showGenerateNotesDialog} onOpenChange={(open) => noteCtx?.setShowGenerateNotesDialog(open)}>
@@ -24,7 +26,7 @@ export default function GenerateNotesDialog(){
                 <Button disabled={noteCtx.files.length < 1} variant={"raised"} onClick={async()=>{
                         noteCtx.setInstructions(instructions);
                         noteCtx.setShowGenerateNotesDialog(false);
-                        noteCtx.generateMeta(instructions, noteCtx.files);
+                        generateMeta({instructions, files: noteCtx.files});
                 }}>
                     Generate now
                 </Button>

@@ -2,7 +2,6 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { NotebookContext } from "@/lib/contexts";
 import { ChevronDown, ChevronLeft, ListTodo, MessageSquare, MessageSquarePlus, Mic, MoreVertical, Plus, WalletCards } from "lucide-react";
 import { cacheSignal, useContext, useState } from "react";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
@@ -43,9 +42,11 @@ import { DefaultChatTransport } from "ai";
 import { text } from "stream/consumers";
 import createOrExtendCache from "@/lib/cache-actions/createOrExtendCache";
 import createCache from "@/lib/cache-actions/createCache";
+import { useNotebook } from "@/components/providers/notebook-provider";
+import checkCacheMatch from "../../(actions)/checkCacheMatch";
 
 export default function ChatMessagesPanel({selectedChat, setSelectedChat}: {selectedChat: string, setSelectedChat: (chat: string) => void}){
-    const noteCtx = useContext(NotebookContext);
+    const noteCtx = useNotebook();
     const [text, setText] = useState<string>("");
     const [thinkingLevel, setThinkingLevel] = useState("minimal");
     const { messages, sendMessage, status, stop } = useChat({
@@ -118,9 +119,9 @@ export default function ChatMessagesPanel({selectedChat, setSelectedChat}: {sele
                         setCacheLoading(true);
                         let newCache;
                         try {
-                            if (!noteCtx.cache || !noteCtx.checkCacheMatch(noteCtx.cache.files, noteCtx.files)){
+                            if (!noteCtx.cache || !checkCacheMatch(noteCtx.cache.fileIds, noteCtx.files.map(f=>f.id))){
                                 console.log("[CHAT] Cache files differ from provided files or no cache. Creating cache...");
-                                newCache = await createCache(noteCtx.files.map(f=>f.name), 720)
+                                newCache = await createCache(noteCtx.files.map(f=>f.id), 720)
                             } else {
                                 console.log("[CHAT] Cache files match provided files. Extending cache...");
                                 newCache = await createOrExtendCache(noteCtx.cache.name, noteCtx.files.map(f=>f.name), 720)
@@ -133,7 +134,7 @@ export default function ChatMessagesPanel({selectedChat, setSelectedChat}: {sele
                         }
                         console.log("Using cache:", newCache.name, "Expire time:", newCache.expireTime, "Total tokens:", newCache.usageMetadata?.totalTokenCount);
                         setCacheLoading(false);
-                        noteCtx.setCache(newCache.name!, noteCtx.files);
+                        noteCtx.setCache(newCache.name!, noteCtx.files.map(f=>f.id));
                         sendMessage({text: message.text}, {
                             body: {
                                 thinkingLevel,

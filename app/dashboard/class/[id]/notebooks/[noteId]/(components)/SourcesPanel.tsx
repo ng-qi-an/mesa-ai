@@ -1,43 +1,38 @@
 'use client';
+import FileSelectorDialog from "@/components/file-browser/dialogs/FileSelectorDialog";
+import { useNotebook } from "@/components/providers/notebook-provider";
 import { Button } from "@/components/ui/button";
-import { Card, CardAction, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardHeader, CardTitle } from "@/components/ui/card";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty";
+import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Spinner } from "@/components/ui/spinner";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import createCache from "@/lib/cache-actions/createCache";
-import { NotebookContext } from "@/lib/contexts";
 import addUserFileClient from "@/lib/r2actions/addUserFileClient";
 import deleteUserFiles from "@/lib/r2actions/deleteUserFiles";
 import AddUserFile from "@/lib/r2actions/getAddUserFileURL";
-import getUserFiles, { FileListType } from "@/lib/r2actions/getUserFiles";
+import getUserFiles from "@/lib/r2actions/getUserFiles";
 import { allowedMimeTypes } from "@/lib/utils";
-import { ChevronDown, ChevronRight, File, FileText, MoreVertical, Pen, Plus, Trash2, X } from "lucide-react";
+import { ChevronDown, File, FileText, MoreVertical, Pen, Plus, Trash2, X } from "lucide-react";
 import { motion } from "motion/react";
-import { useContext, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { addNotebookFiles } from "../(actions)/addNotebookFiles";
 
 export default function SourcesPanel(){
-    const fileInputRef = useRef<HTMLInputElement>(null);
-    const noteCtx = useContext(NotebookContext);
+    const [showFileSelector, setShowFileSelector] = useState(false);
+    const noteCtx = useNotebook();
     const isCollapsed = noteCtx?.collapsedSources;
-    const [loading, setLoading] = useState(true);
-    useEffect(()=>{
-        async function loadSources(){
-            if (noteCtx){
-                console.log("Loading user files...");
-                const response = await getUserFiles();
-                console.log(response)
-                noteCtx?.setFiles(response);
-                setLoading(false);
-            }
-        }
-        loadSources();
-    }, [])
 
     return <Card size="sm" className={`${isCollapsed ? "h-max" : noteCtx?.collapsedTools ? "h-full max-h-full" : "shrink-0  h-full max-h-[230px]"} rounded-md ring-neutral-900 overflow-hidden ${isCollapsed && "gap-0!"}`}>
+            <FileSelectorDialog open={showFileSelector} setOpen={setShowFileSelector} onConfirm={async(files) => {
+                const finalFiles = files.filter((file)=> noteCtx.files.every((f) => f.id !== file.id))
+                noteCtx.setFiles((x) => [...x, ...finalFiles]);
+                await addNotebookFiles(noteCtx.noteId, finalFiles.map(f=>f.id));
+                setShowFileSelector(false);
+                
+            }}/>
             <CardHeader className="items-center group flex cursor-pointer relative">
                 <motion.div
                     animate={{ rotate: !isCollapsed ? 0 : -90 }}
@@ -59,38 +54,10 @@ export default function SourcesPanel(){
                 className="ml-2 text-muted-foreground group-hover:text-foreground w-full">
                     Sources
                 </CardTitle>
-                <Input
-                ref={fileInputRef}
-                type="file"
-                multiple
-                onChange={async(e)=>{
-                    if (e.target.files && noteCtx) {
-                        const filesArray = Array.from(e.target.files)
-                        console.log("Files uploaded:", filesArray)
-                        try {
-                            const urls = await AddUserFile(filesArray.map((file)=> ({ name: file.name, type: file.type })));
-                            noteCtx!.setFiles((x)=> [...x.filter((f)=> f.status != "failed")]);
-                            console.log("urls", urls)
-                            const result = await addUserFileClient(filesArray, urls, noteCtx!.setFiles);
-                            console.log("result", result)
-                            if (result.every(r=> r.status === "uploaded")){
-                                noteCtx?.setShowGenerateNotesDialog(true)
-                            }
-                            console.log("File upload result:", result);
-                            fileInputRef.current!.value = "";
-                        } catch (error) {
-                            console.error("Error uploading files:", error);
-                        }
-                        
-                    }
-                }}
-                accept={allowedMimeTypes.join(",")}
-                className='absolute right-4 opacity-0 pointer-events-none w-20'
-                />
                 <Tooltip open={noteCtx?.isGenerating ? undefined : false}>
                     <TooltipTrigger asChild>
                         <span className="inline-block w-fit absolute right-4">
-                            <Button disabled={noteCtx?.isGenerating} size={'icon-sm'} className="text-muted-foreground" onClick={(e) => {  fileInputRef.current?.click(); }} variant={'ghost'}>
+                            <Button disabled={noteCtx?.isGenerating} size={'icon-sm'} className="text-muted-foreground" onClick={(e) => setShowFileSelector(true)} variant={'ghost'}>
                                 <Plus/>
                             </Button>
                         </span>
@@ -109,7 +76,7 @@ export default function SourcesPanel(){
                 <div className="overflow-hidden">
                     <div className={`gap-3 flex flex-col px-2 pb-2 h-full overflow-y-auto`}>
                         {!isCollapsed && <Separator className="mb-2" />}
-                        {loading ? [...Array(3)].map((_, index) => (
+                        {false ? [...Array(3)].map((_, index) => (
                             <Skeleton key={index} className="h-10 w-full"/>
                         ))
                         : noteCtx!.files.length > 0 ? noteCtx!.files.map((file, index) => (
@@ -118,7 +85,7 @@ export default function SourcesPanel(){
                                 <p className="truncate text-sm w-full text-muted-foreground group-hover:text-foreground/90">
                                     {file.name}
                                 </p>
-                                {file.status == "uploaded" ? <DropdownMenu>
+                                <DropdownMenu>
                                     <DropdownMenuTrigger asChild>
                                         <Button disabled={noteCtx?.isGenerating} size={'icon-sm'} className="text-muted-foreground" variant={'ghost'}>
                                             <MoreVertical/>
@@ -141,25 +108,6 @@ export default function SourcesPanel(){
                                         </DropdownMenuItem>
                                     </DropdownMenuContent>
                                 </DropdownMenu>
-                                : file.status == "pending" ? 
-                                    <div className="size-8 shrink-0 flex items-center justify-center">
-                                        <Spinner className="size-4"/>
-                                    </div>
-                                : file.status == "failed" && 
-                                    <Tooltip>
-                                        <TooltipTrigger asChild>
-                                            <div onClick={()=>{
-                                                noteCtx!.setFiles((x) => x.filter((f) => f.name !== file.name));
-                                            }} className="size-8 shrink-0 flex items-center justify-center text-destructive">
-                                                <X className="size-4"/>
-                                            </div>
-                                        </TooltipTrigger>
-                                        <TooltipContent side="bottom" align="end">
-                                            <p>Upload failed. Please try uploading the file again.</p>
-                                        </TooltipContent>
-                                    </Tooltip>
-                                    
-                                }
                             </div>
                         )) : <Empty className="py-0">
                                 <EmptyHeader>

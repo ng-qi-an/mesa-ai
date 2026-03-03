@@ -1,5 +1,5 @@
 import { SidebarGroupLabel, SidebarGroup, SidebarGroupContent, SidebarMenuItem, SidebarMenuButton, SidebarMenu } from "@/components/ui/sidebar";
-import { FolderOpen, ListTodo, Map, WalletCards } from "lucide-react";
+import { FolderOpen, ListTodo, Map, Notebook, WalletCards } from "lucide-react";
 import { useParams, usePathname, useRouter } from "next/navigation";
 
 export default function MainSidebarLibrary(){
@@ -7,6 +7,10 @@ export default function MainSidebarLibrary(){
         name: "Drive",
         href: "/drive",
         icon: FolderOpen
+    }, {
+        name: "Notebooks",
+        href: "/notebooks",
+        icon: Notebook
     }, {
         name: "Flashcards",
         href: "/flashcards",

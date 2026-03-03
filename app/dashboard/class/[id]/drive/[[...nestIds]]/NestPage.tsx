@@ -20,15 +20,8 @@ export default function NestPage({nests, files, revalidateData}: {nests: FileSel
     }
     return <FileBrowserProvider nests={nests} setNests={setNests} files={files} revalidateData={revalidateData}>
         <PageHeader pages={[{name: "Drive"}]} actionsClassName="ml-0 w-full">
-            <div className="opacity-0 pointer-events-none lg:opacity-100 lg:pointer-events-auto absolute left-0 flex items-center justify-center w-full">
-                <Input className="w-full lg:max-w-[400px] xl:max-w-[500px] px-4" placeholder="Search for files"/>
-            </div>
             <div className="flex-1"/>
-            <Button variant="outline" className="lg:hidden" onClick={()=>{
-                router.push(`/dashboard/class/${_class.id}/drive/search`);
-            }}>
-                <Search/>
-            </Button>
+            <Input className="w-full max-w-[300px] mr-1 border-0 px-3" placeholder="Search for files"/>
             <CreateNewButton nests={nests}/>
         </PageHeader>
         <div className="w-full h-full flex flex-col px-8 py-6">

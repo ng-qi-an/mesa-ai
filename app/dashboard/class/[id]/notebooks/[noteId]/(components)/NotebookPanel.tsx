@@ -5,7 +5,6 @@ import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/
 import { Separator } from "@/components/ui/separator";
 import { Spinner } from "@/components/ui/spinner";
 import { TypographyLead } from "@/components/ui/typography/lead";
-import { NotebookContext } from "@/lib/contexts";
 import { ArrowUp, BadgeCheck, CircleAlert, Notebook, RefreshCw, Settings2, Sidebar, Sparkles, StopCircle } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { useContext, useEffect, useRef, useState } from "react";
@@ -18,9 +17,13 @@ import NoteSettings from "./NoteSettings";
 import { Input } from "@/components/ui/input";
 import { Shimmer } from "@/components/ai-elements/shimmer";
 import { Badge } from "@/components/ui/badge";
+import { useNotebook } from "@/components/providers/notebook-provider";
+import checkCacheMatch from "../(actions)/checkCacheMatch";
+import { useGenerateNotes } from "../(actions)/generateNotes";
 
 export default function NotebookPanel(){
-    const noteCtx = useContext(NotebookContext)
+    const noteCtx = useNotebook()
+    const { generateNotes } = useGenerateNotes();
     const contentRef = useRef<HTMLDivElement>(null);
     const [showNoteSettings, setShowNoteSettings] =  useState(false);
     const [followup, setFollowup] = useState("");
@@ -74,7 +77,7 @@ export default function NotebookPanel(){
                     : ""
                     }
                 </Shimmer>
-                : noteCtx?.cache && !noteCtx.checkCacheMatch(noteCtx.cache.files, noteCtx.files) && 
+                : noteCtx?.cache && !checkCacheMatch(noteCtx.cache.fileIds, noteCtx.files.map(f=> f.id)) && 
                 <Tooltip>
                     <TooltipTrigger asChild>
                         <Badge variant="destructive" className="cursor-default ml-auto mr-20">
@@ -162,7 +165,7 @@ export default function NotebookPanel(){
                                 <StopCircle/>
                                 Stop generating
                             </Button>
-                        : noteCtx?.cache && !noteCtx.checkCacheMatch(noteCtx.cache.files, noteCtx.files) ?
+                        : noteCtx?.cache && !checkCacheMatch(noteCtx.cache.fileIds, noteCtx.files.map(f=> f.id)) ?
                             <Button variant={'raised'} disabled={noteCtx!.files.length < 1} size={'lg'} className="px-4" onClick={() => {
                                 noteCtx?.setShowGenerateNotesDialog(true);
                             }}>
@@ -170,10 +173,10 @@ export default function NotebookPanel(){
                                 Sync sources
                             </Button>
                         : (noteCtx?.notesHistory && noteCtx.notesHistory.length) ?
-                            <form onSubmit={(e)=>{
+                            <form onSubmit={async(e)=>{
                                 e.preventDefault();
                                 if (!followup.trim()) return;
-                                noteCtx.generateNotes(followup, noteCtx.files, noteCtx.topicWeights, noteCtx.cache);
+                                await generateNotes();
                                 setFollowup("");
                             }} className="w-full max-w-[400px] relative flex items-center">
                                 <Input value={followup} onChange={(e) => setFollowup(e.target.value)} className="bg-secondary/85 dark:bg-secondary/85 backdrop-blur-md rounded-lg text-lg h-12 px-6 pr-12" placeholder="Type a follow up to modify content" />

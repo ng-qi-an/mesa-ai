@@ -10,7 +10,6 @@ import { headers } from 'next/headers';
 export const maxDuration = 300;
 
 type NotebookRequestType = {
-    files: string[];
     cacheName: string;
     instructions: string;
 }
@@ -24,32 +23,9 @@ export async function POST(req: Request) {
     if (!session || !session.user) {
         throw new Error("Not authenticated");
     }
-
-    if (!context.files || context.files.length === 0) {
-        throw new Error("No files provided");
+    if (!context.cacheName) {
+        throw new Error("Cache is required");
     }
-
-    console.log("Received files: ", context.files);
-
-    const filesMap = context.files.map(async(fileKey) => {
-        const command = new GetObjectCommand({
-            Bucket: process.env.R2_BUCKET_NAME!,
-            Key: `user-files/${session.user.id}/${fileKey}`,
-        })
-        const response = await r2.send(command);
-        const byteArray = await response.Body?.transformToByteArray();
-        if (!byteArray || !response.ContentType) {
-            throw new Error(`Failed to load file: ${fileKey}`);
-        }
-        const data = {
-            type: "file" as const,
-            mediaType: response.ContentType,
-            filename: fileKey.split('/').pop() || 'file',
-            data: byteArray
-        }
-        return data
-    });
-    const files = await Promise.all(filesMap);
 
     const result = streamText({
         model: google("gemini-3-flash-preview"),
@@ -95,7 +71,6 @@ export async function POST(req: Request) {
                         ## Instructions
                             Use the provided documents as sources for generation. Use the following instructions to guide your topic generation: ${context.instructions}`
                     },
-                    ...files
                 ]
             }
         ],

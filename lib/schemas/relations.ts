@@ -1,6 +1,6 @@
 import { relations } from "drizzle-orm";
 import { account, session, user } from "./auth-schema";
-import { classes, files, topicFiles, topics } from "./schema";
+import { classes, files, notebook, notebookFiles, topics } from "./schema";
 
 export const userRelations = relations(user, ({ many }) => ({
     sessions: many(session),
@@ -8,6 +8,7 @@ export const userRelations = relations(user, ({ many }) => ({
     classes: many(classes),
     topics: many(topics),
     files: many(files),
+    notebooks: many(notebook)
 }));
 
 export const sessionRelations = relations(session, ({ one }) => ({
@@ -30,6 +31,7 @@ export const classesRelations = relations(classes, ({ one, many }) => ({
         references: [user.id],
     }),
     topics: many(topics),
+    notebooks: many(notebook)
 }))
 
 export const topicsRelations = relations(topics, ({ one, many }) => ({
@@ -41,7 +43,7 @@ export const topicsRelations = relations(topics, ({ one, many }) => ({
         fields: [topics.classId],
         references: [classes.id],
     }),
-    files: many(topicFiles)
+    notebooks: many(notebook)
 }))
 
 export const filesRelations = relations(files, ({ one, many }) => ({
@@ -58,16 +60,32 @@ export const filesRelations = relations(files, ({ one, many }) => ({
         references: [classes.id],
     }),
     children: many(files),
-    topics: many(topicFiles)
+    notebooks: many(notebookFiles)
 }))
 
-export const topicFilesRelations = relations(topicFiles, ({ one }) => ({
+export const notebookRelations = relations(notebook, ({ one, many }) => ({
+    user: one(user, {
+        fields: [notebook.userId],
+        references: [user.id],
+    }),
+    class: one(classes, {
+        fields: [notebook.classId],
+        references: [classes.id],
+    }),
     topic: one(topics, {
-        fields: [topicFiles.topicId],
+        fields: [notebook.topicId],
         references: [topics.id],
     }),
+    files: many(notebookFiles)
+}))
+
+export const notebookFilesRelations = relations(notebookFiles, ({ one }) => ({
+    notebook: one(notebook, {
+        fields: [notebookFiles.notebookId],
+        references: [notebook.id],
+    }),
     file: one(files, {
-        fields: [topicFiles.fileId],
+        fields: [notebookFiles.fileId],
         references: [files.id],
     }),
 }))

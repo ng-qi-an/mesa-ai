@@ -1,4 +1,10 @@
 'use client';
+import { NotebookContextType, useNotebook } from "@/components/providers/notebook-provider";
+import createCache from "@/lib/cache-actions/createCache";
+import createOrExtendCache from "@/lib/cache-actions/createOrExtendCache";
+import { FileListType } from "@/lib/r2actions/getUserFilesv2";
+import checkCacheMatch from "./checkCacheMatch";
+
 
 export const defaultNotesInstructions = `
     ## Formatting Rules
@@ -73,3 +79,54 @@ export const defaultNotesInstructions = `
         - Build up from fundamentals before diving deep
         - Use analogies to bridge complex concepts
     `
+
+        
+export async function generateNotes({instructions, fileIds, topicWeights, cache, setCollapseSections, setIsCacheLoading, setCache, sendNotesFollowup}: {
+    instructions: string;
+    fileIds: string[];
+    topicWeights: Record<string, number>;
+    cache: {name: string; fileIds: string[]} | null;
+    setCollapseSections: (collapse: boolean) => void;
+    setIsCacheLoading: (loading: boolean) => void;
+    setCache: (name: string, fileIds: string[]) => void;
+    sendNotesFollowup: any;
+}){
+    console.log("Received generating notes request with instructions:", instructions, "files:", fileIds, "and weights:", topicWeights, "and cache:", cache);
+    setCollapseSections(true);
+    setIsCacheLoading(true);
+    let newCache;
+    if (!cache || !checkCacheMatch(cache.fileIds, fileIds)){
+        console.log("[GEN NOTES] Cache files differ from provided files. Creating cache...");
+        newCache = await createCache(fileIds, 900)
+    } else {
+        console.log("[GEN NOTES] Cache files match provided files. Extending cache...");
+        newCache = await createOrExtendCache(cache.name, fileIds, 900)
+    }
+    setIsCacheLoading(false);
+    console.log("Using cache:", newCache.name, "Expire time:", newCache.expireTime, "Total tokens:", newCache.usageMetadata?.totalTokenCount);
+    setCache(newCache.name!, fileIds);
+    if (topicWeights && Object.keys(topicWeights).length !== 0){
+        sendNotesFollowup({
+            text: `
+                # Topic weights
+                    ${Object.keys(topicWeights).map((topic) => `- ${topic}: ${topicWeights[topic]}`).join("\n")}
+                # Instructions
+                ${instructions}
+            `,
+        }, {
+            body: {
+                topicWeights: topicWeights,
+                cacheName: newCache.name!
+            }
+        })
+    } else {
+        throw new Error("No topic weights provided");
+    }
+}
+
+
+export function useGenerateNotes(){
+    const { setIsCacheLoading, setCache, setCollapseSections, files, instructions, topicWeights, cache, sendNotesFollowup } = useNotebook();
+
+    return { generateNotes: async(customProps?: Record<string, any>)=> await generateNotes({instructions, fileIds: files.map(f=>f.id), topicWeights, cache, setCollapseSections, setIsCacheLoading, setCache, sendNotesFollowup: sendNotesFollowup, ...customProps}) };
+}
