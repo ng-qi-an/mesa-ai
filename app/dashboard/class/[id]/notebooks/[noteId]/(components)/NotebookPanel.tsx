@@ -86,7 +86,7 @@ export default function NotebookPanel(){
                         </Badge>
                     </TooltipTrigger>
                     <TooltipContent>
-                        <p>Notebook was generated with different source.</p>
+                        <p>"Sync sources" to update the notebook with latest sources.</p>
                     </TooltipContent>
                 </Tooltip>}
                 <Tooltip open={noteCtx?.isGenerating ? undefined : false}>
@@ -109,7 +109,7 @@ export default function NotebookPanel(){
             </CardHeader>
             <div className="h-full gap-2 flex flex-col px-2 w-full overflow-y-auto relative">
                 <Separator className="mb-2 w-full"/>
-                {(noteCtx?.notesHistory.length! > 1 && noteCtx?.notesStatus != "submitted" && !noteCtx?.isCacheLoading) ? 
+                {(noteCtx?.notesHistory.length! > 0 && noteCtx?.notesStatus != "submitted" && !noteCtx?.isCacheLoading) ? 
                 <AnimatePresence>
                     <div ref={contentRef} className="h-full overflow-auto pb-4 pt-4 prose dark:prose-invert min-w-full px-8 pb-16">
                         <h1 id={slugify(noteCtx?.metaObject?.header || "")}>{noteCtx?.metaObject?.header}</h1>

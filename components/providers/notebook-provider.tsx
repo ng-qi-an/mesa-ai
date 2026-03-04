@@ -6,13 +6,14 @@ import createCache from "@/lib/cache-actions/createCache";
 import createOrExtendCache from "@/lib/cache-actions/createOrExtendCache";
 import { FileListType } from "@/lib/r2actions/getUserFiles";
 import { experimental_useObject, useChat } from "@ai-sdk/react";
-import { ChatStatus, DefaultChatTransport, UIMessage } from "ai";
+import { ChatStatus, DefaultChatTransport, generateId, UIMessage } from "ai";
 import { useContext, useEffect, useRef, useState } from "react";
 import { NoteMetaType } from "@/app/api/notebook/schema";
 import { createContext } from "react";
 import { DeepPartial } from "better-auth";
-import { FileSelect, NotebookFileSelect } from "@/lib/schemas/schema";
+import { FileSelect, NotebookFileSelect, NotebookSelect } from "@/lib/schemas/schema";
 import { useParams } from "next/navigation";
+import SaveToNotebook from "@/app/dashboard/class/[id]/notebooks/[noteId]/(actions)/saveToNotebook";
 
 export type NotebookContextType = {
     // Ui States
@@ -71,23 +72,22 @@ export function useNotebook() {
     return context;
 }
 
-export default function NotebookProvider({children, data}: {children: React.ReactNode, data: Partial<NotebookContextType>}) {
+export default function NotebookProvider({children, data}: {children: React.ReactNode, data: NotebookSelect & {files: FileSelect[]}}) {
     // UI States
     const {noteId}:{noteId: string} = useParams();
-    const [collapseSections, setCollapseSections] = useState(true);
+    const [collapseSections, setCollapseSections] = useState(data.content ? false :true);
     const [collapsedSources, setCollapsedSources] = useState(false);
     const [collapsedTools, setCollapsedTools] = useState(false);
     const [collapsedRightSidebar, setCollapsedRightSidebar] = useState(false);
     const [activeSection, setActiveSection] = useState<string | null>(null);
     const [isCacheLoading, setIsCacheLoading] = useState(false);
     const [isEmbeddingImages, setIsEmbeddingImages] = useState(false);
-    const [loading, setLoading] = useState(true);
     const [showGenerateNotesDialog, setShowGenerateNotesDialog] = useState(false);
     // Content States
     const [cache, _setCache] = useState<{
         name: string;
         fileIds: string[];
-    }>();
+    } | null>(data.cache);
     const cacheRef = useRef<{name: string, fileIds: string[]} | null>(null);
     const setCache = (name: string, fileIds: string[]) => {
         cacheRef.current = {name, fileIds};
@@ -95,14 +95,15 @@ export default function NotebookProvider({children, data}: {children: React.Reac
     };
     // const [noteContent, setNoteContent] = useState<NoteContentType | null>(null);
     const [files, setFiles] = useState<FileSelect[]>(data.files || []);
-    const [instructions, setInstructions] = useState<string>("");
-    const [topicWeights, setTopicWeights] = useState<Record<string, number>>({});
+    const [instructions, setInstructions] = useState<string>(data.instructions || "");
+    const [topicWeights, setTopicWeights] = useState<Record<string, number>>(data.topicWeights ||{});
 
     // AI States
     const { object:metaObject, submit:metaSubmit, isLoading:isMetaLoading, clear:metaClear, stop:metaStop } = experimental_useObject({
         api: '/api/notebook/generate-meta',
         schema: noteMetaSchema,
-        onFinish: (res)=>{
+        initialValue: (data.topicWeights && data.title && data.subtitle) ? {topics: Object.keys(data.topicWeights), header: data.title, subtitle: data.subtitle} : undefined,
+        onFinish: async(res)=>{
             console.log("Finished generating meta: ", res);
             if (res.error){
                 console.error("Error generating meta: ", res.error);
@@ -114,6 +115,7 @@ export default function NotebookProvider({children, data}: {children: React.Reac
                 })
                 setTopicWeights(weights);
                 console.log("Generating notes with instructions:", instructions, "files:", files.map(f=>f.name), "and weights:", weights, "and cache:", cacheRef.current);
+                await SaveToNotebook(noteId, {instructions, topicWeights: weights, cache: cacheRef.current, title: res.object.header, subtitle: res.object.subtitle})
                 generateNotes({instructions: defaultNotesInstructions, fileIds: files.map(f=>f.id), topicWeights: weights, cache: cacheRef.current, setCollapseSections, setIsCacheLoading, setCache, sendNotesFollowup});
             }
         },
@@ -122,6 +124,16 @@ export default function NotebookProvider({children, data}: {children: React.Reac
         }
     });
     const { messages:notesHistory, setMessages: setNotesHistory, sendMessage:sendNotesFollowup, status:notesStatus, stop: notesStop } = useChat({
+        messages: data.content ? [{
+            id: generateId(),
+            role: "assistant",
+            parts: [
+                {
+                    type: "text",
+                    text: data.content
+                }
+            ]
+        }] as UIMessage[] : [],
         transport: new DefaultChatTransport({
             api: '/api/notebook/generate-notes',
         }),
@@ -131,6 +143,7 @@ export default function NotebookProvider({children, data}: {children: React.Reac
                 console.error("Error generating notes: ", res);
                 return;
             }
+            await SaveToNotebook(noteId, {content: res.message.parts.map((part) => part.type === "text" ? part.text : "").join("")});
             setIsEmbeddingImages(true);
             const parts = await Promise.all(
                 res.message.parts.map(async (part) => 
@@ -143,6 +156,7 @@ export default function NotebookProvider({children, data}: {children: React.Reac
             const updatedMessages = [...notesHistory];
             updatedMessages[updatedMessages.length - 1] = finalMessage;
             setNotesHistory(updatedMessages);
+            await SaveToNotebook(noteId, {content: finalMessage.parts.map((part) => part.type === "text" ? part.text : "").join("")});
             setIsEmbeddingImages(false);
         },
         onError: (err)=>{
@@ -160,10 +174,14 @@ export default function NotebookProvider({children, data}: {children: React.Reac
     // Actions
     
     function getActualNotes(history: UIMessage[]){
-        if (!history || history.length === 0) {
+        if (!history){
+            return "";
+        }
+        const assistantMessages = history.filter((x)=> x.role == "assistant");
+        if (assistantMessages.length === 0) {
             return ""
         }
-        return history[history.length - 1].parts.map((part)=> part.type == "text" ? part.text : null).join("");
+        return assistantMessages[assistantMessages.length - 1].parts.map((part)=> part.type == "text" ? part.text : null).join("");
     }
     function stopGeneration(){
         if (isMetaLoading) {

@@ -95,7 +95,7 @@ export default function FileSelectorDialog({ open, setOpen, onConfirm }: { open:
                     <DialogClose asChild>
                         <Button variant="outline">Cancel</Button>
                     </DialogClose>
-                    <Button type="submit" disabled={loading || selectedFiles.length === 0} onClick={()=> onConfirm(selectedFiles)}>{selectedFiles.length === 0 ? "Select Files" : `Select ${selectedFiles.length} File${selectedFiles.length != 1 ? "s" : ""}`}</Button>
+                    <Button type="submit" disabled={loading || selectedFiles.length === 0} onClick={()=> onConfirm(selectedFiles)}>{selectedFiles.length === 0 ? "Select files" : `Select ${selectedFiles.length} file${selectedFiles.length != 1 ? "s" : ""}`}</Button>
                 </DialogFooter>
             </DialogContent>
         </Dialog>

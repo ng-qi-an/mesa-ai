@@ -19,6 +19,8 @@ import { ChevronDown, File, FileText, MoreVertical, Pen, Plus, Trash2, X } from 
 import { motion } from "motion/react";
 import { useEffect, useRef, useState } from "react";
 import { addNotebookFiles } from "../(actions)/addNotebookFiles";
+import { deleteNotebookFile } from "../(actions)/deleteNotebookFile";
+import { toast } from "sonner";
 
 export default function SourcesPanel(){
     const [showFileSelector, setShowFileSelector] = useState(false);
@@ -97,11 +99,12 @@ export default function SourcesPanel(){
                                             <Pen/> Rename source
                                         </DropdownMenuItem>
                                         <DropdownMenuItem onClick={async()=>{
-                                            const response = await deleteUserFiles([file.name]);
-                                            if (response[0].success){
+                                            try {
+                                                await deleteNotebookFile(noteCtx.noteId, file.id);
                                                 noteCtx!.setFiles((x) => x.filter((f) => f.name !== file.name));
-                                            } else {
-                                                console.log("Failed to delete file:", response[0].error);
+                                            } catch (e) {
+                                                console.log("Failed to delete file from notebook:", e);
+                                                toast.error("Failed to delete file from notebook. Please try again.")
                                             }
                                         }} variant="destructive">
                                             <Trash2/> Remove

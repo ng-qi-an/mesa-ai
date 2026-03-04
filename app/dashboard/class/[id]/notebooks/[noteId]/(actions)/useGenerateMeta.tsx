@@ -1,8 +1,9 @@
 import { useNotebook } from "@/components/providers/notebook-provider";
 import createCache from "@/lib/cache-actions/createCache";
+import SaveToNotebook from "./saveToNotebook";
 
 export function useGenerateMeta(){
-    const { setNotesHistory, setTopicWeights, setIsCacheLoading, setCache, setCollapseSections, files, instructions, metaClear, metaSubmit } = useNotebook();
+    const { noteId, setNotesHistory, setTopicWeights, setIsCacheLoading, setCache, setCollapseSections, files, instructions, metaClear, metaSubmit } = useNotebook();
 
     async function generateMeta(customProps?: Record<string, any>){
         const customInstructions = customProps?.instructions || instructions;
@@ -12,8 +13,14 @@ export function useGenerateMeta(){
         setTopicWeights({});
         setIsCacheLoading(true);
         const newCache = await createCache(files.map(f=>f.id), 900);
+        if (!newCache || !newCache.name){
+            console.error("Failed to create cache");
+            setIsCacheLoading(false);
+            return;
+        }
         console.log("Using cache:", newCache.name, "Expire time:", newCache.expireTime, "Total tokens:", newCache.usageMetadata?.totalTokenCount);
         setCache(newCache.name!, files.map(f=>f.id));
+        await SaveToNotebook(noteId, {cache: {name: newCache.name!, fileIds: files.map(f=>f.id)}});
         setIsCacheLoading(false);
         setCollapseSections(true);
         metaClear();

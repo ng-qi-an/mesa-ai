@@ -9,9 +9,12 @@ export default async function DemoLayout({children, params}: {children: ReactNod
     const session = await auth.api.getSession({
         headers: await headers()
     });
+    if (!session || !session.user) {
+        return redirect("/auth/log-in")
+    }
     const {id, noteId} = await params;
     const raw = await db.query.notebook.findFirst({
-        where: (notebook, {eq})=> eq(notebook.id, noteId),
+        where: (notebook, {eq, and})=> and(eq(notebook.id, noteId), eq(notebook.userId, session.user.id)),
         with: {
             files: {
                 with: {
@@ -25,12 +28,7 @@ export default async function DemoLayout({children, params}: {children: ReactNod
         return redirect(`/dashboard/class/${id}/notebooks`)
     }
     console.log("Notebook data:", data);
-    return <NotebookProvider data={{
-        ...data, 
-        cache: data.cache ? {name: data.cache.name, fileIds: data.cache.fileIds} : null,
-        instructions: data.instructions || "",
-        topicWeights: data.topicWeights || {}
-    }}>
+    return <NotebookProvider data={data}>
         {children}
     </NotebookProvider>
 }
