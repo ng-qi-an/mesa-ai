@@ -1,13 +1,26 @@
-import { auth } from "@/lib/auth"
-import { headers } from "next/headers"
-import { redirect } from "next/navigation"
+'use client';
 
-export default async function DashboardLayout({children}: {children: React.ReactNode}) {
-    const session = await auth.api.getSession({
-        headers: await headers()
-    })
-    if (!session || !session.user.emailVerified) {
-        return redirect('/auth/log-in')
-    }
-    return <>{children}</>
+import Logo from "@/components/logo";
+import { authClient } from "@/lib/auth-client";
+import { AnimatePresence, motion } from "motion/react";
+import { useRouter } from "next/navigation";
+import { useEffect } from "react";
+
+export default function DashboardLayout({children}: {children: React.ReactNode}) {
+    const {data, isPending} = authClient.useSession();
+    const router = useRouter();
+    useEffect(()=>{
+        if (!isPending && !data?.user) {
+            router.push("/auth/log-in");
+        }
+    }, [data, isPending]);
+    return <AnimatePresence mode="wait">
+        {data ? 
+        <motion.div key={'content'} className="w-full h-full" initial={{opacity: 0}} animate={{opacity: 1}} exit={{opacity: 0}}>
+            {children}
+        </motion.div> : 
+        <motion.div key={'loading'} transition={{delay: 1}} className="w-full h-screen bg-background flex flex-col items-center justify-center" animate={{opacity: 1}} exit={{opacity: 0}}>
+            <Logo type="theme" className="size-15 animate-pulse"/>
+        </motion.div>}
+    </AnimatePresence>
 }

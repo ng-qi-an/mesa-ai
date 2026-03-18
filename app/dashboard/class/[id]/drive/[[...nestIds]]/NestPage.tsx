@@ -10,7 +10,7 @@ import { FileSelect } from "@/lib/schemas/schema";
 import { useRouter } from "next/navigation";
 import { useClass } from "@/components/providers/class-provider";
 import FileBrowserBreadcrumbs from "@/components/file-browser/FileBrowserBreadcrumbs";
-import { Search } from "lucide-react";
+import { ChevronDown, Search } from "lucide-react";
 
 export default function NestPage({nests, files, revalidateData}: {nests: FileSelect[], files: FileSelect[], revalidateData: (...args: any[]) => Promise<void>}) {
     const router = useRouter();
@@ -22,7 +22,12 @@ export default function NestPage({nests, files, revalidateData}: {nests: FileSel
         <PageHeader pages={[{name: "Drive"}]} actionsClassName="ml-0 w-full">
             <div className="flex-1"/>
             <Input className="w-full max-w-[300px] mr-1 border-0 px-3" placeholder="Search for files"/>
-            <CreateNewButton nests={nests}/>
+            <CreateNewButton nests={nests}>
+                <Button variant={'secondary'} className="mr-2">
+                    Create new
+                    <ChevronDown/>
+                </Button>
+            </CreateNewButton>
         </PageHeader>
         <div className="w-full h-full flex flex-col px-8 py-6">
             <FileBrowserBreadcrumbs nests={nests} setNests={setNests} classNames={{link: "text-2xl font-medium", page: "text-2xl font-semibold", separator: "scale-120"}}/>

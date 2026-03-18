@@ -11,11 +11,11 @@ import FileRowActions from "./FileRowActions"
 export const checkboxColumn:ColumnDef<FileBrowserItem> = {
     id: "select",
     cell: ({ row, table }) => {
-        const meta = table.options.meta as { selected: string[], setSelected: (selected: string[]) => void }
+        const meta = table.options.meta as { selected?: string[], setSelected?: (selected: string[]) => void }
         const file = row.original    
         return file.contentType != "application/x-directory" && <Checkbox
-            checked={meta.selected.includes(file.id)}
-            onCheckedChange={(value) => value ? meta.setSelected([...meta.selected, file.id]) : meta.setSelected(meta.selected.filter(id => id !== file.id))}
+            checked={meta.selected?.includes(file.id)}
+            onCheckedChange={(value) => meta.setSelected && (value ? meta.setSelected([...meta.selected || [], file.id]) : meta.setSelected(meta.selected?.filter(id => id !== file.id) || []))}
             aria-label="Select row"
         />
     },

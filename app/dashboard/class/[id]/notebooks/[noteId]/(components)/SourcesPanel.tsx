@@ -27,13 +27,16 @@ export default function SourcesPanel(){
     const noteCtx = useNotebook();
     const isCollapsed = noteCtx?.collapsedSources;
 
-    return <Card size="sm" className={`${isCollapsed ? "h-max" : noteCtx?.collapsedTools ? "h-full max-h-full" : "shrink-0  h-full max-h-[230px]"} rounded-md ring-neutral-900 overflow-hidden ${isCollapsed && "gap-0!"}`}>
+    return <Card size="sm" className={`${isCollapsed ? "h-max" : noteCtx?.collapsedApps ? "h-full max-h-full" : "shrink-0  h-full max-h-[230px]"} rounded-md ring-neutral-900 overflow-hidden ${isCollapsed && "gap-0!"}`}>
             <FileSelectorDialog open={showFileSelector} setOpen={setShowFileSelector} onConfirm={async(files) => {
                 const finalFiles = files.filter((file)=> noteCtx.files.every((f) => f.id !== file.id))
+                if (finalFiles.length === 0){
+                    setShowFileSelector(false);
+                    return;
+                }
                 noteCtx.setFiles((x) => [...x, ...finalFiles]);
                 await addNotebookFiles(noteCtx.noteId, finalFiles.map(f=>f.id));
                 setShowFileSelector(false);
-                
             }}/>
             <CardHeader className="items-center group flex cursor-pointer relative">
                 <motion.div
@@ -48,8 +51,8 @@ export default function SourcesPanel(){
                         noteCtx?.setCollapsedSources(false);
                     } else {
                         noteCtx?.setCollapsedSources(true);
-                        if (noteCtx?.collapsedTools){
-                            noteCtx?.setCollapsedTools(false);
+                        if (noteCtx?.collapsedApps){
+                            noteCtx?.setCollapsedApps(false);
                         }
                     }
                 }} 

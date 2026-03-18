@@ -5,8 +5,152 @@ import createOrExtendCache from "@/lib/cache-actions/createOrExtendCache";
 import { FileListType } from "@/lib/r2actions/getUserFilesv2";
 import checkCacheMatch from "./checkCacheMatch";
 
+const lengthModeGuidelines = (length: string) => {
+    const normalizedLength = ["concise", "balanced", "detailed"].includes(length) ? length : "balanced";
 
-export const defaultNotesInstructions = `
+    if (normalizedLength === "concise") {
+        return `
+- Length mode: concise
+- Target 800-1100 words (readable in 5-8 minutes)
+- Focus on high-yield concepts with compact explanations
+- Include one practical example per major topic where possible
+- End with 3-4 key takeaways
+`;
+    }
+
+    if (normalizedLength === "detailed") {
+        return `
+- Length mode: detailed
+- Target 2300-3000 words (readable in 18-25 minutes)
+- Go deep on mechanisms, edge cases, and nuanced distinctions
+- Use multiple examples and include trade-offs/comparisons
+- End with 5-7 key takeaways
+`;
+    }
+
+    return `
+- Length mode: balanced
+- Target 1500-2000 words (readable in 10-15 minutes)
+- Balance clarity and depth across weighted topics
+- Use examples and comparisons for understanding
+- End with 3-5 key takeaways
+`;
+}
+
+export const buildNotesUpdatePrompt = ({
+    topicWeights,
+    length,
+    instructions,
+}: {
+    topicWeights: Record<string, number>;
+    length: string;
+    instructions: string;
+}) => `
+The user wants to make some changes to the notes based on the following topic weights, note length and instructions. Update the content accordingly, while still respecting the original source material and formatting rules:
+# Topic weights
+${Object.keys(topicWeights).map((topic) => `- ${topic}: ${topicWeights[topic]}`).join("\n")}
+# Note Length
+${length}
+# Length-specific guidelines
+${lengthModeGuidelines(length)}
+# Instructions
+${instructions}
+`
+
+
+export const defaultNotesInstructions = (length: string, customInstructions?: string, topics?: string[]) => `
+    ${(() => {
+        const normalizedLength = ["concise", "balanced", "detailed"].includes(length) ? length : "balanced";
+
+        const contentGuidelinesByLength: Record<string, string> = {
+            concise: `
+    ## Content Guidelines
+        ### No title!
+        - The title and summary of the note is already provided and should not be repeated in the content.
+        - Start directly with the first topic heading. Do not provide a summary or introduction paragraph.
+        ### Length & Readability
+        - Target 800-1100 words (readable in 5-8 minutes)
+        - Keep explanations concise and focused on high-yield concepts
+        - Allocate word count proportionally to topic weight percentages
+        - A topic with 40% weight should receive ~40% of the content depth
+        ### Writing Style
+        - Explain concepts clearly without unnecessary detail
+        - Use short examples to anchor understanding
+        - Prioritize clarity and quick comprehension
+        - Active voice preferred
+        ### Structure Each Topic Section
+        1. One-sentence intro (what is this and why it matters)
+        2. Core explanation with one practical example
+        3. Key relationship or comparison only if high value
+        ### Always End With
+        A "Key Takeaways" section containing 3-4 bullet points summarizing the most important concepts.
+`,
+            balanced: `
+    ## Content Guidelines
+        ### No title!
+        - The title and summary of the note is already provided and should not be repeated in the content.
+        - Start directly with the first topic heading. Do not provide a summary or introduction paragraph.
+        ### Length & Readability
+        - Target 1500-2000 words (readable in 10-15 minutes)
+        - Allocate word count proportionally to topic weight percentages
+        - A topic with 40% weight should receive ~40% of the content depth
+        ### Writing Style
+        - Explain concepts, don't just restate the source
+        - Use analogies for complex ideas
+        - Write for understanding, not just memorization
+        - Active voice preferred
+        ### Structure Each Topic Section
+        1. Brief intro (what is this and why does it matter?)
+        2. Core explanation with examples
+        3. Key relationships or comparisons
+        4. Common misconceptions if relevant
+        ### Always End With
+        A "Key Takeaways" section containing 3-5 bullet points summarizing the most important concepts.
+`,
+            detailed: `
+    ## Content Guidelines
+        ### No title!
+        - The title and summary of the note is already provided and should not be repeated in the content.
+        - Start directly with the first topic heading. Do not provide a summary or introduction paragraph.
+        ### Length & Readability
+        - Target 2300-3000 words (readable in 18-25 minutes)
+        - Go deeper on mechanisms, edge cases, and nuanced distinctions
+        - Allocate word count proportionally to topic weight percentages
+        - A topic with 40% weight should receive ~40% of the content depth
+        ### Writing Style
+        - Explain concepts deeply, not just restate the source
+        - Use analogies and layered examples for difficult ideas
+        - Connect ideas across topics to build conceptual understanding
+        - Active voice preferred
+        ### Structure Each Topic Section
+        1. Brief intro (what is this and why does it matter?)
+        2. Core explanation with multiple examples
+        3. Key relationships, comparisons, and trade-offs
+        4. Common misconceptions and how to correct them
+        5. Practical implications or real-world application when relevant
+        ### Always End With
+        A "Key Takeaways" section containing 5-7 bullet points summarizing the most important concepts.
+`,
+        };
+
+        return contentGuidelinesByLength[normalizedLength];
+    })()}
+
+    ## Topics
+    ${topics?.map(topic => `- ${topic}`).join("\n") || "No topics specified."}
+
+    ## Required section structure
+    - Create exactly one H2 section (##) for each topic listed in "Topic weights".
+    - Use the exact topic names as the H2 headings in the same order they are listed.
+    - Do not merge, rename, skip, or reorder topics.
+    - Topic weights control depth, not whether a topic gets a section.
+    - If the source has limited content for a topic, still include that topic heading with a brief "limited coverage in source" explanation.
+
+    ## Weight handling
+    - Allocate explanation depth proportionally to the topic weights.
+    - Higher-weight topics should receive proportionally more detail, examples, and subpoints.
+    - Lower-weight topics should still be covered, but more briefly.
+    
     ## Formatting Rules
         ### Headings
         - NEVER use H1 (#) — The title has already been provided
@@ -35,36 +179,11 @@ export const defaultNotesInstructions = `
         - Numbered lists for sequences, steps, or ranked items
         - Keep list items concise — expand in paragraphs if needed
 
-    ## Content Guidelines
-        ### No title!
-        - The title and summary of the note is already provided and should not be repeated in the content.
-        - Start directly with the first topic heading. Do not provide a summary or introduction paragraph.
-        ### Length & Readability
-        - Target 1500-2000 words (readable in 10-15 minutes)
-        - Allocate word count proportionally to topic weight percentages
-        - A topic with 40% weight should receive ~40% of the content depth
-        ### Writing Style
-        - Explain concepts, don't just restate the source
-        - Use analogies for complex ideas
-        - Write for understanding, not just memorization
-        - Active voice preferred
-        ### Structure Each Topic Section
-        1. Brief intro (what is this and why does it matter?)
-        2. Core explanation with examples
-        3. Key relationships or comparisons
-        4. Common misconceptions if relevant
-        ### Always End With
-        A "Key Takeaways" section containing 3-5 bullet points summarizing the most important concepts.
-    
     ## Edge Case Handling
         ### If the document is very short:
         - Focus on depth over breadth
         - Add contextual explanations the source may assume
         - Still respect topic weight ratios
-        ### If the document is very long:
-        - Prioritize concepts matching the weighted topics
-        - Summarize tangential information briefly
-        - Maintain the 15-minute reading target — don't overload
         ### If topic weights don't add to 100%:
         - Normalize proportionally
         - Example: weights of 30, 30, 20 → treat as 37.5%, 37.5%, 25%
@@ -78,20 +197,28 @@ export const defaultNotesInstructions = `
         - Define jargon on first use
         - Build up from fundamentals before diving deep
         - Use analogies to bridge complex concepts
+
+    ${customInstructions?.trim() ? `
+    ## Additional User Instructions
+        - Follow the following user-provided preferences in addition to all default rules above.
+
+${customInstructions.trim()}
+    ` : ""}
     `
 
         
-export async function generateNotes({instructions, fileIds, topicWeights, cache, setCollapseSections, setIsCacheLoading, setCache, sendNotesFollowup}: {
+export async function generateNotes({instructions, fileIds, topicWeights, length, cache, setCollapseSections, setIsCacheLoading, setCache, sendNotesFollowup}: {
     instructions: string;
     fileIds: string[];
     topicWeights: Record<string, number>;
+    length: string;
     cache: {name: string; fileIds: string[]} | null;
     setCollapseSections: (collapse: boolean) => void;
     setIsCacheLoading: (loading: boolean) => void;
     setCache: (name: string, fileIds: string[]) => void;
     sendNotesFollowup: any;
 }){
-    console.log("Received generating notes request with instructions:", instructions, "files:", fileIds, "and weights:", topicWeights, "and cache:", cache);
+    console.log("Received generating notes request with instructions:", instructions);
     setCollapseSections(true);
     setIsCacheLoading(true);
     let newCache;
@@ -107,12 +234,7 @@ export async function generateNotes({instructions, fileIds, topicWeights, cache,
     setCache(newCache.name!, fileIds);
     if (topicWeights && Object.keys(topicWeights).length !== 0){
         sendNotesFollowup({
-            text: `
-                # Topic weights
-                    ${Object.keys(topicWeights).map((topic) => `- ${topic}: ${topicWeights[topic]}`).join("\n")}
-                # Instructions
-                ${instructions}
-            `,
+            text: instructions,
         }, {
             body: {
                 topicWeights: topicWeights,
@@ -126,7 +248,27 @@ export async function generateNotes({instructions, fileIds, topicWeights, cache,
 
 
 export function useGenerateNotes(){
-    const { setIsCacheLoading, setCache, setCollapseSections, files, instructions, topicWeights, cache, sendNotesFollowup } = useNotebook();
+    const { setIsCacheLoading, setCache, setCollapseSections, files, instructions, topicWeights, cache, sendNotesFollowup, length } = useNotebook();
 
-    return { generateNotes: async(customProps?: Record<string, any>)=> await generateNotes({instructions, fileIds: files.map(f=>f.id), topicWeights, cache, setCollapseSections, setIsCacheLoading, setCache, sendNotesFollowup: sendNotesFollowup, ...customProps}) };
+    return {
+        generateNotes: async(customProps?: Record<string, any>) => {
+            const resolvedLength = customProps?.length ?? length;
+            const resolvedInstructions = customProps?.instructions ?? instructions;
+            const resolvedTopicWeights = customProps?.topicWeights ?? topicWeights;
+            const includeContext = customProps?.includeContext ?? true;
+
+            return await generateNotes({
+                fileIds: files.map(f=>f.id),
+                topicWeights: resolvedTopicWeights,
+                cache,
+                setCollapseSections,
+                setIsCacheLoading,
+                setCache,
+                sendNotesFollowup: sendNotesFollowup,
+                ...customProps,
+                length: resolvedLength,
+                instructions: resolvedInstructions,
+            })
+        }
+    };
 }

@@ -29,6 +29,8 @@ export async function POST(req: Request) {
     }
     console.log("Chatting on notebook with user:", session.user.id, "with cache:", context.cacheName, "and thinking level:", context.thinkingLevel);
 
+    console.log("Messages received in API route:", JSON.stringify(context.messages, null, 2));
+
     const result = streamText({
         model: google("gemini-3-flash-preview"),
         messages: await convertToModelMessages(context.messages),
@@ -36,11 +38,14 @@ export async function POST(req: Request) {
             google: {
                 thinkingConfig: {
                     thinkingLevel: context.thinkingLevel,
+                    includeThoughts: true,
                 },
                 cachedContent: context.cacheName,
             }
         }
     });
 
-    return result.toUIMessageStreamResponse();
+    return result.toUIMessageStreamResponse({
+        sendReasoning: true,
+    });
 }

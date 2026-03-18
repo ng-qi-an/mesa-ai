@@ -13,13 +13,13 @@ import remarkGfm from 'remark-gfm'
 import rehypeSlug from 'rehype-slug'
 import { slugify } from "./SectionsPanel";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import NoteSettings from "./NoteSettings";
 import { Input } from "@/components/ui/input";
 import { Shimmer } from "@/components/ai-elements/shimmer";
 import { Badge } from "@/components/ui/badge";
 import { useNotebook } from "@/components/providers/notebook-provider";
 import checkCacheMatch from "../(actions)/checkCacheMatch";
 import { useGenerateNotes } from "../(actions)/generateNotes";
+import NoteSettingsDialog from "./(modals)/NoteSettingsDialog";
 
 export default function NotebookPanel(){
     const noteCtx = useNotebook()
@@ -58,7 +58,7 @@ export default function NotebookPanel(){
         return () => observer.disconnect();
     }, [noteCtx?.notesHistory])
     return  noteCtx && <motion.div layout transition={{ type: "spring", bounce: 0.15, duration: 0.4 }} className="flex-1 min-w-0 h-full">
-        <NoteSettings open={showNoteSettings} onOpenChange={setShowNoteSettings}/>
+        <NoteSettingsDialog open={showNoteSettings} onOpenChange={setShowNoteSettings}/>
         <Card size="sm" className="rounded-md ring-neutral-900 h-full ">
             <CardHeader className="items-center flex relative">
                 <CardTitle className="text-muted-foreground">
@@ -89,10 +89,10 @@ export default function NotebookPanel(){
                         <p>"Sync sources" to update the notebook with latest sources.</p>
                     </TooltipContent>
                 </Tooltip>}
-                <Tooltip open={noteCtx?.isGenerating ? undefined : false}>
+                <Tooltip open={(noteCtx.notesHistory.length === 0 || noteCtx?.isGenerating) ? undefined : false}>
                     <TooltipTrigger asChild>
                         <span className="inline-block w-fit absolute right-13">
-                            <Button disabled={noteCtx?.isGenerating} onClick={()=> {
+                            <Button disabled={noteCtx.notesHistory.length === 0 || noteCtx?.isGenerating} onClick={()=> {
                                 setShowNoteSettings(true);
                             }} size={'icon-sm'} className="text-muted-foreground" variant={'ghost'}>
                                 {noteCtx?.isGenerating ? <Spinner/> : <Settings2/>}
@@ -100,7 +100,7 @@ export default function NotebookPanel(){
                         </span>
                     </TooltipTrigger>
                     <TooltipContent side="bottom" align="end">
-                        <p>Note settings can't be changed while generating.</p>
+                        <p>Note settings can't be changed {noteCtx?.isGenerating ? 'while generating' : 'before generating notes'}.</p>
                     </TooltipContent>
                 </Tooltip>
                 <Button onClick={()=> noteCtx?.setCollapsedRightSidebar(!noteCtx.collapsedRightSidebar)} size={'icon-sm'} className="absolute right-4 text-muted-foreground" variant={'ghost'}>
@@ -159,12 +159,13 @@ export default function NotebookPanel(){
                 </div>
                 }
                 <AnimatePresence mode="wait">
-                    <motion.div key={noteCtx?.isGenerating ? 'stopGeneratingButton' : 'generateButton'} initial={{scale: 0.95, opacity: 0}} animate={{scale: 1, opacity: 1}} exit={{scale: 0.95, opacity: 0}} className="absolute bottom-2 z-20 left-0 w-full flex px-4 justify-center">
-                        {noteCtx?.isGenerating ?
+                    <motion.div key={noteCtx?.isContentGenerating ? 'stopGeneratingButton' : 'generateButton'} initial={{scale: 0.95, opacity: 0}} animate={{scale: 1, opacity: 1}} exit={{scale: 0.95, opacity: 0}} className="absolute bottom-2 z-20 left-0 w-full flex px-4 justify-center">
+                        {noteCtx?.isGenerating ? (noteCtx?.isContentGenerating ?
                             <Button variant={'secondaryRaised'} size={'lg'} className="px-4" onClick={() => noteCtx?.stopGeneration()}>
                                 <StopCircle/>
                                 Stop generating
                             </Button>
+                        : <></>)
                         : noteCtx?.cache && !checkCacheMatch(noteCtx.cache.fileIds, noteCtx.files.map(f=> f.id)) ?
                             <Button variant={'raised'} disabled={noteCtx!.files.length < 1} size={'lg'} className="px-4" onClick={() => {
                                 noteCtx?.setShowGenerateNotesDialog(true);
@@ -176,7 +177,8 @@ export default function NotebookPanel(){
                             <form onSubmit={async(e)=>{
                                 e.preventDefault();
                                 if (!followup.trim()) return;
-                                await generateNotes();
+                                const followupInstructions = `Apply only the requested changes to the current notes. Keep all unrelated content as-is unless absolutely necessary for consistency.\n\nRequested changes:\n${followup.trim()}`;
+                                await generateNotes({ instructions: followupInstructions, includeContext: false });
                                 setFollowup("");
                             }} className="w-full max-w-[400px] relative flex items-center">
                                 <Input value={followup} onChange={(e) => setFollowup(e.target.value)} className="bg-secondary/85 dark:bg-secondary/85 backdrop-blur-md rounded-lg text-lg h-12 px-6 pr-12" placeholder="Type a follow up to modify content" />
@@ -184,7 +186,7 @@ export default function NotebookPanel(){
                                     <ArrowUp/>
                                 </Button>
                             </form>
-                        : !noteCtx?.metaObject && <Button variant={'raised'} disabled={noteCtx!.files.length < 1} size={'lg'} className="px-4" onClick={() => {
+                        : (!noteCtx?.metaObject || !noteCtx.metaObject.header) && <Button variant={'raised'} disabled={noteCtx!.files.length < 1} size={'lg'} className="px-4" onClick={() => {
                             noteCtx?.setShowGenerateNotesDialog(true);
                         }}>
                             <Sparkles/>

@@ -7,11 +7,11 @@ import { useContext } from "react";
 import { motion } from "motion/react";
 import { useNotebook } from "@/components/providers/notebook-provider";
 
-export default function ToolsPanel({setSidebarTool}: {setSidebarTool: (tool: string) => void}){
+export default function AppsPanel({setSidebarTool}: {setSidebarTool: (tool: string) => void}){
     const noteCtx = useNotebook();
-    const isCollapsed = noteCtx.collapsedTools
+    const isCollapsed = noteCtx.collapsedApps
     
-    const tools = [
+    const Apps = [
         {
             name: "Flashcards",
             icon: WalletCards
@@ -39,17 +39,17 @@ export default function ToolsPanel({setSidebarTool}: {setSidebarTool: (tool: str
                 </motion.div>
                 <CardTitle 
                 onClick={()=> {
-                    if (noteCtx?.collapsedTools){
-                        noteCtx?.setCollapsedTools(false);
+                    if (noteCtx?.collapsedApps){
+                        noteCtx?.setCollapsedApps(false);
                     } else {
-                        noteCtx?.setCollapsedTools(true);
+                        noteCtx?.setCollapsedApps(true);
                         if (noteCtx?.collapsedSources){
                             noteCtx?.setCollapsedSources(false);
                         }
                     }
                 }} 
                 className="ml-2 text-muted-foreground group-hover:text-foreground w-full">
-                    Tools
+                    Apps
                 </CardTitle>
             </CardHeader>
             <motion.div 
@@ -62,7 +62,7 @@ export default function ToolsPanel({setSidebarTool}: {setSidebarTool: (tool: str
                     {!isCollapsed && <Separator className="mb-2" />}
                     <div className="h-full px-2 pb-2 overflow-auto">
                     <div className="grid grid-cols-2 gap-2 h-max w-full mb-2">
-                        {tools.map((tool) => (
+                        {Apps.map((tool) => (
                             <div key={tool.name} className="w-full px-4 py-3 flex flex-col group cursor-pointer bg-secondary/50 hover:bg-secondary rounded-md gap-2" onClick={() => {noteCtx?.setCollapsedSources(true); setSidebarTool(tool.name)}}>
                                 <tool.icon className="size-5 text-muted-foreground group-hover:text-foreground"/>
                                 <p className="text-sm font-medium text-foreground/80 group-hover:text-foreground">{tool.name}</p>

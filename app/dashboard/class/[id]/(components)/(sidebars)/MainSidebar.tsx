@@ -19,6 +19,5 @@ export default function MainSidebar({_class, classes}: {_class: ClassSelect, cla
             <MainSidebarTopics/>
         </SidebarContent>
         <MainSidebarFooter user={session.user}/>
-        <SidebarRail/>
     </Sidebar>
 }

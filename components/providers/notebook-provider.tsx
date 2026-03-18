@@ -2,9 +2,6 @@
 import { noteMetaSchema } from "@/app/api/notebook/schema";
 import { embedImages } from "@/app/dashboard/class/[id]/notebooks/[noteId]/(actions)/embedImages";
 import { defaultNotesInstructions, generateNotes } from "@/app/dashboard/class/[id]/notebooks/[noteId]/(actions)/generateNotes";
-import createCache from "@/lib/cache-actions/createCache";
-import createOrExtendCache from "@/lib/cache-actions/createOrExtendCache";
-import { FileListType } from "@/lib/r2actions/getUserFiles";
 import { experimental_useObject, useChat } from "@ai-sdk/react";
 import { ChatStatus, DefaultChatTransport, generateId, UIMessage } from "ai";
 import { useContext, useEffect, useRef, useState } from "react";
@@ -21,20 +18,24 @@ export type NotebookContextType = {
     setCollapseSections: (collapse: boolean) => void;
     collapsedSources: boolean;
     setCollapsedSources: (sources: boolean) => void;
-    collapsedTools: boolean;
-    setCollapsedTools: (tools: boolean) => void;
+    collapsedApps: boolean;
+    setCollapsedApps: (Apps: boolean) => void;
     collapsedRightSidebar: boolean;
     setCollapsedRightSidebar: (collapsed: boolean) => void;
     showGenerateNotesDialog: boolean;
     setShowGenerateNotesDialog: (show: boolean) => void;
     // Content States
     noteId: string;
+    name: string;
+    setName: (name: string) => void;
     files: FileSelect[];
     setCache: (name: string, fileIds: string[]) => void;
     cache: {name: string, fileIds: string[]} | null;
     setFiles: (files: FileSelect[] | ((files: FileSelect[]) => FileSelect[])) => void;
     activeSection: string | null;
     setActiveSection: (section: string | null) => void;
+    length: string;
+    setLength: (length: string) => void;
     instructions: string;
     setInstructions: (instructions: string) => void;
     topicWeights: Record<string, number>;
@@ -43,8 +44,8 @@ export type NotebookContextType = {
     stopGeneration: () => void;
     // AI States
     metaObject: DeepPartial<NoteMetaType> | undefined;
+    setMetaObject: (metaObject: DeepPartial<NoteMetaType> | undefined) => void;
     metaSubmit: (input: any) => void;
-    metaClear: () => void;
     metaStop: () => void;
     notesHistory: UIMessage[],
     setNotesHistory: (messages: UIMessage[]) => void
@@ -57,6 +58,7 @@ export type NotebookContextType = {
     isCacheLoading: boolean;
     setIsCacheLoading: (loading: boolean) => void;
     notesStatus: ChatStatus;
+    isContentGenerating: boolean;    
     isGenerating: boolean;
 };
 
@@ -77,7 +79,7 @@ export default function NotebookProvider({children, data}: {children: React.Reac
     const {noteId}:{noteId: string} = useParams();
     const [collapseSections, setCollapseSections] = useState(data.content ? false :true);
     const [collapsedSources, setCollapsedSources] = useState(false);
-    const [collapsedTools, setCollapsedTools] = useState(false);
+    const [collapsedApps, setCollapsedApps] = useState(false);
     const [collapsedRightSidebar, setCollapsedRightSidebar] = useState(false);
     const [activeSection, setActiveSection] = useState<string | null>(null);
     const [isCacheLoading, setIsCacheLoading] = useState(false);
@@ -93,16 +95,29 @@ export default function NotebookProvider({children, data}: {children: React.Reac
         cacheRef.current = {name, fileIds};
         _setCache({name, fileIds});
     };
-    // const [noteContent, setNoteContent] = useState<NoteContentType | null>(null);
+    const [name, setName] = useState(data.name);
     const [files, setFiles] = useState<FileSelect[]>(data.files || []);
-    const [instructions, setInstructions] = useState<string>(data.instructions || "");
+    const instructionsRef = useRef<string>(data.instructions || "");
+    const [instructionsState, setInstructionsState] = useState<string>(data.instructions || "");
+    const setInstructions = (newInstructions: string) => {
+        instructionsRef.current = newInstructions;
+        setInstructionsState(newInstructions);
+    };
+    const lengthRef = useRef<string>(data.length || "balanced");
+    const [lengthState, setLengthState] = useState(data.length || "balanced");
+    const setLength = (newLength: string) => {
+        lengthRef.current = newLength;
+        setLengthState(newLength);
+    };
+    const instructions = instructionsState;
+    const length = lengthState;
     const [topicWeights, setTopicWeights] = useState<Record<string, number>>(data.topicWeights ||{});
 
     // AI States
-    const { object:metaObject, submit:metaSubmit, isLoading:isMetaLoading, clear:metaClear, stop:metaStop } = experimental_useObject({
+    const [metaObject, setMetaObject] = useState<DeepPartial<NoteMetaType> | undefined>(data.topicWeights && data.title && data.subtitle ? {topics: Object.keys(data.topicWeights), header: data.title, subtitle: data.subtitle} : undefined);
+    const { object:internalMetaObject, submit:metaSubmit, isLoading:isMetaLoading, stop:metaStop } = experimental_useObject({
         api: '/api/notebook/generate-meta',
         schema: noteMetaSchema,
-        initialValue: (data.topicWeights && data.title && data.subtitle) ? {topics: Object.keys(data.topicWeights), header: data.title, subtitle: data.subtitle} : undefined,
         onFinish: async(res)=>{
             console.log("Finished generating meta: ", res);
             if (res.error){
@@ -114,17 +129,41 @@ export default function NotebookProvider({children, data}: {children: React.Reac
                     weights[topic] = 100;
                 })
                 setTopicWeights(weights);
-                console.log("Generating notes with instructions:", instructions, "files:", files.map(f=>f.name), "and weights:", weights, "and cache:", cacheRef.current);
-                await SaveToNotebook(noteId, {instructions, topicWeights: weights, cache: cacheRef.current, title: res.object.header, subtitle: res.object.subtitle})
-                generateNotes({instructions: defaultNotesInstructions, fileIds: files.map(f=>f.id), topicWeights: weights, cache: cacheRef.current, setCollapseSections, setIsCacheLoading, setCache, sendNotesFollowup});
+                const resolvedInstructions = instructionsRef.current;
+                const resolvedLength = lengthRef.current;
+                console.log("Generating notes with instructions:", resolvedInstructions, "files:", files.map(f=>f.name), "and weights:", weights, "and cache:", cacheRef.current);
+                const payload:Record<string, any> = {instructions: resolvedInstructions, topicWeights: weights, cache: cacheRef.current, title: res.object.header, subtitle: res.object.subtitle}
+                if (name == "New Notebook"){
+                    setName(res.object.header);
+                    payload.name = res.object.header;
+                }
+                await SaveToNotebook(noteId, payload);
+                console.log("Selected length", resolvedLength);
+                generateNotes({instructions: `${defaultNotesInstructions(resolvedLength, resolvedInstructions, Object.keys((weights)))}`, length: resolvedLength, fileIds: files.map(f=>f.id), topicWeights: weights, cache: cacheRef.current, setCollapseSections, setIsCacheLoading, setCache, sendNotesFollowup});
             }
         },
         onError: (err)=>{
             console.error("Error generating meta: ", err);
         }
     });
+    useEffect(()=>{
+        if (internalMetaObject){
+            setMetaObject(internalMetaObject);
+        }
+    }, [internalMetaObject])
     const { messages:notesHistory, setMessages: setNotesHistory, sendMessage:sendNotesFollowup, status:notesStatus, stop: notesStop } = useChat({
-        messages: data.content ? [{
+        messages: data.content ? [
+            {
+                id: generateId,
+                role: "user",
+                parts: [
+                    {
+                        type: 'text',
+                        text: defaultNotesInstructions(length, instructions, Object.keys(topicWeights))
+                    }
+                ]
+            },
+            {
             id: generateId(),
             role: "assistant",
             parts: [
@@ -158,6 +197,7 @@ export default function NotebookProvider({children, data}: {children: React.Reac
             setNotesHistory(updatedMessages);
             await SaveToNotebook(noteId, {content: finalMessage.parts.map((part) => part.type === "text" ? part.text : "").join("")});
             setIsEmbeddingImages(false);
+            console.log("Finished embedding images");
         },
         onError: (err)=>{
             console.error("Error generating notes: ", err);
@@ -200,20 +240,24 @@ export default function NotebookProvider({children, data}: {children: React.Reac
             setCollapseSections, 
             collapsedSources, 
             setCollapsedSources, 
-            collapsedTools, 
-            setCollapsedTools, 
+            collapsedApps, 
+            setCollapsedApps, 
             collapsedRightSidebar, 
             setCollapsedRightSidebar, 
             showGenerateNotesDialog,
             setShowGenerateNotesDialog,
         // Content States
             noteId,
+            name,
+            setName,
             files, 
             setFiles, 
             activeSection, 
             setActiveSection, 
             topicWeights, 
             setTopicWeights, 
+            length,
+            setLength,
             instructions,
             setInstructions,
             setCache,
@@ -221,7 +265,7 @@ export default function NotebookProvider({children, data}: {children: React.Reac
         // AI States
             metaObject,
             metaSubmit, 
-            metaClear, 
+            setMetaObject, 
             metaStop,
             notesHistory, 
             setNotesHistory,
@@ -234,6 +278,7 @@ export default function NotebookProvider({children, data}: {children: React.Reac
             isCacheLoading,
             setIsCacheLoading,
             isNotesLoading: notesStatus == "streaming" || notesStatus == "submitted",
+            isContentGenerating: isMetaLoading || notesStatus == "streaming",
             isGenerating: isCacheLoading || isMetaLoading || notesStatus == "streaming" || notesStatus == "submitted",
             getActualNotes,
             stopGeneration, 

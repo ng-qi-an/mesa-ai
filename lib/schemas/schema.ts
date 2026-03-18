@@ -1,6 +1,6 @@
 import { text, pgTable, serial, date, timestamp, AnyPgColumn, jsonb } from "drizzle-orm/pg-core";
 import { user } from "./auth-schema";
-
+import { UIMessage } from "ai";
 export const classes = pgTable("classes", {
     id: text("id").primaryKey(),
     userId: text("user_id").notNull().references(() => user.id, { onDelete: "cascade" }),
@@ -47,6 +47,7 @@ export const notebook = pgTable("notebook", {
     title: text("title"),
     subtitle: text("subtitle"),
     topicWeights: jsonb("topic_weights").$type<{[key: string]: number}>(),
+    length: text("length"),
     instructions: text("instructions"),
     cache: jsonb("cache").$type<{name: string, fileIds: string[]}>(),
     content: text("content"),
@@ -65,3 +66,26 @@ export const notebookFiles = pgTable("notebook_files", {
 
 export type NotebookFileInsert = typeof notebookFiles.$inferInsert
 export type NotebookFileSelect = typeof notebookFiles.$inferSelect
+
+export const chats = pgTable("chats", {
+    id: text("id").primaryKey(),
+    userId: text("user_id").notNull().references(() => user.id, { onDelete: "cascade" }),
+    notebookId: text("notebook_id").references(() => notebook.id, { onDelete: "cascade" }),
+    name: text("name").notNull().default("New chat"),
+    messages: jsonb("messages").notNull().$type<UIMessage[]>(),
+    dateCreated: timestamp("date_created").notNull().defaultNow(),
+    dateModified: timestamp("date_modified").notNull().defaultNow(),
+})
+
+export type ChatInsert = typeof chats.$inferInsert
+export type ChatSelect = typeof chats.$inferSelect
+
+export const chatFiles = pgTable("chat_files", {
+    id: text("id").notNull(),
+    contentType: text("content_type").notNull(),
+    chatId: text("chat_id").notNull().references(() => chats.id, { onDelete: "cascade" }),
+    userId: text("user_id").notNull().references(() => user.id, { onDelete: "cascade" }),
+})
+
+export type ChatFileInsert = typeof chatFiles.$inferInsert
+export type ChatFileSelect = typeof chatFiles.$inferSelect

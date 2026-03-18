@@ -1,8 +1,8 @@
 import { motion } from "motion/react";
 import SourcesPanel from "../SourcesPanel";
-import ToolsPanel from "../ToolsPanel";
+import AppsPanel from "../AppsPanel";
 import { useState } from "react";
-import ChatsPanel from "../(tools)/ChatsPanel";
+import ChatsPanel from "../(apps)/(chats)/ChatsPanel";
 import { useNotebook } from "@/components/providers/notebook-provider";
 
 export default function RightNotebookSidebar(){
@@ -22,7 +22,7 @@ export default function RightNotebookSidebar(){
                 <ChatsPanel setSidebarTool={setSidebarTool}/>
             : <>
                 <SourcesPanel/>
-                <ToolsPanel setSidebarTool={setSidebarTool}/>
+                <AppsPanel setSidebarTool={setSidebarTool}/>
             </>
             }
         </div>

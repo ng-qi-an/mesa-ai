@@ -13,7 +13,7 @@ import getAddUserFileURL from "@/lib/r2actions/files/getAddUserFileUrl";
 import { useFileBrowser } from "../providers/file-browser-provider";
 import { useClass } from "../providers/class-provider";
 
-export default function CreateNewButton({nests}: {nests: FileSelect[]}) {
+export default function CreateNewButton({nests, children}: {nests: FileSelect[], children: React.ReactNode}) {
     const [createFolderOpen, setCreateFolderOpen] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const pathname = usePathname();
@@ -65,10 +65,7 @@ export default function CreateNewButton({nests}: {nests: FileSelect[]}) {
         />
         <DropdownMenu>
             <DropdownMenuTrigger asChild>
-                <Button variant={'secondary'} className="mr-2">
-                    Create new
-                    <ChevronDown/>
-                </Button>
+                {children}
             </DropdownMenuTrigger>
             <DropdownMenuContent className="w-max" align="end">
                 <DropdownMenuItem onClick={()=> fileInputRef.current?.click()}>

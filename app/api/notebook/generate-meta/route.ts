@@ -12,6 +12,7 @@ export const maxDuration = 300;
 type NotebookRequestType = {
     cacheName: string;
     instructions: string;
+    length: string;
 }
 
 export async function POST(req: Request) {
@@ -47,7 +48,7 @@ export async function POST(req: Request) {
                         ## Examples
                                 Source about economics:
                                 - Title: "Macroeconomic Policy Fundamentals"
-                                - Topics: ["Fiscal Policy Tools", "Monetary Policy Mechanisms", "Inflation and Unemployment", "International Trade Effects"]
+                                - Topics: ["Fiscal Policy Apps", "Monetary Policy Mechanisms", "Inflation and Unemployment", "International Trade Effects"]
                                 Source about biology:
                                 - Title: "Cell Division and Reproduction"  
                                 - Topics: ["Mitosis Process", "Meiosis and Genetic Variation", "Cell Cycle Regulation", "Chromosomal Abnormalities"]
@@ -69,7 +70,13 @@ export async function POST(req: Request) {
                             - Break down into subtopics or aspects
                             - Example: A document only about photosynthesis → ["Light-Dependent Reactions", "Calvin Cycle", "Factors Affecting Rate", "Photosynthesis in Ecosystems"]
                         ## Instructions
-                            Use the provided documents as sources for generation. Use the following instructions to guide your topic generation: ${context.instructions}`
+                            Use the provided documents as sources for generation. 
+                            As the user wants ${context.length} notes, generate ${
+                                context.length == "concise" ? "2-4 high-level topics that capture the key points of a source such that a brief summary can be made for readers with some prior knowledge."
+                                : context.length == "detailed" ? "8-12 specific topics that cover every aspects of the source, enabling a comprehensive set of notes for readers with no prior knowledge."
+                                : "5-8 balanced topics that cover the main themes and some specific details of the source, allowing for moderately detailed notes for readers with some prior knowledge."
+                            }    
+                            In addition, the user provided the following instructions to guide your topic generation: ${context.instructions}`
                     },
                 ]
             }

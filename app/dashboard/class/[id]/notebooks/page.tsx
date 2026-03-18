@@ -14,6 +14,6 @@ export default async function Page({params}: {params: Promise<{id: string}>}) {
         return redirect("/auth/log-in")
     }
     const { id } = await params;
-    const data = await db.select().from(notebook).where(and(eq(notebook.userId, session.user.id), eq(notebook.classId, id)));
-    return <NotebookPage/>
+    const data = (await db.select().from(notebook).where(and(eq(notebook.userId, session.user.id), eq(notebook.classId, id)))).sort((a, b) => b.dateModified.getTime() - a.dateModified.getTime());
+    return <NotebookPage notebooks={data} />
 }

@@ -8,15 +8,33 @@ import { Button } from "@/components/ui/button";
 import { Settings, Share } from "lucide-react";
 import Link from "next/link";
 import Logo from "@/components/logo";
+import { useSidebar } from "@/components/ui/sidebar";
+import { useEffect } from "react";
+import { useNotebook } from "@/components/providers/notebook-provider";
+import { useParams } from "next/navigation";
+import PageHeader from "../../(components)/PageHeader";
+import SaveToNotebook from "./(actions)/saveToNotebook";
+import { toast } from "sonner";
 
 export default function Page(){
+    const {state, toggleSidebar} = useSidebar();
+    const notebook = useNotebook();
+    useEffect(()=>{
+        if (state == "expanded"){
+            toggleSidebar();
+        }
+    }, [])
     return <div className="flex flex-col h-screen">
-        <div className="w-full flex items-center py-4 px-6">
-            <Link href={"/dashboard"}>
-                <Logo type="favicon" className="size-7 invert hover:opacity-80"/>
-            </Link>
-            <h1 className="pl-4 font-medium">Mesa Notebook</h1>
-            <div className="flex-1"/>
+        <PageHeader titleEditable onTitleSubmit={async(x)=> {
+            const oldName = notebook.name;
+            notebook.setName(x);
+            try {
+                await SaveToNotebook(notebook.noteId, {name: x});
+            } catch (error) {
+                toast.error("Failed to update notebook name. Please try again.");
+                notebook.setName(oldName);
+            }
+        }} pages={[{name: "Notebooks", href: `/notebooks`}, {name: notebook.name || "Notebook"}]}>
             <Button variant={"ghost"} size={'icon'}>
                 <Settings/>
             </Button>
@@ -24,10 +42,10 @@ export default function Page(){
                 Share
                 <Share/>
             </Button>
-        </div>
+        </PageHeader>
         <LayoutGroup>
             <GenerateNotesDialog/>
-            <div className="flex-1 min-h-0 w-full flex px-4 pb-4 gap-3">
+            <div className="flex-1 min-h-0 w-full flex px-4 pb-4 gap-3 mt-5">
                 <LeftNotebookSidebar/>
                 <NotebookPanel/>
                 <RightNotebookSidebar/>
