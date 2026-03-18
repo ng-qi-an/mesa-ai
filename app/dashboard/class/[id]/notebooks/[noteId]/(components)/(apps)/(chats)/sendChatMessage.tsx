@@ -6,7 +6,7 @@ import { chatFiles } from "@/lib/schemas/schema";
 import { FileUIPart } from "ai";
 import addFileToChatFilesDb from "./addFileToChatFilesDb";
 
-const fileHost = `http://localhost:3000`
+const fileHost = `http://mesa-ai.vercel.app`
 
 export default async function SendChatMessage({message, files, sendMessage, thinkingLevel, chatId, bodyOptions}:{message: PromptInputMessage, files: (FileUIPart & {id: string})[], sendMessage: any, thinkingLevel: string, chatId: string, bodyOptions: Record<string, any>}){
     const fileUrls = await getAddUserFileURL(message.files.map((file) => ({ name: file.filename || "Untitled file", type: file.mediaType || "application/octet-stream" })));

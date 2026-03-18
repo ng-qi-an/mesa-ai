@@ -50,7 +50,6 @@ import MessageParts from "./MessageParts";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import ChatInputFooter from "./ChatInputFooter";
 import ChatInputAttachments from "./ChatInputAttachments";
-import FileSelectorDialog from "@/components/file-browser/dialogs/FileSelectorDialog";
 import SendChatMessage from "./sendChatMessage";
 import { toast } from "sonner";
 import { ChatSelect } from "@/lib/schemas/schema";
