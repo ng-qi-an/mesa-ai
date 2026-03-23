@@ -7,29 +7,26 @@ import { Spinner } from "@/components/ui/spinner";
 import { FileUIPart } from "ai";
 import { Square } from "lucide-react";
 import { useEffect, useState } from "react";
+import { ChatAttachmentType } from "./sendChatMessage";
 
-export default function ChatInputFooter({thinkingLevel, setThinkingLevel, text, files, setFiles, onStop, disableStop, disableSend}:{thinkingLevel: string, setThinkingLevel: (level: string) => void, text: string, files: (FileUIPart & {id: string})[] , setFiles: (files: any) => void, onStop: () => void, disableStop: boolean, disableSend: boolean}){
+export default function ChatInputFooter({thinkingLevel, setThinkingLevel, text, files, setFiles, onStop, disableStop, disableSend}:{thinkingLevel: string, setThinkingLevel: (level: string) => void, text: string, files: ChatAttachmentType[], setFiles: (updater: (files: ChatAttachmentType[]) => ChatAttachmentType[]) => void, onStop: () => void, disableStop: boolean, disableSend: boolean}){
     const [showMesaDrive, setShowMesaDrive] = useState(false);
     const { files:promptFiles } = usePromptInputAttachments();
     useEffect(()=>{
-        setFiles((x: (FileUIPart & {id: string})[]) => {
+        setFiles((x: ChatAttachmentType[]) => {
             const promptIds = promptFiles.map((file) => file.id);
             const nonPromptFiles = x.filter((file) => !promptIds.includes(file.id));
-            return [...nonPromptFiles, ...promptFiles];
+            return [...nonPromptFiles, ...promptFiles.map((file) => ({...file, drive: false}))];
         });
     }, [promptFiles])
-    useEffect(()=>{
-        console.log("Current attachments in ChatInputFooter:", files);
-        console.log("Prompt attachments from context:", promptFiles);
-    }, [files, promptFiles])
     return <PromptInputFooter>
         <FileSelectorDialog open={showMesaDrive} setOpen={setShowMesaDrive} onConfirm={(selected)=> {
             console.log(selected)
-            setFiles((x: (FileUIPart & {id: string})[]) => {
+            setFiles((x: ChatAttachmentType[]) => {
                 const existingIds = x.map((file) => file.id);
                 const finalFiles = selected
                     .filter((file) => !existingIds.includes(file.id))
-                    .map((file) => ({ id: file.id, filename: file.name, mediaType: file.contentType }));
+                    .map((file) => ({ id: file.id, filename: file.name, type: "file" as "file", url: "", mediaType: file.contentType, drive: true}));
                 console.log("Adding files to prompt attachments:", finalFiles);
                 return [...x, ...finalFiles];
             });

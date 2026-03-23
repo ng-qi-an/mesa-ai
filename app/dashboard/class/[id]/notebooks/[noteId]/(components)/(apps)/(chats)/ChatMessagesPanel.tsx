@@ -46,18 +46,23 @@ import { useNotebook } from "@/components/providers/notebook-provider";
 import checkCacheMatch from "../../../(actions)/checkCacheMatch";
 import { Shimmer } from "@/components/ai-elements/shimmer";
 import { Spinner } from "@/components/ui/spinner";
-import MessageParts from "./MessageParts";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import ChatInputFooter from "./ChatInputFooter";
-import ChatInputAttachments from "./ChatInputAttachments";
-import SendChatMessage from "./sendChatMessage";
+import ChatInputAttachments from "./ChatAttachments";
+import SendChatMessage, { ChatAttachmentType } from "./sendChatMessage";
 import { toast } from "sonner";
 import { ChatSelect } from "@/lib/schemas/schema";
+import SaveToNotebook from "../../../(actions)/saveToNotebook";
+import saveToChat from "./saveToChat";
+import ChatInputHeader from "./ChatInputHeader";
+import ChatMessageContent from "./ChatMessageContent";
 
-export default function ChatMessagesPanel({setSelectedChatId, chat}: {selectedChat: string, setSelectedChatId: (chat: string) => void, chat: ChatSelect}){
+export default function ChatMessagesPanel({setSelectedChatId, initialChat}: {setSelectedChatId: (chat: string) => void, initialChat: ChatSelect}){
     const noteCtx = useNotebook();
     const [text, setText] = useState<string>("");
-    const [files, setFiles] = useState<(FileUIPart & {id: string})[]>([]);
+    const [chat, setChat] = useState<ChatSelect>(initialChat);
+    const [files, setFiles] = useState<ChatAttachmentType[]>([]);
+    const [previousFiles, setPreviousFiles] = useState<ChatAttachmentType[]>([]);
     const [previousText, setPreviousText] = useState<string>("");
     const [thinkingLevel, setThinkingLevel] = useState("minimal");
     const { messages, sendMessage, setMessages, status, stop } = useChat({
@@ -65,12 +70,15 @@ export default function ChatMessagesPanel({setSelectedChatId, chat}: {selectedCh
             api: '/api/notebook/chat',
         }),
         messages: chat.messages,
+        onFinish: async ({messages}) => {
+            setMessages(messages);
+            await saveToChat(chat.id, { messages });
+        }
     }); 
-    useEffect(()=>{
-        console.log(messages)
-        console.log(messages.map(m=> m.parts.filter(p=> p.type == "reasoning").join("\n\n")).join("\n----\n"))
-    }, [messages])
     const [cacheLoading, setCacheLoading] = useState(false);
+    useEffect(()=>{
+        console.log("ChatMessagesPanel mounted with chat:", initialChat);
+    }, [])
 
     return <>
         <Card size="sm" className={`rounded-md ring-neutral-900 h-full pb-2!`}>
@@ -115,27 +123,11 @@ export default function ChatMessagesPanel({setSelectedChatId, chat}: {selectedCh
                         />
                         ) : messages.map((message, index) => (
                         <Message from={message.role} key={message.id}>
-                            <MessageContent>
-                                <MessageParts
-                                    message={message}
-                                    isLastMessage={index === messages.length - 1}
-                                    isStreaming={status =="streaming"}
-                                />
-                            {/* {message.parts.map((part, i) => {
-                                switch (part.type) {
-                                    case "reasoning":
-                                        return 
-                                    case "text":
-                                        return (
-                                        <MessageResponse key={`${message.id}-${i}`}>
-                                            {part.text}
-                                        </MessageResponse>
-                                        );
-                                    default:
-                                        return null;
-                                }
-                            })} */}
-                            </MessageContent>
+                            <ChatMessageContent
+                                message={message}
+                                isLastMessage={index === messages.length - 1}
+                                isStreaming={status =="streaming"}
+                            />
                         </Message>
                         ))}
                         {status == "submitted" ? 
@@ -175,8 +167,11 @@ export default function ChatMessagesPanel({setSelectedChatId, chat}: {selectedCh
                             return;
                         }
                         const oldText = text;
-                        setText("");
+                        const oldFiles = files;
+                        setPreviousFiles(files);
                         setPreviousText(text);
+                        setFiles([]);
+                        setText("");
                         setCacheLoading(true);
                         let newCache;
                         try {
@@ -187,7 +182,6 @@ export default function ChatMessagesPanel({setSelectedChatId, chat}: {selectedCh
                                 console.log("[CHAT] Cache files match provided files. Extending cache...");
                                 newCache = await createOrExtendCache(noteCtx.cache.name, noteCtx.files.map(f=>f.name), 720)
                             }
-                            setCacheLoading(false);
                         } catch (err) {
                             console.error("Error creating/extending cache:", err);
                             setCacheLoading(false);
@@ -195,21 +189,23 @@ export default function ChatMessagesPanel({setSelectedChatId, chat}: {selectedCh
                             return;
                         }
                         console.log("Using cache:", newCache.name, "Expire time:", newCache.expireTime, "Total tokens:", newCache.usageMetadata?.totalTokenCount);
-                        setCacheLoading(false);
                         noteCtx.setCache(newCache.name!, noteCtx.files.map(f=>f.id));
-                        console.log("Files to upload", message.files)
+                        await SaveToNotebook(noteCtx.noteId, {cache: {name: newCache.name!, fileIds: noteCtx.files.map(f=>f.id)}});
+
                         const r = await SendChatMessage({message, files, sendMessage, thinkingLevel, chatId: chat.id, bodyOptions: {cacheName: newCache.name}});
+                        console.log("SendChatMessage result:", r);
                         if (r === "failed_uploads") {
                             toast.warning("Some files failed to upload.");
                         } else if (r === "error") {
+                            setText(oldText);
+                            setFiles(oldFiles);
                             toast.error("Error sending message. Please try again.");
                         }
+                        setCacheLoading(false);
                     }}
                     className="mt-4 px-2"
                 >
-                    {files.length > 0 && <PromptInputHeader>
-                        <ChatInputAttachments files={files} setFiles={setFiles} />
-                    </PromptInputHeader>}
+                    {files.length > 0 && <ChatInputHeader files={files} setFiles={setFiles} />}
                     <PromptInputBody>
                         <PromptInputTextarea
                         disabled={status === "submitted" || cacheLoading}

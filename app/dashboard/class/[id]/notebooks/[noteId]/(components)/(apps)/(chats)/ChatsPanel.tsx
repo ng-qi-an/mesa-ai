@@ -9,7 +9,7 @@ export default function ChatsPanel({setSidebarTool}: {setSidebarTool: (tool: str
     const activeChat = chatsList.find((x)=> x.id == selectedChatId);
 
     if (activeChat) {
-        return <ChatMessagesPanel chat={activeChat} selectedChat={selectedChatId} setSelectedChatId={setSelectedChatId}/>;
+        return <ChatMessagesPanel initialChat={activeChat} setSelectedChatId={setSelectedChatId}/>;
     } else {
         return <ChatsListPanel setSidebarTool={setSidebarTool} chatsList={chatsList} setChatsList={setChatsList} selectedChatId={selectedChatId} setSelectedChatId={setSelectedChatId}/>;
     }

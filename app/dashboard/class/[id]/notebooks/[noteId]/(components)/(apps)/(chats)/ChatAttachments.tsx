@@ -1,26 +1,19 @@
 import { Attachments, Attachment, AttachmentPreview, AttachmentRemove, AttachmentHoverCard, AttachmentHoverCardTrigger, AttachmentHoverCardContent, getAttachmentLabel } from "@/components/ai-elements/attachments";
-import { usePromptInputAttachments } from "@/components/ai-elements/prompt-input"
+import { ChatAttachmentType } from "./sendChatMessage";
 import { FileUIPart } from "ai";
 
-export default function ChatInputAttachments({files, setFiles}:{files: (FileUIPart & {id: string})[], setFiles: (files: any) => void}){
-    const { files:promptFiles, remove: removePromptFile } = usePromptInputAttachments();
+export default function ChatAttachments({files, onRemove}:{files: ChatAttachmentType[] | (FileUIPart & {id: string})[], onRemove?: (id: string) => void}){
     return <div className="flex items-center justify-center">
         <Attachments variant="grid">
             {files.map((attachment) => (
                 <AttachmentHoverCard key={attachment.id}>
                     <AttachmentHoverCardTrigger asChild>
                         <Attachment
-                            key={attachment.id}
                             data={attachment}
-                            onRemove={() => {
-                                if (promptFiles.some((f) => f.id === attachment.id)){
-                                    removePromptFile(attachment.id);
-                                }
-                                setFiles(files.filter((f) => f.id !== attachment.id))
-                            }}
+                            onRemove={()=> onRemove && onRemove(attachment.id)}
                         >
                             <AttachmentPreview />
-                            <AttachmentRemove />
+                            {onRemove && <AttachmentRemove />}
                         </Attachment>
                     </AttachmentHoverCardTrigger>
                     <AttachmentHoverCardContent>

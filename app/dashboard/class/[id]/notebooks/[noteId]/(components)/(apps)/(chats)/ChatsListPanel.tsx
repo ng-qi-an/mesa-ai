@@ -13,28 +13,33 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty";
 import createChat from "./createChat";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { relativeTime } from "@/lib/utils/relativeTime";
 export default function ChatsPanel({setSidebarTool, chatsList, setChatsList, selectedChatId, setSelectedChatId}: {setSidebarTool: (tool: string) => void, chatsList: ChatSelect[], setChatsList: (chats: ChatSelect[]) => void, selectedChatId: string, setSelectedChatId: (id: string) => void}){
     const noteCtx = useNotebook();
     const [loading, setLoading] = useState(true);
     const [creating, setCreating] = useState(false);
     
+    async function syncChatsList(){
+        setLoading(true);
+        try {
+            setChatsList(await getChatsList(noteCtx.noteId))
+        } catch {
+            toast.error("Failed to load chats. Please refresh and try again.")
+        } finally {
+            setLoading(false);
+        }
+    }
+
     useEffect(()=>{
-        (async()=>{
-            setLoading(true);
-            try {
-                setChatsList(await getChatsList(noteCtx.noteId))
-            } catch {
-                toast.error("Failed to load chats. Please refresh and try again.")
-            } finally {
-                setLoading(false);
-            }
-        })();
+        syncChatsList()
     }, [])
 
     async function createHandler(){
         setCreating(true);
         try {
             const result = await createChat(noteCtx.noteId);
+            console.log("Created chat:", result);
+            setChatsList([...result, ...chatsList]);
             setSelectedChatId(result[0].id);
         } catch (error) {
             toast.error("Failed to create chat. Please try again.")
@@ -55,7 +60,7 @@ export default function ChatsPanel({setSidebarTool, chatsList, setChatsList, sel
             <Tooltip>
                 <TooltipTrigger asChild>
                     <span className="inline-block w-fit absolute right-4">
-                        <Button disabled={noteCtx.files.length < 1 || loading} size={'icon-sm'} className="text-muted-foreground" onClick={createHandler} variant={'ghost'}>
+                        <Button disabled={noteCtx.files.length < 1 || loading || creating} size={'icon-sm'} className="text-muted-foreground" onClick={createHandler} variant={'ghost'}>
                             <MessageSquarePlus/>
                         </Button>
                     </span>
@@ -78,7 +83,7 @@ export default function ChatsPanel({setSidebarTool, chatsList, setChatsList, sel
                                 {chat.name}
                             </p>
                             <p className="truncate text-sm w-full text-muted-foreground group-hover:text-foreground/90">
-                                1 minute ago
+                                {relativeTime(chat.dateModified, {capitalize: true})}
                             </p>
                         </div>
                         <DropdownMenu>

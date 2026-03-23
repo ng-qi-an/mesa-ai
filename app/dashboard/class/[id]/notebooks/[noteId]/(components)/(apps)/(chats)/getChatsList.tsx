@@ -13,5 +13,5 @@ export default async function getChatsList(notebookId: string){
     if (!session || !session.user) {
         throw new Error("Not authenticated");
     }
-    return await db.select().from(chats).where(and(eq(chats.notebookId, notebookId), eq(chats.userId, session.user.id)));
+    return (await db.select().from(chats).where(and(eq(chats.notebookId, notebookId), eq(chats.userId, session.user.id)))).sort((a, b) => b.dateModified.getTime() - a.dateModified.getTime());
 }
