@@ -9,7 +9,7 @@ export default function MainSidebarNavigation(){
         icon: Home
     }, {
         name: "Chat",
-        href: "/chat",
+        href: "/chats",
         icon: MessageSquare
     }, {
         name: "Guided Study",

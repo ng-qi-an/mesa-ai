@@ -6,16 +6,19 @@ import { ChevronLeft, MessageSquare, MessageSquarePlus, MoreVertical, Pencil, Tr
 import { useEffect, useState } from "react";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useNotebook } from "@/components/providers/notebook-provider";
-import getChatsList from "./getChatsList";
+import getChatsList from "@/lib/actions/chat/getChatsList";
 import { ChatSelect } from "@/lib/schemas/schema";
 import { toast } from "sonner";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty";
-import createChat from "./createChat";
+import createChat from "@/lib/actions/chat/createChat";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { relativeTime } from "@/lib/utils/relativeTime";
+import ChatActionsDropdown from "./ChatActionsDropdown";
+import { useParams } from "next/navigation";
 export default function ChatsPanel({setSidebarTool, chatsList, setChatsList, selectedChatId, setSelectedChatId}: {setSidebarTool: (tool: string) => void, chatsList: ChatSelect[], setChatsList: (chats: ChatSelect[]) => void, selectedChatId: string, setSelectedChatId: (id: string) => void}){
     const noteCtx = useNotebook();
+    const { id } = useParams();
     const [loading, setLoading] = useState(true);
     const [creating, setCreating] = useState(false);
     
@@ -37,7 +40,7 @@ export default function ChatsPanel({setSidebarTool, chatsList, setChatsList, sel
     async function createHandler(){
         setCreating(true);
         try {
-            const result = await createChat(noteCtx.noteId);
+            const result = await createChat(id as string, noteCtx.noteId);
             console.log("Created chat:", result);
             setChatsList([...result, ...chatsList]);
             setSelectedChatId(result[0].id);
@@ -48,7 +51,7 @@ export default function ChatsPanel({setSidebarTool, chatsList, setChatsList, sel
         }
     }
 
-    return <Card size="sm" className={`rounded-md ring-neutral-900 h-full`}>
+    return <Card size="sm" className={`rounded-md  ring-neutral-200 dark:ring-neutral-900 h-full`}>
         <CardHeader className="items-center group flex cursor-pointer relative">
             <div className="flex w-full items-center gap-1" onClick={()=> setSidebarTool("")}>
                 <ChevronLeft className="text-muted-foreground group-hover:text-foreground size-4"/>
@@ -86,17 +89,7 @@ export default function ChatsPanel({setSidebarTool, chatsList, setChatsList, sel
                                 {relativeTime(chat.dateModified, {capitalize: true})}
                             </p>
                         </div>
-                        <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                                <Button size={'icon-sm'} onClick={(e)=> e.stopPropagation()} className="text-muted-foreground ml-auto absolute right-3" variant={'ghost'}>
-                                    <MoreVertical/>
-                                </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                                <DropdownMenuItem><Pencil/> Rename</DropdownMenuItem>
-                                <DropdownMenuItem variant="destructive"><Trash/> Delete</DropdownMenuItem>
-                            </DropdownMenuContent>
-                        </DropdownMenu>
+                        <ChatActionsDropdown triggerClassName="inline-block" chat={chat} onRename={()=> syncChatsList()} onDelete={()=> syncChatsList()}/>
                     </div>) : 
                     <Empty>
                         <EmptyHeader>

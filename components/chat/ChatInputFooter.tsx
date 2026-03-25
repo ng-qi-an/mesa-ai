@@ -6,10 +6,10 @@ import { DropdownMenuItem, DropdownMenuSeparator } from "@/components/ui/dropdow
 import { Spinner } from "@/components/ui/spinner";
 import { FileUIPart } from "ai";
 import { Square } from "lucide-react";
-import { useEffect, useState } from "react";
-import { ChatAttachmentType } from "./sendChatMessage";
+import { Dispatch, SetStateAction, useEffect, useState } from "react";
+import { ChatAttachmentType } from "../../lib/actions/chat/sendChatMessage";
 
-export default function ChatInputFooter({thinkingLevel, setThinkingLevel, text, files, setFiles, onStop, disableStop, disableSend}:{thinkingLevel: string, setThinkingLevel: (level: string) => void, text: string, files: ChatAttachmentType[], setFiles: (updater: (files: ChatAttachmentType[]) => ChatAttachmentType[]) => void, onStop: () => void, disableStop: boolean, disableSend: boolean}){
+export default function ChatInputFooter({thinkingLevel, setThinkingLevel, text, files, setFiles, onStop, disableStop, disableSend}:{thinkingLevel: string, setThinkingLevel: (level: string) => void, text: string, files: ChatAttachmentType[], setFiles: Dispatch<SetStateAction<ChatAttachmentType[]>>, onStop: () => void, disableStop: boolean, disableSend: boolean}){
     const [showMesaDrive, setShowMesaDrive] = useState(false);
     const { files:promptFiles } = usePromptInputAttachments();
     useEffect(()=>{

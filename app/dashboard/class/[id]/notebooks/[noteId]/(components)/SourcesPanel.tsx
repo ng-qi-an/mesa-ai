@@ -27,7 +27,7 @@ export default function SourcesPanel(){
     const noteCtx = useNotebook();
     const isCollapsed = noteCtx?.collapsedSources;
 
-    return <Card size="sm" className={`${isCollapsed ? "h-max" : noteCtx?.collapsedApps ? "h-full max-h-full" : "shrink-0  h-full max-h-[230px]"} rounded-md ring-neutral-900 overflow-hidden ${isCollapsed && "gap-0!"}`}>
+    return <Card size="sm" className={`${isCollapsed ? "h-max" : noteCtx?.collapsedApps ? "h-full max-h-full" : "shrink-0  h-full max-h-[230px]"} rounded-md ring-neutral-200 dark:ring-neutral-900 overflow-hidden ${isCollapsed && "gap-0!"}`}>
             <FileSelectorDialog open={showFileSelector} setOpen={setShowFileSelector} onConfirm={async(files) => {
                 const finalFiles = files.filter((file)=> noteCtx.files.every((f) => f.id !== file.id))
                 if (finalFiles.length === 0){

@@ -17,11 +17,16 @@ import SaveToNotebook from "./(actions)/saveToNotebook";
 import { toast } from "sonner";
 
 export default function Page(){
-    const {state, toggleSidebar} = useSidebar();
+    const {isMobile, setOpen} = useSidebar();
     const notebook = useNotebook();
     useEffect(()=>{
-        if (state == "expanded"){
-            toggleSidebar();
+        if (!isMobile){
+            setOpen(false);
+        }
+        return()=>{
+            if (!isMobile){
+                setOpen(true);
+            }
         }
     }, [])
     return <div className="flex flex-col h-screen">

@@ -5,7 +5,7 @@ import { authClient } from "@/lib/auth-client";
 import { AnimatePresence, motion } from "motion/react";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
-
+import "streamdown/styles.css";
 export default function DashboardLayout({children}: {children: React.ReactNode}) {
     const {data, isPending} = authClient.useSession();
     const router = useRouter();

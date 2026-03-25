@@ -14,7 +14,7 @@ import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import deleteUserFile from "@/lib/r2actions/files/deleteUserFile";
 import deleteUserFolder from "@/lib/r2actions/folders/deleteUserFolder";
-import revalidateData from "@/lib/r2actions/revalidateData";
+import revalidateData from "@/lib/actions/revalidateData";
 import { FileX, FolderX, Notebook } from "lucide-react"
 import { usePathname } from "next/navigation";
 import { useState } from "react";

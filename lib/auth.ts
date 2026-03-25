@@ -5,9 +5,11 @@ import { nextCookies } from "better-auth/next-js";
 import { sendVerificationEmail } from "@/components/emails/emailActions";
 
 export const auth = betterAuth({
+    session: {
+        disableSessionRefresh: true
+    },
     emailAndPassword: { 
-        enabled: true, 
-        
+        enabled: true,
     }, 
     emailVerification: {
         sendVerificationEmail: async ({ user, url, token }, request) => {

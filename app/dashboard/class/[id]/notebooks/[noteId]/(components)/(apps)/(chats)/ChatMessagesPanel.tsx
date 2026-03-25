@@ -1,61 +1,41 @@
 'use client';
-import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { ChevronDown, ChevronLeft, Cloud, ListTodo, MessageSquare, MessageSquarePlus, Mic, MoreVertical, Pencil, Plus, Square, Trash, Upload, WalletCards } from "lucide-react";
-import { cacheSignal, useContext, useEffect, useState } from "react";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { ChevronLeft } from "lucide-react";
+import { useEffect, useState } from "react";
 import Logo from "@/components/logo";
 import {
   Conversation,
   ConversationContent,
-  ConversationDownload,
   ConversationEmptyState,
   ConversationScrollButton,
 } from "@/components/ai-elements/conversation";
 import {
   PromptInput,
-  PromptInputActionAddAttachments,
-  PromptInputActionMenu,
-  PromptInputActionMenuContent,
-  PromptInputActionMenuTrigger,
   PromptInputBody,
-  PromptInputButton,
-  PromptInputHeader,
   type PromptInputMessage,
-  PromptInputSelect,
-  PromptInputSelectContent,
-  PromptInputSelectItem,
-  PromptInputSelectTrigger,
-  PromptInputSelectValue,
-  PromptInputSubmit,
   PromptInputTextarea,
-  PromptInputFooter,
-  PromptInputTools,
-  usePromptInputAttachments,
 } from "@/components/ai-elements/prompt-input";
 
 import { Message, MessageContent, MessageResponse } from "@/components/ai-elements/message";
 import { MessageSquareIcon } from "lucide-react";
 import { useChat } from "@ai-sdk/react";
-import { DefaultChatTransport, FileUIPart } from "ai";
-import { text } from "stream/consumers";
+import { DefaultChatTransport } from "ai";
 import createOrExtendCache from "@/lib/cache-actions/createOrExtendCache";
 import createCache from "@/lib/cache-actions/createCache";
 import { useNotebook } from "@/components/providers/notebook-provider";
 import checkCacheMatch from "../../../(actions)/checkCacheMatch";
 import { Shimmer } from "@/components/ai-elements/shimmer";
-import { Spinner } from "@/components/ui/spinner";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import ChatInputFooter from "./ChatInputFooter";
-import ChatInputAttachments from "./ChatAttachments";
-import SendChatMessage, { ChatAttachmentType } from "./sendChatMessage";
+import ChatInputFooter from "@/components/chat/ChatInputFooter";
+import SendChatMessage, { ChatAttachmentType } from "@/lib/actions/chat/sendChatMessage";
 import { toast } from "sonner";
 import { ChatSelect } from "@/lib/schemas/schema";
 import SaveToNotebook from "../../../(actions)/saveToNotebook";
-import saveToChat from "./saveToChat";
-import ChatInputHeader from "./ChatInputHeader";
-import ChatMessageContent from "./ChatMessageContent";
+import saveToChat from "@/lib/actions/chat/saveToChat";
+import ChatInputHeader from "@/components/chat/ChatInputHeader";
+import ChatMessageContent from "@/components/chat/ChatMessageContent";
+import ChatActionsDropdown from "./ChatActionsDropdown";
+import { allowedMimeTypes } from "@/lib/utils";
 
 export default function ChatMessagesPanel({setSelectedChatId, initialChat}: {setSelectedChatId: (chat: string) => void, initialChat: ChatSelect}){
     const noteCtx = useNotebook();
@@ -81,7 +61,7 @@ export default function ChatMessagesPanel({setSelectedChatId, initialChat}: {set
     }, [])
 
     return <>
-        <Card size="sm" className={`rounded-md ring-neutral-900 h-full pb-2!`}>
+        <Card size="sm" className={`rounded-md ring-neutral-200 dark:ring-neutral-900 h-full pb-2!`}>
             <CardHeader className="items-center group flex cursor-pointer relative">
                 <div className="flex w-full items-center gap-1" onClick={()=> setSelectedChatId("")}>
                     <ChevronLeft onClick={()=> setSelectedChatId("")} className="text-muted-foreground group-hover:text-foreground size-4"/>
@@ -90,26 +70,11 @@ export default function ChatMessagesPanel({setSelectedChatId, initialChat}: {set
                         {chat.name}
                     </CardTitle>
                 </div>
-                <Tooltip>
-                    <DropdownMenu>
-                        <TooltipTrigger asChild>
-                            <DropdownMenuTrigger asChild>
-                                <span className="inline-block w-fit absolute right-4">
-                                    <Button size={'icon-sm'} className="text-muted-foreground" onClick={(e) => {   }} variant={'ghost'}>
-                                        <MoreVertical/>
-                                    </Button>
-                                </span>
-                            </DropdownMenuTrigger>
-                        </TooltipTrigger>
-                        <DropdownMenuContent align="end">
-                            <DropdownMenuItem><Pencil/> Rename</DropdownMenuItem>
-                            <DropdownMenuItem variant="destructive"><Trash/> Delete</DropdownMenuItem>
-                        </DropdownMenuContent>
-                    </DropdownMenu>
-                    <TooltipContent side="bottom" align="end">
-                        <p>More options</p>
-                    </TooltipContent>
-                </Tooltip>
+                <ChatActionsDropdown triggerClassName="inline-block w-fit absolute -top-1 right-4" chat={chat} onRename={(newName) => {
+                    setChat({...chat, name: newName});
+                }} onDelete={()=>{
+                    setSelectedChatId("");
+                }}/>
             </CardHeader>
             <div className="flex-1 min-h-0 flex flex-col">
                 <Separator className="mb-2" />
@@ -160,8 +125,10 @@ export default function ChatMessagesPanel({setSelectedChatId, initialChat}: {set
                     <ConversationScrollButton />
                 </Conversation>
                 <PromptInput
+                    globalDrop
+                    multiple
+                    accept={allowedMimeTypes.join(",")}
                     onSubmit={async(message: PromptInputMessage) => {
-                        console.log("Chat id", chat.id);
                         setMessages((x)=> x.filter((m, i)=> !(m.role == "user" && i == x.length - 1)))
                         if (!message.text.trim()) {
                             return;
@@ -174,13 +141,14 @@ export default function ChatMessagesPanel({setSelectedChatId, initialChat}: {set
                         setText("");
                         setCacheLoading(true);
                         let newCache;
+                        console.log(noteCtx.files)
                         try {
                             if (!noteCtx.cache || !checkCacheMatch(noteCtx.cache.fileIds, noteCtx.files.map(f=>f.id))){
                                 console.log("[CHAT] Cache files differ from provided files or no cache. Creating cache...");
                                 newCache = await createCache(noteCtx.files.map(f=>f.id), 720)
                             } else {
                                 console.log("[CHAT] Cache files match provided files. Extending cache...");
-                                newCache = await createOrExtendCache(noteCtx.cache.name, noteCtx.files.map(f=>f.name), 720)
+                                newCache = await createOrExtendCache(noteCtx.cache.name, noteCtx.files.map(f=>f.id), 720)
                             }
                         } catch (err) {
                             console.error("Error creating/extending cache:", err);
@@ -217,6 +185,7 @@ export default function ChatMessagesPanel({setSelectedChatId, initialChat}: {set
                         onStop={()=>{
                             stop();
                             setText(previousText);
+                            setFiles(previousFiles);
                         }}
                         disableSend={status === "submitted" || cacheLoading}
                         disableStop={cacheLoading}

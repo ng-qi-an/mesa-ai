@@ -18,6 +18,7 @@ export default async function createCache(fileIds: string[], ttl: number = 720){
         apiKey: process.env.GOOGLE_GENERATIVE_AI_API_KEY,
     });
 
+    console.log("[Cache] Received files: ", fileIds);
     const filesMap = fileIds.map(async(id) => {
         const file = await getUserFileContent(id);
         if (!file.data || !file.ContentType) {

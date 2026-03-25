@@ -70,6 +70,7 @@ export type NotebookFileSelect = typeof notebookFiles.$inferSelect
 export const chats = pgTable("chats", {
     id: text("id").primaryKey(),
     userId: text("user_id").notNull().references(() => user.id, { onDelete: "cascade" }),
+    classId: text("class_id").notNull().references(() => classes.id, { onDelete: "cascade" }),
     notebookId: text("notebook_id").references(() => notebook.id, { onDelete: "cascade" }),
     name: text("name").notNull().default("New chat"),
     messages: jsonb("messages").notNull().$type<UIMessage[]>(),

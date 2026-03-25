@@ -1,23 +1,17 @@
 'use client';
-import { useFileBrowser } from "@/components/providers/file-browser-provider";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Field, FieldGroup } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Spinner } from "@/components/ui/spinner";
-import renameUserFile from "@/lib/r2actions/files/renameUserFile";
 import { Pen } from "lucide-react";
-import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
-import renameChat from "./renameChat";
+import renameChat from "../../../lib/actions/chat/renameChat";
 
 export default function RenameChatDialog({ open, setOpen, chatid, initialName, onSubmit }: { open: boolean, setOpen: (open: boolean) => void, chatid: string, initialName: string, onSubmit: (newName: string) => void }) {
     const [renaming, setRenaming] = useState(false);
-    const pathname = usePathname()
-    const { revalidateData } = useFileBrowser();
-
     return <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent>
             <form onSubmit={async(e)=>{
@@ -29,12 +23,12 @@ export default function RenameChatDialog({ open, setOpen, chatid, initialName, o
                 setRenaming(true);
                 try {
                     await renameChat(chatid, name);
-                    setOpen(false);
                     onSubmit(name);
                 } catch (error) {
                     console.log("Error renaming chat:", error);
                     toast.error("Failed to rename chat. Please try again.")
                 } finally {
+                    setOpen(false);
                     setRenaming(false);
                 }
             }} className="space-y-6">

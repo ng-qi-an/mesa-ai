@@ -5,7 +5,7 @@ import { db } from "@/lib/db";
 import getAddUserFileURL from "@/lib/r2actions/files/getAddUserFileUrl";
 import { chatFiles } from "@/lib/schemas/schema";
 import { FileUIPart } from "ai";
-import addFileToChatFilesDb from "./addFileToChatFilesDb";
+import addFileToChatFilesDb from "../../../components/chat/addFileToChatFilesDb";
 
 const fileHost = `http://mesa-ai.vercel.app`
 export type ChatAttachmentType = FileUIPart & {
@@ -13,12 +13,12 @@ export type ChatAttachmentType = FileUIPart & {
     drive: boolean;
 }
 
-export default async function SendChatMessage({message, files, sendMessage, thinkingLevel, chatId, bodyOptions}:{message: PromptInputMessage, files: ChatAttachmentType[], sendMessage: any, thinkingLevel: string, chatId: string, bodyOptions: Record<string, any>}){
+export default async function SendChatMessage({message, files, sendMessage, thinkingLevel, chatId, bodyOptions}:{message: PromptInputMessage, files: ChatAttachmentType[], sendMessage: any, thinkingLevel: string, chatId: string, bodyOptions?: Record<string, any>}){
     try {
         let fileUploads;
         let finalFiles: (FileUIPart & { id: string })[] | undefined;
         if (files.length > 0) {
-            const fileUrls = await getAddUserFileURL(message.files.map((file) => ({ name: file.filename || "Untitled file", type: file.mediaType || "application/octet-stream" })));
+            const fileUrls = await getAddUserFileURL(message.files.filter((file)=> file.url).map((file) => ({ name: file.filename || "Untitled file", type: file.mediaType || "application/octet-stream" })));
             fileUploads = await Promise.all(
                 fileUrls.map(async (signedUrl, index) => {
                     const file = message.files[index];

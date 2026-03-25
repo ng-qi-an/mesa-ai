@@ -4,6 +4,8 @@ import { chatFiles } from "@/lib/schemas/schema";
 import { GetObjectCommand } from "@aws-sdk/client-s3";
 import { eq } from "drizzle-orm";
 
+
+
 export async function GET(req: Request, { params }: { params: Promise<{ fileId: string }> }) {
     const { fileId } = await params;
     const file = (await db.select().from(chatFiles).where(eq(chatFiles.id, fileId)))[0];

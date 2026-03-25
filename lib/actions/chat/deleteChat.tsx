@@ -1,9 +1,9 @@
 'use server';
 import { headers } from "next/headers";
-import { and, eq } from "drizzle-orm";
+import { and, eq, inArray, not } from "drizzle-orm";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { chats } from "@/lib/schemas/schema";
+import { chats, files } from "@/lib/schemas/schema";
 import { DeleteObjectsCommand } from "@aws-sdk/client-s3";
 import { r2 } from "@/lib/r2";
 
@@ -25,9 +25,11 @@ export default async function deleteChat(chatId: string){
     if (!chat){
         throw new Error("Chat not found")
     }
-    const chatFilesKeys = chat.chatFiles.map((file)=> ({Key : `user-files/${session!.user.id!}/${file.id}`}))
+    // Make sure to only delete files that are not associated with mesa drive 
+    const filesFromMesa = await db.select({id: files.id}).from(files).where(inArray(files.id, chat.chatFiles.map(f=>f.id)))
+    const chatFilesKeys = chat.chatFiles.filter((f)=> !filesFromMesa.map((mf)=> mf.id).includes(f.id)).map((file)=> ({Key : `user-files/${session!.user.id!}/${file.id}`}))
     if (chatFilesKeys.length > 0){
-        console.log("Deleting chat files with keys:", chatFilesKeys);
+        console.log("Deleting chat files not from mesa:", chatFilesKeys);
         const command = new DeleteObjectsCommand({
             Bucket: process.env.R2_BUCKET_NAME!,
             Delete: {

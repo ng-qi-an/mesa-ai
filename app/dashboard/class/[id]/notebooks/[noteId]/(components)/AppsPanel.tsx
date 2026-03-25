@@ -29,7 +29,7 @@ export default function AppsPanel({setSidebarTool}: {setSidebarTool: (tool: stri
             icon: MessageSquare
         }
     ]
-    return <Card size="sm" className={`rounded-md ring-neutral-900 ${isCollapsed ? "h-max shrink-0 gap-0!" : "h-full"}`}>
+    return <Card size="sm" className={`rounded-md ring-neutral-200 dark:ring-neutral-900 ${isCollapsed ? "h-max shrink-0 gap-0!" : "h-full"}`}>
             <CardHeader className="items-center group flex cursor-pointer relative">
                 <motion.div
                     animate={{ rotate: !isCollapsed ? 0 : -90 }}

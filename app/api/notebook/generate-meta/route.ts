@@ -85,6 +85,7 @@ export async function POST(req: Request) {
             google: {
                 thinkingConfig: {
                     thinkingLevel: "minimal",
+                    // thinkingBudget: 0
                 },
                 cachedContent: context.cacheName,
             }

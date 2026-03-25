@@ -6,7 +6,7 @@ import { chats } from "@/lib/schemas/schema";
 import { generateId } from "better-auth";
 import { headers } from "next/headers";
 
-export default async function createChat(noteId: string){
+export default async function createChat(classId: string, noteId?: string){
     const session = await auth.api.getSession({
         headers: await headers()
     })
@@ -16,7 +16,8 @@ export default async function createChat(noteId: string){
     return await db.insert(chats).values({
         id: generateId(12),
         name: "New Chat",
-        notebookId: noteId,
+        classId,
+        notebookId: noteId || null,
         userId: session.user.id,
         messages: []
     }).returning()

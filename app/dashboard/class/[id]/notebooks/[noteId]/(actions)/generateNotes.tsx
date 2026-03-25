@@ -174,11 +174,11 @@ export const defaultNotesInstructions = (length: string, customInstructions?: st
         - *Italics* for definitions and emphasis
         - Use > blockquotes for important formulas, quotes, or critical points
         - Use \`inline code\` for technical terms, commands, or notation
-        ### Lists
         - Bullet points for unordered information (features, characteristics)
         - Numbered lists for sequences, steps, or ranked items
         - Keep list items concise — expand in paragraphs if needed
-
+        ## VERY IMPORTANT: Math formatting
+        - When generating math equations using Latex format, always use 2 dollar signs ($$) rather than 1 dollar sign ($). For example, instead of $$x = \frac{-b \pm \sqrt{b^2 - 4ac}}{2a}$$ use $x = \frac{-b \pm \sqrt{b^2 - 4ac}}{2a}$
     ## Edge Case Handling
         ### If the document is very short:
         - Focus on depth over breadth

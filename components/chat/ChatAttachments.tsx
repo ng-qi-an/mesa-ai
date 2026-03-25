@@ -1,5 +1,5 @@
 import { Attachments, Attachment, AttachmentPreview, AttachmentRemove, AttachmentHoverCard, AttachmentHoverCardTrigger, AttachmentHoverCardContent, getAttachmentLabel } from "@/components/ai-elements/attachments";
-import { ChatAttachmentType } from "./sendChatMessage";
+import { ChatAttachmentType } from "../../lib/actions/chat/sendChatMessage";
 import { FileUIPart } from "ai";
 
 export default function ChatAttachments({files, onRemove}:{files: ChatAttachmentType[] | (FileUIPart & {id: string})[], onRemove?: (id: string) => void}){

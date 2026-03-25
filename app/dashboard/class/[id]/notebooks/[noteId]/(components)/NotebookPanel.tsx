@@ -5,10 +5,11 @@ import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/
 import { Separator } from "@/components/ui/separator";
 import { Spinner } from "@/components/ui/spinner";
 import { TypographyLead } from "@/components/ui/typography/lead";
-import { ArrowUp, BadgeCheck, CircleAlert, Notebook, RefreshCw, Settings2, Sidebar, Sparkles, StopCircle } from "lucide-react";
+import { ArrowUp, CircleAlert, Moon, Notebook, RefreshCw, Settings2, Sidebar, Sparkles, StopCircle, Sun } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
-import { useContext, useEffect, useRef, useState } from "react";
-import Markdown from "react-markdown";
+import { useEffect, useRef, useState } from "react";
+import { math } from '@streamdown/math';
+import 'katex/dist/katex.min.css';
 import remarkGfm from 'remark-gfm'
 import rehypeSlug from 'rehype-slug'
 import { slugify } from "./SectionsPanel";
@@ -20,13 +21,36 @@ import { useNotebook } from "@/components/providers/notebook-provider";
 import checkCacheMatch from "../(actions)/checkCacheMatch";
 import { useGenerateNotes } from "../(actions)/generateNotes";
 import NoteSettingsDialog from "./(modals)/NoteSettingsDialog";
+import { Streamdown } from "streamdown";
+import { useTheme } from "next-themes";
 
 export default function NotebookPanel(){
     const noteCtx = useNotebook()
     const { generateNotes } = useGenerateNotes();
+    const { resolvedTheme } = useTheme();
     const contentRef = useRef<HTMLDivElement>(null);
     const [showNoteSettings, setShowNoteSettings] =  useState(false);
     const [followup, setFollowup] = useState("");
+    const [forceLightNotebook, setForceLightNotebook] = useState(false);
+
+    useEffect(() => {
+        try {
+            const savedPreference = localStorage.getItem("notebook-force-light");
+            setForceLightNotebook(savedPreference === "1");
+        } catch {
+            // Ignore localStorage issues.
+        }
+    }, []);
+
+    useEffect(() => {
+        try {
+            localStorage.setItem("notebook-force-light", forceLightNotebook ? "1" : "0");
+        } catch {
+            // Ignore localStorage issues.
+        }
+    }, [forceLightNotebook]);
+
+    const useLightNotebookTheme = resolvedTheme === "dark" && forceLightNotebook;
 
     // Track which heading is visible using IntersectionObserver
     useEffect(() => {
@@ -59,13 +83,20 @@ export default function NotebookPanel(){
     }, [noteCtx?.notesHistory])
     return  noteCtx && <motion.div layout transition={{ type: "spring", bounce: 0.15, duration: 0.4 }} className="flex-1 min-w-0 h-full">
         <NoteSettingsDialog open={showNoteSettings} onOpenChange={setShowNoteSettings}/>
-        <Card size="sm" className="rounded-md ring-neutral-900 h-full ">
+        <Card
+            size="sm"
+            className={`rounded-md ring-neutral-200 dark:ring-neutral-900 h-full ${
+                useLightNotebookTheme
+                    ? "dark:[--background:oklch(1_0_0)] dark:[--foreground:oklch(0.145_0_0)] dark:[--card:oklch(1_0_0)] dark:[--card-foreground:oklch(0.145_0_0)] dark:[--popover:oklch(1_0_0)] dark:[--popover-foreground:oklch(0.145_0_0)] dark:[--secondary:oklch(0.97_0_0)] dark:[--secondary-foreground:oklch(0.205_0_0)] dark:[--muted:oklch(0.97_0_0)] dark:[--muted-foreground:oklch(0.556_0_0)] dark:[--accent:oklch(0.97_0_0)] dark:[--accent-foreground:oklch(0.205_0_0)] dark:[--border:oklch(0.922_0_0)] dark:[--input:oklch(0.922_0_0)] dark:[--ring:oklch(0.708_0_0)]"
+                    : ""
+            }`}
+        >
             <CardHeader className="items-center flex relative">
                 <CardTitle className="text-muted-foreground">
                     Notebook
                 </CardTitle>
                 {(noteCtx.isCacheLoading || noteCtx.isMetaLoading || noteCtx.isNotesLoading || noteCtx.isEmbeddingImages) ? 
-                <Shimmer duration={3} className="text-sm ml-auto mr-21">
+                <Shimmer duration={3} className="text-sm ml-auto mr-29">
                     {noteCtx?.isCacheLoading ? 
                         "Loading cache..."
                     : noteCtx?.isMetaLoading ?
@@ -89,9 +120,10 @@ export default function NotebookPanel(){
                         <p>"Sync sources" to update the notebook with latest sources.</p>
                     </TooltipContent>
                 </Tooltip>}
+                
                 <Tooltip open={(noteCtx.notesHistory.length === 0 || noteCtx?.isGenerating) ? undefined : false}>
                     <TooltipTrigger asChild>
-                        <span className="inline-block w-fit absolute right-13">
+                        <span className="inline-block w-fit absolute right-22">
                             <Button disabled={noteCtx.notesHistory.length === 0 || noteCtx?.isGenerating} onClick={()=> {
                                 setShowNoteSettings(true);
                             }} size={'icon-sm'} className="text-muted-foreground" variant={'ghost'}>
@@ -103,6 +135,18 @@ export default function NotebookPanel(){
                         <p>Note settings can't be changed {noteCtx?.isGenerating ? 'while generating' : 'before generating notes'}.</p>
                     </TooltipContent>
                 </Tooltip>
+                <Tooltip>
+                    <TooltipTrigger asChild>
+                        <div className="absolute right-13 flex items-center gap-2">
+                            <span className="text-xs text-muted-foreground select-none">
+                                <Button onClick={()=> setForceLightNotebook(!forceLightNotebook)} disabled={resolvedTheme !== "dark"} variant={"ghost"} size={"icon-sm"}>{forceLightNotebook && resolvedTheme === "dark" ? <Moon/> : <Sun/>}</Button>
+                            </span>
+                        </div>
+                    </TooltipTrigger>
+                    <TooltipContent side="bottom" align="end">
+                        <p>{resolvedTheme === "dark" ? "Force light colors in notebook." : "Available only while dark mode is active."}</p>
+                    </TooltipContent>
+                </Tooltip>
                 <Button onClick={()=> noteCtx?.setCollapsedRightSidebar(!noteCtx.collapsedRightSidebar)} size={'icon-sm'} className="absolute right-4 text-muted-foreground" variant={'ghost'}>
                     <Sidebar/>
                 </Button>
@@ -111,13 +155,13 @@ export default function NotebookPanel(){
                 <Separator className="mb-2 w-full"/>
                 {(noteCtx?.notesHistory.length! > 0 && noteCtx?.notesStatus != "submitted" && !noteCtx?.isCacheLoading) ? 
                 <AnimatePresence>
-                    <div ref={contentRef} className="h-full overflow-auto pb-4 pt-4 prose dark:prose-invert min-w-full px-8 pb-16">
+                    <div ref={contentRef} className={`h-full overflow-auto pb-4 pt-4 prose ${useLightNotebookTheme ? "" : "dark:prose-invert"} min-w-full px-8 pb-16`}>
                         <h1 id={slugify(noteCtx?.metaObject?.header || "")}>{noteCtx?.metaObject?.header}</h1>
                         <TypographyLead>{noteCtx?.metaObject?.subtitle}</TypographyLead>
-                        <Separator className=""/>
-                        <Markdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeSlug]}>
+                        <Separator className="mb-8"/>
+                        <Streamdown plugins={{math}} isAnimating={noteCtx.isContentGenerating} animated={{animation: "fadeIn"}} remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeSlug]}>
                             {noteCtx?.getActualNotes(noteCtx.notesHistory)}
-                        </Markdown>
+                        </Streamdown>
                     </div>
                 </AnimatePresence>
                 : <div className="relative h-full overflow-hidden">
