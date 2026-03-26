@@ -20,8 +20,7 @@ export default async function addUserFileClient(files: File[], urls: {url: strin
                     }
                 } catch (error) {
                     console.log("Error adding file to database after successful R2 upload:", error);
-                    const res2 = await deleteUserFile(url.id, parent);
-                    res2 > 0 && console.log("Deleted file from database after failed add, rolling back R2 upload:", files[index].name);
+                    await deleteUserFile(url.id, parent);
                     return { name: files[index].name, status: "failed" };
                 }
             } else {
