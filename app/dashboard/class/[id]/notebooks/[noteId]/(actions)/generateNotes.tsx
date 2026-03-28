@@ -137,33 +137,31 @@ export const defaultNotesInstructions = (length: string, customInstructions?: st
 `
 
         
-export async function generateNotes({noteId, instructions, fileIds, topicWeights, length, cache, setCollapseSections, setIsCacheLoading, setCache, sendNotesFollowup}: {
+export async function generateNotes({noteId, instructions, fileIds, topicWeights, length, fileStoreId, setCollapseSections, sendNotesFollowup}: {
     noteId: string;
     instructions: string;
     fileIds: string[];
+    fileStoreId: string;
     topicWeights: Record<string, number>;
     length: string;
-    cache: {name: string; fileIds: string[]} | null;
     setCollapseSections: (collapse: boolean) => void;
-    setIsCacheLoading: (loading: boolean) => void;
-    setCache: (name: string, fileIds: string[]) => void;
     sendNotesFollowup: any;
 }){
     console.log("Received generating notes request with instructions:", instructions);
     setCollapseSections(true);
-    setIsCacheLoading(true);
-    let newCache;
-    if (!cache || !checkCacheMatch(cache.fileIds, fileIds)){
-        console.log("[GEN NOTES] Cache files differ from provided files. Creating cache...");
-        newCache = await createCache(fileIds)
-    } else {
-        console.log("[GEN NOTES] Cache files match provided files. Extending cache...");
-        newCache = await createOrExtendCache(cache.name, fileIds)
-    }
-    setIsCacheLoading(false);
-    console.log("Using cache:", newCache.name, "Expire time:", newCache.expireTime, "Total tokens:", newCache.usageMetadata?.totalTokenCount);
-    setCache(newCache.name!, fileIds);
-    await SaveToNotebook(noteId, {cache: {name: newCache.name!, fileIds: fileIds}});
+    // setIsCacheLoading(true);
+    // let newCache;
+    // if (!cache || !checkCacheMatch(cache.fileIds, fileIds)){
+    //     console.log("[GEN NOTES] Cache files differ from provided files. Creating cache...");
+    //     newCache = await createCache(fileIds)
+    // } else {
+    //     console.log("[GEN NOTES] Cache files match provided files. Extending cache...");
+    //     newCache = await createOrExtendCache(cache.name, fileIds)
+    // }
+    // setIsCacheLoading(false);
+    // console.log("Using cache:", newCache.name, "Expire time:", newCache.expireTime, "Total tokens:", newCache.usageMetadata?.totalTokenCount);
+    // setCache(newCache.name!, fileIds);
+    // await SaveToNotebook(noteId, {cache: {name: newCache.name!, fileIds: fileIds}});
     console.log("Instructions for follow-up:", instructions);
     if (topicWeights && Object.keys(topicWeights).length !== 0){
         sendNotesFollowup({
@@ -171,7 +169,7 @@ export async function generateNotes({noteId, instructions, fileIds, topicWeights
         }, {
             body: {
                 topicWeights: topicWeights,
-                cacheName: newCache.name!
+                fileStoreId: fileStoreId,
             }
         })
     } else {
@@ -181,22 +179,22 @@ export async function generateNotes({noteId, instructions, fileIds, topicWeights
 
 
 export function useGenerateNotes(){
-    const { setIsCacheLoading, setCache, setCollapseSections, files, instructions, topicWeights, cache, sendNotesFollowup, length, noteId } = useNotebook();
+    const { setCollapseSections, files, instructions, topicWeights, sendNotesFollowup, length, noteId, fileStoreId } = useNotebook();
 
     return {
         generateNotes: async(customProps?: Record<string, any>) => {
             const resolvedLength = customProps?.length ?? length;
             const resolvedInstructions = customProps?.instructions ?? instructions;
             const resolvedTopicWeights = customProps?.topicWeights ?? topicWeights;
-
+            if (!fileStoreId){
+                throw new Error("File store ID is required to generate notes");
+            }
             return await generateNotes({
                 noteId,
+                fileStoreId: fileStoreId,
                 fileIds: files.map(f=>f.id),
                 topicWeights: resolvedTopicWeights,
-                cache,
                 setCollapseSections,
-                setIsCacheLoading,
-                setCache,
                 sendNotesFollowup: sendNotesFollowup,
                 ...customProps,
                 length: resolvedLength,

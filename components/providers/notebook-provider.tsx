@@ -8,7 +8,7 @@ import { useContext, useEffect, useRef, useState } from "react";
 import { NoteMetaType } from "@/app/api/notebook/schema";
 import { createContext } from "react";
 import { DeepPartial } from "better-auth";
-import { FileSelect, NotebookFileSelect, NotebookSelect } from "@/lib/schemas/schema";
+import { FileSelect, NotebookSelect } from "@/lib/schemas/schema";
 import { useParams } from "next/navigation";
 import SaveToNotebook from "@/app/dashboard/class/[id]/notebooks/[noteId]/(actions)/saveToNotebook";
 
@@ -26,11 +26,14 @@ export type NotebookContextType = {
     setShowGenerateNotesDialog: (show: boolean) => void;
     // Content States
     noteId: string;
+    fileStoreId: string;
     name: string;
     setName: (name: string) => void;
     files: FileSelect[];
-    setCache: (name: string, fileIds: string[]) => void;
-    cache: {name: string, fileIds: string[]} | null;
+    fileStoreFiles: string[];
+    setFileStoreFiles: (fileIds: string[]) => void;
+    // setCache: (name: string, fileIds: string[]) => void;
+    // cache: {name: string, fileIds: string[]} | null;
     setFiles: (files: FileSelect[] | ((files: FileSelect[]) => FileSelect[])) => void;
     activeSection: string | null;
     setActiveSection: (section: string | null) => void;
@@ -55,8 +58,10 @@ export type NotebookContextType = {
     isNotesLoading: boolean;
     isMetaLoading: boolean;
     isEmbeddingImages: boolean;
-    isCacheLoading: boolean;
-    setIsCacheLoading: (loading: boolean) => void;
+    isStoringFiles: boolean;
+    setIsStoringFiles: (storing: boolean) => void;
+    // isCacheLoading: boolean;
+    // setIsCacheLoading: (loading: boolean) => void;
     notesStatus: ChatStatus;
     isContentGenerating: boolean;    
     isGenerating: boolean;
@@ -74,7 +79,7 @@ export function useNotebook() {
     return context;
 }
 
-export default function NotebookProvider({children, data}: {children: React.ReactNode, data: NotebookSelect & {files: FileSelect[]}}) {
+export default function NotebookProvider({children, data}: {children: React.ReactNode, data: NotebookSelect & {files: FileSelect[], fileStoreFiles: string[]}}) {
     // UI States
     const {noteId}:{noteId: string} = useParams();
     const [collapseSections, setCollapseSections] = useState(data.content ? false :true);
@@ -82,21 +87,24 @@ export default function NotebookProvider({children, data}: {children: React.Reac
     const [collapsedApps, setCollapsedApps] = useState(false);
     const [collapsedRightSidebar, setCollapsedRightSidebar] = useState(false);
     const [activeSection, setActiveSection] = useState<string | null>(null);
-    const [isCacheLoading, setIsCacheLoading] = useState(false);
+    // const [isCacheLoading, setIsCacheLoading] = useState(false);
+    const [isStoringFiles, setIsStoringFiles] = useState(false);
     const [isEmbeddingImages, setIsEmbeddingImages] = useState(false);
     const [showGenerateNotesDialog, setShowGenerateNotesDialog] = useState(false);
     // Content States
-    const [cache, _setCache] = useState<{
-        name: string;
-        fileIds: string[];
-    } | null>(data.cache);
-    const cacheRef = useRef<{name: string, fileIds: string[]} | null>(null);
-    const setCache = (name: string, fileIds: string[]) => {
-        cacheRef.current = {name, fileIds};
-        _setCache({name, fileIds});
-    };
+    // const [cache, _setCache] = useState<{
+    //     name: string;
+    //     fileIds: string[];
+    // } | null>(data.cache);
+    // const cacheRef = useRef<{name: string, fileIds: string[]} | null>(null);
+    // const setCache = (name: string, fileIds: string[]) => {
+    //     cacheRef.current = {name, fileIds};
+    //     _setCache({name, fileIds});
+    // };
     const [name, setName] = useState(data.name);
     const [files, setFiles] = useState<FileSelect[]>(data.files || []);
+    const [retryCount, setRetryCount] = useState(0);
+    const [fileStoreFiles, setFileStoreFiles] = useState<string[]>(data.fileStoreFiles || []);
     const instructionsRef = useRef<string>(data.instructions || "");
     const [instructionsState, setInstructionsState] = useState<string>(data.instructions || "");
     const setInstructions = (newInstructions: string) => {
@@ -131,14 +139,15 @@ export default function NotebookProvider({children, data}: {children: React.Reac
                 setTopicWeights(weights);
                 const resolvedInstructions = instructionsRef.current;
                 const resolvedLength = lengthRef.current;
-                console.log("Generating notes with instructions:", resolvedInstructions, "files:", files.map(f=>f.name), "and weights:", weights, "and cache:", cacheRef.current);
-                const payload:Record<string, any> = {instructions: resolvedInstructions, length: resolvedLength, topicWeights: weights, cache: cacheRef.current, title: res.object.header, subtitle: res.object.subtitle}
+                // console.log("Generating notes with instructions:", resolvedInstructions, "files:", files.map(f=>f.name), "and weights:", weights, "and cache:", cacheRef.current);
+                // /cache: cacheRef.current, 
+                const payload:Record<string, any> = {instructions: resolvedInstructions, length: resolvedLength, topicWeights: weights, title: res.object.header, subtitle: res.object.subtitle}
                 if (name == "New Notebook"){
                     setName(res.object.header);
                     payload.name = res.object.header;
                 }
                 await SaveToNotebook(noteId, payload);
-                generateNotes({noteId, instructions: `${defaultNotesInstructions(resolvedLength, resolvedInstructions, Object.keys((weights)))}`, length: resolvedLength, fileIds: files.map(f=>f.id), topicWeights: weights, cache: cacheRef.current, setCollapseSections, setIsCacheLoading, setCache, sendNotesFollowup});
+                generateNotes({noteId, instructions: `${defaultNotesInstructions(resolvedLength, resolvedInstructions, Object.keys((weights)))}`, length: resolvedLength, fileIds: files.map(f=>f.id), topicWeights: weights, setCollapseSections, sendNotesFollowup, fileStoreId: data.fileStoreId!});
             }
         },
         onError: (err)=>{
@@ -150,7 +159,7 @@ export default function NotebookProvider({children, data}: {children: React.Reac
             setMetaObject(internalMetaObject);
         }
     }, [internalMetaObject])
-    const { messages:notesHistory, setMessages: setNotesHistory, sendMessage:sendNotesFollowup, status:notesStatus, stop: notesStop } = useChat({
+    const { messages:notesHistory, setMessages: setNotesHistory, sendMessage:sendNotesFollowup, status:notesStatus, stop: notesStop, regenerate } = useChat({
         messages: data.content ? [
             {
                 id: generateId,
@@ -181,6 +190,15 @@ export default function NotebookProvider({children, data}: {children: React.Reac
                 console.error("Error generating notes: ", res);
                 return;
             }
+            if (res.finishReason == "other"){
+                if (retryCount >= 2){
+                    return
+                }
+                console.warn("Generation stopped unexpectedly, retrying... Reattempt ", retryCount + 1);
+                regenerate();
+                setRetryCount(retryCount + 1);
+            }
+
             await SaveToNotebook(noteId, {content: res.message.parts.map((part) => part.type === "text" ? part.text : "").join("")});
             setIsEmbeddingImages(true);
             const parts = await Promise.all(
@@ -247,10 +265,13 @@ export default function NotebookProvider({children, data}: {children: React.Reac
             setShowGenerateNotesDialog,
         // Content States
             noteId,
+            fileStoreId: data.fileStoreId!,
             name,
             setName,
             files, 
             setFiles, 
+            fileStoreFiles,
+            setFileStoreFiles,
             activeSection, 
             setActiveSection, 
             topicWeights, 
@@ -259,8 +280,8 @@ export default function NotebookProvider({children, data}: {children: React.Reac
             setLength,
             instructions,
             setInstructions,
-            setCache,
-            cache: cache ?? null,
+            // setCache,
+            // cache: cache ?? null,
         // AI States
             metaObject,
             metaSubmit, 
@@ -274,11 +295,13 @@ export default function NotebookProvider({children, data}: {children: React.Reac
             isMetaLoading, 
             notesStatus,
             isEmbeddingImages,
-            isCacheLoading,
-            setIsCacheLoading,
+            // isCacheLoading,
+            // setIsCacheLoading,
+            isStoringFiles,
+            setIsStoringFiles,
             isNotesLoading: notesStatus == "streaming" || notesStatus == "submitted",
-            isContentGenerating: isMetaLoading || notesStatus == "streaming",
-            isGenerating: isCacheLoading || isMetaLoading || notesStatus == "streaming" || notesStatus == "submitted",
+            isContentGenerating: isMetaLoading || notesStatus == "streaming" || notesStatus == "submitted",
+            isGenerating: isStoringFiles || isMetaLoading || notesStatus == "streaming" || notesStatus == "submitted",
             getActualNotes,
             stopGeneration, 
         }}>

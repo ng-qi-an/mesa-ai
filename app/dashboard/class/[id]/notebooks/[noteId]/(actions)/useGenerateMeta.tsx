@@ -1,9 +1,10 @@
 import { useNotebook } from "@/components/providers/notebook-provider";
-import createCache from "@/lib/cache-actions/createCache";
 import SaveToNotebook from "./saveToNotebook";
+import addFilesToStore from "@/lib/file-search-actions/addFilesToStore";
+import deleteStoreFiles from "@/lib/file-search-actions/deleteStoreFiles";
 
 export function useGenerateMeta(){
-    const { noteId, setNotesHistory, setTopicWeights, setIsCacheLoading, setCache, setCollapseSections, files, instructions, length, setInstructions, setLength, setMetaObject, metaSubmit } = useNotebook();
+    const { noteId, setNotesHistory, setTopicWeights, setCollapseSections, files, instructions, length, fileStoreId, fileStoreFiles, setFileStoreFiles, setIsStoringFiles, setInstructions, setLength, setMetaObject, metaSubmit } = useNotebook();
 
     async function generateMeta(customProps?: Record<string, any>){
         const customInstructions = customProps?.instructions ?? instructions;
@@ -13,22 +14,54 @@ export function useGenerateMeta(){
         setMetaObject(undefined);
         setNotesHistory([]);
         setTopicWeights({});
-        setIsCacheLoading(true);
-        const newCache = await createCache(customFiles.map(f=>f.id));
-        if (!newCache || !newCache.name){
-            console.error("Failed to create cache");
-            setIsCacheLoading(false);
+        if (!fileStoreId){
+            throw new Error("No file store ID found for this notebook");
+        }
+
+        // Updating the filestoreee!
+        setIsStoringFiles(true);
+        const customFileIds = customFiles.map(f => f.id);
+        const fileStoreFileIds = [...new Set(fileStoreFiles)];
+        console.log("Current file store files:", fileStoreFileIds);
+        console.log("Custom files for meta generation:", customFileIds);
+        const filesToAdd:string[] = []
+        const filesToRemove:string[] = []
+        customFiles.forEach((file) => {
+            if (!fileStoreFileIds.includes(file.id)){
+                filesToAdd.push(file.id);
+            }
+        })
+        fileStoreFileIds.forEach((fileId) => {
+            if (!customFileIds.includes(fileId)){
+                filesToRemove.push(fileId);
+            }
+        }) 
+        console.log("Files to add to store:", filesToAdd);
+        console.log("Files to remove from store:", filesToRemove);
+        try {
+            console.log("[gen meta] Adding", filesToAdd.length, "files to store")
+            let result = null;
+            if (filesToAdd.length > 0) {
+                result = await addFilesToStore(filesToAdd, fileStoreId!);
+            }
+            console.log("[gen meta] Removing", filesToRemove.length, "files from store")
+            if (filesToRemove.length > 0){
+                result = await deleteStoreFiles(fileStoreId!, filesToRemove)
+            }
+            if (result){
+                setFileStoreFiles(result)
+            }
+            setIsStoringFiles(false);
+        } catch (error) {
+            console.error("[gen meta] Error adding files to store:", error);
+            setIsStoringFiles(false);
             return;
         }
-        console.log("Using cache:", newCache.name, "Expire time:", newCache.expireTime, "Total tokens:", newCache.usageMetadata?.totalTokenCount);
-        setCache(newCache.name!, customFiles.map(f=>f.id));
-        await SaveToNotebook(noteId, {cache: {name: newCache.name!, fileIds: customFiles.map(f=>f.id)}});
-        setIsCacheLoading(false);
         setCollapseSections(true);
         setInstructions(customInstructions);
         setLength(customLength);
         metaSubmit({
-            cacheName: newCache.name!,
+            fileStoreId: fileStoreId!,
             instructions: customInstructions,
             length: customLength
         })

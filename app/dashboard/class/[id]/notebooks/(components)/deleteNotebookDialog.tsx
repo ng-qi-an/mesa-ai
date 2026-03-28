@@ -33,7 +33,7 @@ export function DeleteNotebookDialog({noteId, open, onOpenChange}: {noteId: stri
                     </AlertDialogMedia>
                     <AlertDialogTitle>Delete notebook?</AlertDialogTitle>
                     <AlertDialogDescription>
-                        This will permanently delete this notebook and all its contents, along with flashcards, quizzes, and other associated Apps.
+                        This will permanently delete this notebook with all of its contents and apps.
                     </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>

@@ -1,6 +1,7 @@
 import NotebookProvider from "@/components/providers/notebook-provider";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
+import getStoreFiles from "@/lib/file-search-actions/getStoreFiles";
 import { notebook } from "@/lib/schemas/schema";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
@@ -27,7 +28,8 @@ export default async function DemoLayout({children, params}: {children: ReactNod
     if (!data){
         return redirect(`/dashboard/class/${id}/notebooks`)
     }
-    return <NotebookProvider data={data}>
+    const fileStoreFiles = (await getStoreFiles(data.fileStoreId!)).ids;
+    return <NotebookProvider data={{ ...data, fileStoreFiles }}>
         {children}
     </NotebookProvider>
 }

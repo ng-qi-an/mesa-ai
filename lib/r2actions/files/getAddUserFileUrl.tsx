@@ -21,7 +21,7 @@ export default async function getAddUserFileURL(files: PartialFileType[]){
     console.log("Generating signed URLs for user:", session.user.id);
     console.log("Files to upload:", files);
     const promises = files.map(async(file) => {
-        const fileId = generateId(12);
+        const fileId = generateId(12).toLowerCase();
         const command = new PutObjectCommand({
             Bucket: process.env.R2_BUCKET_NAME!,
             Key: `user-files/${session!.user.id!}/${fileId}`,

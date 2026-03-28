@@ -11,7 +11,7 @@ export const maxDuration = 300;
 
 type NotebookRequestType = {
     topicWeights?: Record<string, number>;
-    cacheName: string;
+    fileStoreId: string;
     messages: UIMessage[];
 }
 
@@ -30,22 +30,28 @@ export async function POST(req: Request) {
     const topicWeights = context.topicWeights!
 
     console.log("Using topic weights:", topicWeights);
-    console.log("Using cache:", context.cacheName);
+    console.log("Using file store:", context.fileStoreId);
     console.log("Generating notes for user:", session.user.id);
 
     const result = streamText({
-        model: google(process.env.NOTEBOOK_AI_MODEL!),
+        model: google("gemini-3.1-flash-lite-preview"),
         messages: await convertToModelMessages(context.messages),
+        tools: {
+            file_search: google.tools.fileSearch({fileSearchStoreNames: [context.fileStoreId]}),
+        },
         providerOptions: {
             google: {
                 thinkingConfig: {
                     thinkingLevel: "minimal",
                     // thinkingBudget: 0
                 },
-                cachedContent: context.cacheName,
             }
         }
     });
 
-    return result.toUIMessageStreamResponse();
+    return result.toUIMessageStreamResponse({
+        onFinish: async()=>{
+
+        }
+    });
 }

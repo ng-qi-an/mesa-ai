@@ -23,6 +23,7 @@ import { useGenerateNotes } from "../(actions)/generateNotes";
 import NoteSettingsDialog from "./(modals)/NoteSettingsDialog";
 import { Streamdown } from "streamdown";
 import { useTheme } from "next-themes";
+import checkFileStoreMatch from "../(actions)/checkFileStoreMatch";
 
 export default function NotebookPanel(){
     const noteCtx = useNotebook()
@@ -95,10 +96,10 @@ export default function NotebookPanel(){
                 <CardTitle className="text-muted-foreground">
                     Notebook
                 </CardTitle>
-                {(noteCtx.isCacheLoading || noteCtx.isMetaLoading || noteCtx.isNotesLoading || noteCtx.isEmbeddingImages) ? 
+                {(noteCtx.isStoringFiles || noteCtx.isMetaLoading || noteCtx.isNotesLoading || noteCtx.isEmbeddingImages) ? 
                 <Shimmer duration={3} className="text-sm ml-auto mr-29">
-                    {noteCtx?.isCacheLoading ? 
-                        "Loading cache..."
+                    {noteCtx?.isStoringFiles ? 
+                        "Extracting content.."
                     : noteCtx?.isMetaLoading ?
                         "Generating topics..."
                     : noteCtx?.isNotesLoading ?
@@ -108,10 +109,10 @@ export default function NotebookPanel(){
                     : ""
                     }
                 </Shimmer>
-                : noteCtx?.cache && !checkCacheMatch(noteCtx.cache.fileIds, noteCtx.files.map(f=> f.id)) && 
+                : noteCtx.fileStoreFiles.length > 0 &&  !checkFileStoreMatch(noteCtx.fileStoreFiles, noteCtx.files.map(f=> f.id)) && 
                 <Tooltip>
                     <TooltipTrigger asChild>
-                        <Badge variant="destructive" className="cursor-default ml-auto mr-20">
+                        <Badge variant="destructive" className="cursor-default ml-auto mr-28">
                             <CircleAlert data-icon="inline-start" />
                             Outdated
                         </Badge>
@@ -153,7 +154,7 @@ export default function NotebookPanel(){
             </CardHeader>
             <div className="h-full gap-2 flex flex-col px-2 w-full overflow-y-auto relative">
                 <Separator className="mb-2 w-full"/>
-                {(noteCtx?.notesHistory.length! > 0 && noteCtx?.notesStatus != "submitted" && !noteCtx?.isCacheLoading) ? 
+                {(noteCtx?.notesHistory.length! > 0 && noteCtx?.notesStatus != "submitted" && !noteCtx?.isStoringFiles) ? 
                 <AnimatePresence>
                     <div ref={contentRef} className={`h-full overflow-auto pb-4 pt-4 prose ${useLightNotebookTheme ? "" : "dark:prose-invert"} min-w-full px-8 pb-16`}>
                         <h1 id={slugify(noteCtx?.metaObject?.header || "")}>{noteCtx?.metaObject?.header}</h1>
@@ -173,11 +174,11 @@ export default function NotebookPanel(){
                         </p>
                     </div>}
                     <Empty className="h-full absolute z-10 top-0 left-0 w-full bg-card/80">
-                        {noteCtx?.isCacheLoading ?
+                        {noteCtx?.isStoringFiles ?
                             <EmptyHeader className="">
                                 <Spinner className="text-muted-foreground size-6" />
                                 <EmptyTitle className="text-foreground/90 mt-2">Uploading files..</EmptyTitle>
-                                <EmptyDescription>Uploading files to the server...</EmptyDescription>
+                                <EmptyDescription>Extracting text and images...</EmptyDescription>
                             </EmptyHeader>
                         : noteCtx?.isMetaLoading ?
                             <EmptyHeader className="">
@@ -210,7 +211,7 @@ export default function NotebookPanel(){
                                 Stop generating
                             </Button>
                         : <></>)
-                        : noteCtx?.cache && !checkCacheMatch(noteCtx.cache.fileIds, noteCtx.files.map(f=> f.id)) ?
+                        : noteCtx?.isStoringFiles && !checkFileStoreMatch(noteCtx.fileStoreFiles, noteCtx.files.map(f=> f.id)) ?
                             <Button variant={'raised'} disabled={noteCtx!.files.length < 1} size={'lg'} className="px-4" onClick={() => {
                                 noteCtx?.setShowGenerateNotesDialog(true);
                             }}>

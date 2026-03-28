@@ -55,7 +55,6 @@ export default function ChatMessagesPanel({setSelectedChatId, initialChat}: {set
             await saveToChat(chat.id, { messages });
         }
     }); 
-    const [cacheLoading, setCacheLoading] = useState(false);
     useEffect(()=>{
         console.log("ChatMessagesPanel mounted with chat:", initialChat);
     }, [])
@@ -80,7 +79,7 @@ export default function ChatMessagesPanel({setSelectedChatId, initialChat}: {set
                 <Separator className="mb-2" />
                 <Conversation className="relative min-h-0">
                     <ConversationContent>
-                        {(status == "ready" && !cacheLoading && messages.length === 0) ? (
+                        {(status == "ready" && messages.length === 0) ? (
                         <ConversationEmptyState
                             description="Messages will appear here as the conversation progresses."
                             icon={<MessageSquareIcon className="size-6" />}
@@ -95,7 +94,7 @@ export default function ChatMessagesPanel({setSelectedChatId, initialChat}: {set
                             />
                         </Message>
                         ))}
-                        {status == "submitted" ? 
+                        {status == "submitted" &&
                             <Message from="assistant">
                                 <MessageContent className="flex flex-row items-center gap-3">
                                     <Logo type="favicon" className="size-4 invert" />
@@ -103,24 +102,7 @@ export default function ChatMessagesPanel({setSelectedChatId, initialChat}: {set
                                         Analysing..
                                     </Shimmer>
                                 </MessageContent>
-                            </Message>
-                        : cacheLoading && <>
-                            <Message from={"user"}>
-                                <MessageContent>
-                                    <MessageResponse>
-                                        {previousText}
-                                    </MessageResponse>
-                                </MessageContent>
-                            </Message>
-                            <Message from="assistant">
-                                <MessageContent className="flex flex-row items-center gap-3">
-                                    <Logo type="favicon" className="size-4 invert" />
-                                    <Shimmer>
-                                        Processing files..    
-                                    </Shimmer>
-                                </MessageContent>
-                            </Message>
-                        </>}
+                            </Message>}
                     </ConversationContent>
                     <ConversationScrollButton />
                 </Conversation>
@@ -129,38 +111,38 @@ export default function ChatMessagesPanel({setSelectedChatId, initialChat}: {set
                     multiple
                     accept={allowedMimeTypes.join(",")}
                     onSubmit={async(message: PromptInputMessage) => {
-                        setMessages((x)=> x.filter((m, i)=> !(m.role == "user" && i == x.length - 1)))
-                        if (!message.text.trim()) {
+                        if (!message.text.trim() || status == "submitted" || status == "streaming"){
                             return;
                         }
+                        setMessages((x)=> x.filter((m, i)=> !(m.role == "user" && i == x.length - 1)))
                         const oldText = text;
                         const oldFiles = files;
                         setPreviousFiles(files);
                         setPreviousText(text);
                         setFiles([]);
                         setText("");
-                        setCacheLoading(true);
-                        let newCache;
-                        console.log(noteCtx.files)
-                        try {
-                            if (!noteCtx.cache || !checkCacheMatch(noteCtx.cache.fileIds, noteCtx.files.map(f=>f.id))){
-                                console.log("[CHAT] Cache files differ from provided files or no cache. Creating cache...");
-                                newCache = await createCache(noteCtx.files.map(f=>f.id), 600)
-                            } else {
-                                console.log("[CHAT] Cache files match provided files. Extending cache...");
-                                newCache = await createOrExtendCache(noteCtx.cache.name, noteCtx.files.map(f=>f.id), 600)
-                            }
-                        } catch (err) {
-                            console.error("Error creating/extending cache:", err);
-                            setCacheLoading(false);
-                            setText(oldText);
-                            return;
-                        }
-                        console.log("Using cache:", newCache.name, "Expire time:", newCache.expireTime, "Total tokens:", newCache.usageMetadata?.totalTokenCount);
-                        noteCtx.setCache(newCache.name!, noteCtx.files.map(f=>f.id));
-                        await SaveToNotebook(noteCtx.noteId, {cache: {name: newCache.name!, fileIds: noteCtx.files.map(f=>f.id)}});
+                        // setCacheLoading(true);
+                        // let newCache;
+                        // console.log(noteCtx.files)
+                        // try {
+                        //     if (!noteCtx.cache || !checkCacheMatch(noteCtx.cache.fileIds, noteCtx.files.map(f=>f.id))){
+                        //         console.log("[CHAT] Cache files differ from provided files or no cache. Creating cache...");
+                        //         newCache = await createCache(noteCtx.files.map(f=>f.id), 600)
+                        //     } else {
+                        //         console.log("[CHAT] Cache files match provided files. Extending cache...");
+                        //         newCache = await createOrExtendCache(noteCtx.cache.name, noteCtx.files.map(f=>f.id), 600)
+                        //     }
+                        // } catch (err) {
+                        //     console.error("Error creating/extending cache:", err);
+                        //     setCacheLoading(false);
+                        //     setText(oldText);
+                        //     return;
+                        // }
+                        // console.log("Using cache:", newCache.name, "Expire time:", newCache.expireTime, "Total tokens:", newCache.usageMetadata?.totalTokenCount);
+                        // noteCtx.setCache(newCache.name!, noteCtx.files.map(f=>f.id));
+                        // await SaveToNotebook(noteCtx.noteId, {cache: {name: newCache.name!, fileIds: noteCtx.files.map(f=>f.id)}});
 
-                        const r = await SendChatMessage({message, files, sendMessage, thinkingLevel, chatId: chat.id, bodyOptions: {cacheName: newCache.name}});
+                        const r = await SendChatMessage({message, files, sendMessage, thinkingLevel, chatId: chat.id, bodyOptions: {fileStoreId: noteCtx.fileStoreId}});
                         console.log("SendChatMessage result:", r);
                         if (r === "failed_uploads") {
                             toast.warning("Some files failed to upload.");
@@ -169,14 +151,13 @@ export default function ChatMessagesPanel({setSelectedChatId, initialChat}: {set
                             setFiles(oldFiles);
                             toast.error("Error sending message. Please try again.");
                         }
-                        setCacheLoading(false);
+                        // setCacheLoading(false);
                     }}
                     className="mt-4 px-2"
                 >
                     {files.length > 0 && <ChatInputHeader files={files} setFiles={setFiles} />}
                     <PromptInputBody>
                         <PromptInputTextarea
-                        disabled={status === "submitted" || cacheLoading}
                         onChange={(e) => setText(e.target.value)}
                         value={text}
                         />
@@ -187,8 +168,8 @@ export default function ChatMessagesPanel({setSelectedChatId, initialChat}: {set
                             setText(previousText);
                             setFiles(previousFiles);
                         }}
-                        disableSend={status === "submitted" || cacheLoading}
-                        disableStop={cacheLoading}
+                        disableSend={status === "submitted" || status == "streaming"}
+                        disableStop={false}
                     />
                 </PromptInput>
             </div>

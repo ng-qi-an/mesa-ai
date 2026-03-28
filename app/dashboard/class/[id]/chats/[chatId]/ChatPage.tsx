@@ -99,9 +99,6 @@ export default function ChatPage({chat}:{chat: ChatSelect}){
             stop();
         }
     }, [])
-    useEffect(()=>{
-        console.log(messages[messages.length - 1].parts);
-    }, [messages])
 
     return <div className="flex flex-col h-full flex-1 min-h-0 w-full items-center py-4">
         <Conversation className="relative min-h-0 w-full max-w-2xl">

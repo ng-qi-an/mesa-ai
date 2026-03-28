@@ -50,7 +50,7 @@ export const notebook = pgTable("notebook", {
     topicWeights: jsonb("topic_weights").$type<{[key: string]: number}>(),
     length: text("length"),
     instructions: text("instructions"),
-    cache: jsonb("cache").$type<{name: string, fileIds: string[]}>(),
+    fileStoreId: text("file_store_id").notNull(),
     content: text("content"),
     dateCreated: timestamp("date_created").notNull().defaultNow(),
     dateModified: timestamp("date_modified").notNull().defaultNow(),

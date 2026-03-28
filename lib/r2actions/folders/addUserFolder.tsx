@@ -19,7 +19,7 @@ export default async function addUserFolder(name: string, parent: string, classI
         throw new Error("Not authenticated");
     }
     console.log("Creating folder for user:", session.user.id, "with folder name:", name, "and parent:", parent);
-    const folderId = generateId(6)
+    const folderId = generateId(12).toLowerCase();
     const command = new PutObjectCommand({
         Bucket: process.env.R2_BUCKET_NAME!,
         Key: `user-files/${session!.user.id!}/${folderId}`,
