@@ -21,6 +21,5 @@ export default async function SaveToNotebook(noteId: string, props: Partial<Note
     delete copyProps.id;
     delete copyProps.topicId;
     copyProps.dateModified = new Date();
-    console.log("Saving to notebook with ID:", noteId, "and props:", copyProps);
     return await db.update(notebook).set(copyProps).where(and(eq(notebook.id, noteId), eq(notebook.userId, session.user.id))).returning();
 }

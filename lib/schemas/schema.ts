@@ -1,6 +1,7 @@
 import { text, pgTable, serial, date, timestamp, AnyPgColumn, jsonb } from "drizzle-orm/pg-core";
 import { user } from "./auth-schema";
 import { UIMessage } from "ai";
+import { ChatUIMessage } from "../utils/models";
 export const classes = pgTable("classes", {
     id: text("id").primaryKey(),
     userId: text("user_id").notNull().references(() => user.id, { onDelete: "cascade" }),
@@ -73,7 +74,7 @@ export const chats = pgTable("chats", {
     classId: text("class_id").notNull().references(() => classes.id, { onDelete: "cascade" }),
     notebookId: text("notebook_id").references(() => notebook.id, { onDelete: "cascade" }),
     name: text("name").notNull().default("New chat"),
-    messages: jsonb("messages").notNull().$type<UIMessage[]>(),
+    messages: jsonb("messages").notNull().$type<ChatUIMessage[]>(),
     dateCreated: timestamp("date_created").notNull().defaultNow(),
     dateModified: timestamp("date_modified").notNull().defaultNow(),
 })

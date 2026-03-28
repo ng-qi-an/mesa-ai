@@ -132,14 +132,13 @@ export default function NotebookProvider({children, data}: {children: React.Reac
                 const resolvedInstructions = instructionsRef.current;
                 const resolvedLength = lengthRef.current;
                 console.log("Generating notes with instructions:", resolvedInstructions, "files:", files.map(f=>f.name), "and weights:", weights, "and cache:", cacheRef.current);
-                const payload:Record<string, any> = {instructions: resolvedInstructions, topicWeights: weights, cache: cacheRef.current, title: res.object.header, subtitle: res.object.subtitle}
+                const payload:Record<string, any> = {instructions: resolvedInstructions, length: resolvedLength, topicWeights: weights, cache: cacheRef.current, title: res.object.header, subtitle: res.object.subtitle}
                 if (name == "New Notebook"){
                     setName(res.object.header);
                     payload.name = res.object.header;
                 }
                 await SaveToNotebook(noteId, payload);
-                console.log("Selected length", resolvedLength);
-                generateNotes({instructions: `${defaultNotesInstructions(resolvedLength, resolvedInstructions, Object.keys((weights)))}`, length: resolvedLength, fileIds: files.map(f=>f.id), topicWeights: weights, cache: cacheRef.current, setCollapseSections, setIsCacheLoading, setCache, sendNotesFollowup});
+                generateNotes({noteId, instructions: `${defaultNotesInstructions(resolvedLength, resolvedInstructions, Object.keys((weights)))}`, length: resolvedLength, fileIds: files.map(f=>f.id), topicWeights: weights, cache: cacheRef.current, setCollapseSections, setIsCacheLoading, setCache, sendNotesFollowup});
             }
         },
         onError: (err)=>{

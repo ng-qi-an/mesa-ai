@@ -11,7 +11,7 @@ import revalidateData from "@/lib/actions/revalidateData";
 import { allowedMimeTypes } from "@/lib/utils";
 import { Sparkle, Sparkles } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
 export default function NewChat(){
@@ -19,6 +19,14 @@ export default function NewChat(){
     const chatCtx = useChatContext();
     const router = useRouter();
     const [creating, setCreating] = useState(false);
+    const promptInputRef = useRef<HTMLTextAreaElement>(null);
+
+    useEffect(()=>{
+        if (promptInputRef.current) {
+            promptInputRef.current.focus();
+        }
+    })
+
     return <div className="flex flex-col h-full overflow-auto items-center justify-center">
         <Empty className="w-full p-0 h-max flex-0 mb-5">
             <EmptyMedia variant={"icon"} className="size-max p-3">
@@ -43,14 +51,13 @@ export default function NewChat(){
                     } catch (error) {
                         console.error("Error creating chat:", error);
                         toast.error("Failed to create chat. Please try again.");
-                    } finally {
                         setCreating(false);
                     }
                 }}
             >
                 {chatCtx.newFiles.length > 0 && <ChatInputHeader files={chatCtx.newFiles} setFiles={chatCtx.setNewFiles} />}
                 <PromptInputBody>
-                    <PromptInputTextarea onChange={(e) => chatCtx.setNewText(e.target.value)} value={chatCtx.newText}/>
+                    <PromptInputTextarea ref={promptInputRef} onChange={(e) => chatCtx.setNewText(e.target.value)} value={chatCtx.newText}/>
                 </PromptInputBody>
                 <ChatInputFooter files={chatCtx.newFiles} setFiles={chatCtx.setNewFiles} text={chatCtx.newText} thinkingLevel={chatCtx.newThinkingLevel} setThinkingLevel={chatCtx.setNewThinkingLevel} 
                     onStop={()=>{

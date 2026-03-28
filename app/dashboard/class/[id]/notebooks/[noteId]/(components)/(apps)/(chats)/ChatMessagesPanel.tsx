@@ -145,10 +145,10 @@ export default function ChatMessagesPanel({setSelectedChatId, initialChat}: {set
                         try {
                             if (!noteCtx.cache || !checkCacheMatch(noteCtx.cache.fileIds, noteCtx.files.map(f=>f.id))){
                                 console.log("[CHAT] Cache files differ from provided files or no cache. Creating cache...");
-                                newCache = await createCache(noteCtx.files.map(f=>f.id), 720)
+                                newCache = await createCache(noteCtx.files.map(f=>f.id), 600)
                             } else {
                                 console.log("[CHAT] Cache files match provided files. Extending cache...");
-                                newCache = await createOrExtendCache(noteCtx.cache.name, noteCtx.files.map(f=>f.id), 720)
+                                newCache = await createOrExtendCache(noteCtx.cache.name, noteCtx.files.map(f=>f.id), 600)
                             }
                         } catch (err) {
                             console.error("Error creating/extending cache:", err);

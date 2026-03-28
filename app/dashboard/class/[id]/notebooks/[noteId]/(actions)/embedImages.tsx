@@ -25,12 +25,15 @@ export async function embedImages(content: string): Promise<string> {
                         alt: query
                     };
                 } else {
+                    console.log(`No image results found for query: "${query}"`);
                     results[query] = null;
                 }
             } else {
+                console.error(`Image search API error for query: "${query}", status: ${res.status}, text: ${await res.text()}`);
                 results[query] = null;
             }
-        } catch {
+        } catch(error) {
+            console.error(`Error fetching image for query: "${query}"`, error);
             results[query] = null;
         }
     }));
@@ -41,7 +44,7 @@ export async function embedImages(content: string): Promise<string> {
         if (result) {
             return `![${result.alt}](${result.url})`;
         } else {
-            return `*No image found for: ${query}*`;
+            return `*[image: ${query}]*`;
         }
     });
 }

@@ -14,7 +14,7 @@ export default async function DemoLayout({children, params}: {children: ReactNod
     }
     const {id, noteId} = await params;
     const raw = await db.query.notebook.findFirst({
-        where: (notebook, {eq, and})=> and(eq(notebook.id, noteId), eq(notebook.userId, session.user.id)),
+        where: (notebook, {eq, and})=> and(eq(notebook.id, noteId), eq(notebook.userId, session.user.id), eq(notebook.classId, id)),
         with: {
             files: {
                 with: {
@@ -27,7 +27,6 @@ export default async function DemoLayout({children, params}: {children: ReactNod
     if (!data){
         return redirect(`/dashboard/class/${id}/notebooks`)
     }
-    console.log("Notebook data:", data);
     return <NotebookProvider data={data}>
         {children}
     </NotebookProvider>

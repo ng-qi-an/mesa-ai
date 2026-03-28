@@ -42,7 +42,7 @@ export default async function createCache(fileIds: string[], ttl: number = 720){
 
     const cacheFiles = await Promise.all(filesMap);
     const cache = await ai.caches.create({
-        model: "gemini-3-flash-preview",
+        model: process.env.NOTEBOOK_AI_MODEL!,
         config: {
             contents: createUserContent(cacheFiles.map(file => createPartFromUri(file.uri!, file.mimeType!))),
             ttl: `${ttl}s`,

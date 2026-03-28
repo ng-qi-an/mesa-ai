@@ -43,13 +43,24 @@ export default function NotebookPage({notebooks}: {notebooks: NotebookSelect[]})
                     <NotebookPen />
                 </EmptyMedia>
                 <EmptyHeader>
-                    <EmptyTitle className="text-lg">No notebooks yet</EmptyTitle>
-                    <EmptyDescription>Create notebooks to organize and consolidate learning materials for your class.</EmptyDescription>
+                <EmptyTitle className="text-lg">No notebooks yet</EmptyTitle>
+                <EmptyDescription>Create notebooks to organize and consolidate learning materials for your class.</EmptyDescription>
                 </EmptyHeader>
-                
+                <Button disabled={creating} variant={"raised"} className="mt-4" onClick={async()=>{
+                setCreating(true);
+                try {
+                    const response = await createNotebook(id)
+                    router.push(`/dashboard/class/${id}/notebooks/${response[0].id}`);
+                } catch (error) {
+                    console.error("Error creating notebook:", error);
+                    toast.error("Failed to create notebook. Please try again.");
+                } finally {
+                    setCreating(false);
+                }
+            }}>Create new {creating ? <Spinner/> : <NotebookPen/>}</Button>
             </Empty>
             :
-            <div className="w-full grid xl:grid-cols-5 lg:grid-cols-4 md:grid-cols-3 sm:grid-cols-2 gap-4 max-w-7xl h-full overflow-auto p-4 rounded-lg content-start auto-rows-max">
+            <div className="w-full grid xl:grid-cols-5 lg:grid-cols-4 md:grid-cols-3 sm:grid-cols-2 gap-4 max-w-6xl h-full overflow-auto p-4 rounded-lg content-start auto-rows-max">
                 {notebooks.map((notebook)=>{
                     return <NotebookListItem key={notebook.id} notebook={notebook} />
                 })}

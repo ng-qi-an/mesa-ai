@@ -5,11 +5,12 @@ import { ClassSelect } from "@/lib/schemas/schema";
 import { cn } from "@/lib/utils";
 import { ArrowLeft, ChevronsUpDown, Search } from "lucide-react";
 import { DynamicIcon } from "lucide-react/dynamic";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 
 export default function MainSidebarHeader({_class, classes}: {_class: ClassSelect, classes: ClassSelect[]}) {
     const router = useRouter();
     const { isMobile, state } = useSidebar()
+    const pathname = usePathname();
     return <SidebarHeader className="pt-3">
         <SidebarMenu>
             <SidebarMenuItem>
@@ -51,7 +52,7 @@ export default function MainSidebarHeader({_class, classes}: {_class: ClassSelec
                         {classes.map((_classx)=>{
                         return _class.id != _classx.id && <DropdownMenuItem
                             key={_classx.id}
-                            onSelect={() => router.push(`/dashboard/class/${_classx.id}`)}
+                            onSelect={() => router.push(`/dashboard/class/${_classx.id}${pathname.replace(`/dashboard/class/${_class.id}`, "")}`)}
                             className=""
                         >
                                 <div className={cn(_classx.theme, "bg-primary text-primary-foreground! group-hover:text-primary-foreground! flex aspect-square size-8 items-center justify-center rounded-lg")}>

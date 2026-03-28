@@ -29,7 +29,7 @@ export async function POST(req: Request) {
     }
 
     const result = streamText({
-        model: google("gemini-3-flash-preview"),
+        model: google(process.env.NOTEBOOK_AI_MODEL!),
         output: Output.object({ schema: noteMetaSchema }),
         messages: [
             {

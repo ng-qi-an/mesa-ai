@@ -14,7 +14,7 @@ export function useGenerateMeta(){
         setNotesHistory([]);
         setTopicWeights({});
         setIsCacheLoading(true);
-        const newCache = await createCache(customFiles.map(f=>f.id), 900);
+        const newCache = await createCache(customFiles.map(f=>f.id));
         if (!newCache || !newCache.name){
             console.error("Failed to create cache");
             setIsCacheLoading(false);

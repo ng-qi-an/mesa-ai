@@ -1,11 +1,11 @@
 'use client';
-import { NotebookContextType, useNotebook } from "@/components/providers/notebook-provider";
+import { useNotebook } from "@/components/providers/notebook-provider";
 import createCache from "@/lib/cache-actions/createCache";
 import createOrExtendCache from "@/lib/cache-actions/createOrExtendCache";
-import { FileListType } from "@/lib/r2actions/getUserFilesv2";
 import checkCacheMatch from "./checkCacheMatch";
+import SaveToNotebook from "./saveToNotebook";
 
-const lengthModeGuidelines = (length: string) => {
+function lengthModeGuidelines(length: string) {
     const normalizedLength = ["concise", "balanced", "detailed"].includes(length) ? length : "balanced";
 
     if (normalizedLength === "concise") {
@@ -14,7 +14,7 @@ const lengthModeGuidelines = (length: string) => {
 - Target 800-1100 words (readable in 5-8 minutes)
 - Focus on high-yield concepts with compact explanations
 - Include one practical example per major topic where possible
-- End with 3-4 key takeaways
+- Always end with 3-4 key takeaways
 `;
     }
 
@@ -24,7 +24,7 @@ const lengthModeGuidelines = (length: string) => {
 - Target 2300-3000 words (readable in 18-25 minutes)
 - Go deep on mechanisms, edge cases, and nuanced distinctions
 - Use multiple examples and include trade-offs/comparisons
-- End with 5-7 key takeaways
+- Always end with 5-7 key takeaways
 `;
     }
 
@@ -33,19 +33,11 @@ const lengthModeGuidelines = (length: string) => {
 - Target 1500-2000 words (readable in 10-15 minutes)
 - Balance clarity and depth across weighted topics
 - Use examples and comparisons for understanding
-- End with 3-5 key takeaways
+- Always end with 3-5 key takeaways
 `;
 }
 
-export const buildNotesUpdatePrompt = ({
-    topicWeights,
-    length,
-    instructions,
-}: {
-    topicWeights: Record<string, number>;
-    length: string;
-    instructions: string;
-}) => `
+export const buildNotesUpdatePrompt = ({topicWeights, length, instructions}: {topicWeights: Record<string, number>; length: string; instructions: string}) => `
 The user wants to make some changes to the notes based on the following topic weights, note length and instructions. Update the content accordingly, while still respecting the original source material and formatting rules:
 # Topic weights
 ${Object.keys(topicWeights).map((topic) => `- ${topic}: ${topicWeights[topic]}`).join("\n")}
@@ -59,87 +51,29 @@ ${instructions}
 
 
 export const defaultNotesInstructions = (length: string, customInstructions?: string, topics?: string[]) => `
-    ${(() => {
-        const normalizedLength = ["concise", "balanced", "detailed"].includes(length) ? length : "balanced";
-
-        const contentGuidelinesByLength: Record<string, string> = {
-            concise: `
     ## Content Guidelines
-        ### No title!
-        - The title and summary of the note is already provided and should not be repeated in the content.
-        - Start directly with the first topic heading. Do not provide a summary or introduction paragraph.
-        ### Length & Readability
-        - Target 800-1100 words (readable in 5-8 minutes)
-        - Keep explanations concise and focused on high-yield concepts
-        - Allocate word count proportionally to topic weight percentages
-        - A topic with 40% weight should receive ~40% of the content depth
-        ### Writing Style
-        - Explain concepts clearly without unnecessary detail
-        - Use short examples to anchor understanding
-        - Prioritize clarity and quick comprehension
-        - Active voice preferred
-        ### Structure Each Topic Section
-        1. One-sentence intro (what is this and why it matters)
-        2. Core explanation with one practical example
-        3. Key relationship or comparison only if high value
-        ### Always End With
-        A "Key Takeaways" section containing 3-4 bullet points summarizing the most important concepts.
-`,
-            balanced: `
-    ## Content Guidelines
-        ### No title!
-        - The title and summary of the note is already provided and should not be repeated in the content.
-        - Start directly with the first topic heading. Do not provide a summary or introduction paragraph.
-        ### Length & Readability
-        - Target 1500-2000 words (readable in 10-15 minutes)
-        - Allocate word count proportionally to topic weight percentages
-        - A topic with 40% weight should receive ~40% of the content depth
-        ### Writing Style
-        - Explain concepts, don't just restate the source
-        - Use analogies for complex ideas
-        - Write for understanding, not just memorization
-        - Active voice preferred
-        ### Structure Each Topic Section
-        1. Brief intro (what is this and why does it matter?)
-        2. Core explanation with examples
-        3. Key relationships or comparisons
-        4. Common misconceptions if relevant
-        ### Always End With
-        A "Key Takeaways" section containing 3-5 bullet points summarizing the most important concepts.
-`,
-            detailed: `
-    ## Content Guidelines
-        ### No title!
-        - The title and summary of the note is already provided and should not be repeated in the content.
-        - Start directly with the first topic heading. Do not provide a summary or introduction paragraph.
-        ### Length & Readability
-        - Target 2300-3000 words (readable in 18-25 minutes)
-        - Go deeper on mechanisms, edge cases, and nuanced distinctions
-        - Allocate word count proportionally to topic weight percentages
-        - A topic with 40% weight should receive ~40% of the content depth
-        ### Writing Style
-        - Explain concepts deeply, not just restate the source
-        - Use analogies and layered examples for difficult ideas
-        - Connect ideas across topics to build conceptual understanding
-        - Active voice preferred
-        ### Structure Each Topic Section
-        1. Brief intro (what is this and why does it matter?)
-        2. Core explanation with multiple examples
-        3. Key relationships, comparisons, and trade-offs
-        4. Common misconceptions and how to correct them
-        5. Practical implications or real-world application when relevant
-        ### Always End With
-        A "Key Takeaways" section containing 5-7 bullet points summarizing the most important concepts.
-`,
-        };
-
-        return contentGuidelinesByLength[normalizedLength];
-    })()}
-
+    ### No title!
+    - The title and summary of the note is already provided and should not be repeated in the content.
+    - Start directly with the first topic heading. Do not provide a summary or introduction paragraph.
+    ### Length-specific guidelines
+    ${lengthModeGuidelines(length)}
+    ### Writing Style
+    - Explain concepts deeply, not just restate the source
+    - Use analogies and layered examples for difficult ideas
+    - Active voice preferred
+    - Allocate word count proportionally to topic weight percentages
+    - A topic with 40% weight should receive ~40% of the content depth
+    ### Structure Each Topic Section
+    1. Brief intro (what is this and why does it matter?)
+    2. Core explanation with multiple examples
+    3. Key relationships, comparisons, and trade-offs
+    4. Common misconceptions and how to correct them
+    5. Practical implications or real-world application when relevant
+    
     ## Topics
     ${topics?.map(topic => `- ${topic}`).join("\n") || "No topics specified."}
 
-    ## Required section structure
+    ## Section structure
     - Create exactly one H2 section (##) for each topic listed in "Topic weights".
     - Use the exact topic names as the H2 headings in the same order they are listed.
     - Do not merge, rename, skip, or reorder topics.
@@ -157,28 +91,25 @@ export const defaultNotesInstructions = (length: string, customInstructions?: st
         - Use H2 (##) for main topic sections
         - Use H3 (###) for subtopics within sections
         - Use H4 (####) sparingly for detailed breakdowns
+        ### [VERY IMPORTANT]: Math formatting
+        - When generating math equations using Latex format, always use 2 dollar signs ($$) rather than 1 dollar sign ($). For example, instead of $$x = \frac{-b \pm \sqrt{b^2 - 4ac}}{2a}$$ use $x = \frac{-b \pm \sqrt{b^2 - 4ac}}{2a}$
         ### Images
         If you want to illustrate a concept with an image, insert a placeholder in the following format:
-        [image: <short description or query>]
+        [image: <short description or very short query>]
         - Example: [image: cell division diagram]
         - Example: [image: economic policy chart]
         - Example: [image: World War I map]
         - Example: [image: water cycle experiment setup]
-        - Place the image placeholder after introducing the concept it illustrates
-        - Keep the description concise like a search query, not a full sentence.
+        - Keep the description concise like a search query, not a full sentence or a descriptive statement.
         - Do not embed actual images or URLs; only use the placeholder format above
-        - Don't cluster images — spread them throughout the content
         - If no images are relevant, continue without them
         ### Text Formatting
-        - **Bold** for key terms and vocabulary
-        - *Italics* for definitions and emphasis
         - Use > blockquotes for important formulas, quotes, or critical points
         - Use \`inline code\` for technical terms, commands, or notation
         - Bullet points for unordered information (features, characteristics)
         - Numbered lists for sequences, steps, or ranked items
         - Keep list items concise — expand in paragraphs if needed
-        ## VERY IMPORTANT: Math formatting
-        - When generating math equations using Latex format, always use 2 dollar signs ($$) rather than 1 dollar sign ($). For example, instead of $$x = \frac{-b \pm \sqrt{b^2 - 4ac}}{2a}$$ use $x = \frac{-b \pm \sqrt{b^2 - 4ac}}{2a}$
+        - Tables for summarising comparisons, pros/cons, or structured data
     ## Edge Case Handling
         ### If the document is very short:
         - Focus on depth over breadth
@@ -199,15 +130,15 @@ export const defaultNotesInstructions = (length: string, customInstructions?: st
         - Use analogies to bridge complex concepts
 
     ${customInstructions?.trim() ? `
-    ## Additional User Instructions
-        - Follow the following user-provided preferences in addition to all default rules above.
-
-${customInstructions.trim()}
+    ## Custom user iinstructions
+        - Follow the following user-provided strictly preferences after considering the rules above.
+    ${customInstructions.trim()}
     ` : ""}
-    `
+`
 
         
-export async function generateNotes({instructions, fileIds, topicWeights, length, cache, setCollapseSections, setIsCacheLoading, setCache, sendNotesFollowup}: {
+export async function generateNotes({noteId, instructions, fileIds, topicWeights, length, cache, setCollapseSections, setIsCacheLoading, setCache, sendNotesFollowup}: {
+    noteId: string;
     instructions: string;
     fileIds: string[];
     topicWeights: Record<string, number>;
@@ -224,14 +155,16 @@ export async function generateNotes({instructions, fileIds, topicWeights, length
     let newCache;
     if (!cache || !checkCacheMatch(cache.fileIds, fileIds)){
         console.log("[GEN NOTES] Cache files differ from provided files. Creating cache...");
-        newCache = await createCache(fileIds, 900)
+        newCache = await createCache(fileIds)
     } else {
         console.log("[GEN NOTES] Cache files match provided files. Extending cache...");
-        newCache = await createOrExtendCache(cache.name, fileIds, 900)
+        newCache = await createOrExtendCache(cache.name, fileIds)
     }
     setIsCacheLoading(false);
     console.log("Using cache:", newCache.name, "Expire time:", newCache.expireTime, "Total tokens:", newCache.usageMetadata?.totalTokenCount);
     setCache(newCache.name!, fileIds);
+    await SaveToNotebook(noteId, {cache: {name: newCache.name!, fileIds: fileIds}});
+    console.log("Instructions for follow-up:", instructions);
     if (topicWeights && Object.keys(topicWeights).length !== 0){
         sendNotesFollowup({
             text: instructions,
@@ -248,16 +181,16 @@ export async function generateNotes({instructions, fileIds, topicWeights, length
 
 
 export function useGenerateNotes(){
-    const { setIsCacheLoading, setCache, setCollapseSections, files, instructions, topicWeights, cache, sendNotesFollowup, length } = useNotebook();
+    const { setIsCacheLoading, setCache, setCollapseSections, files, instructions, topicWeights, cache, sendNotesFollowup, length, noteId } = useNotebook();
 
     return {
         generateNotes: async(customProps?: Record<string, any>) => {
             const resolvedLength = customProps?.length ?? length;
             const resolvedInstructions = customProps?.instructions ?? instructions;
             const resolvedTopicWeights = customProps?.topicWeights ?? topicWeights;
-            const includeContext = customProps?.includeContext ?? true;
 
             return await generateNotes({
+                noteId,
                 fileIds: files.map(f=>f.id),
                 topicWeights: resolvedTopicWeights,
                 cache,

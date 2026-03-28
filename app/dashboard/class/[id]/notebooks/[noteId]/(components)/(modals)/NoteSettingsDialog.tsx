@@ -138,6 +138,7 @@ export default function NoteSettingsDialog({open, onOpenChange}: {open: boolean,
                     noteCtx?.setTopicWeights(topicWeights);
                     noteCtx?.setInstructions(instructions);
                     noteCtx?.setLength(length);
+                    await SaveToNotebook(noteCtx.noteId, {instructions: instructions || undefined, length: length || undefined});
                     await generateNotes({instructions: buildNotesUpdatePrompt({
                         topicWeights: topicWeights,
                         length: length,

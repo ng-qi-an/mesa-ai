@@ -34,7 +34,7 @@ export async function POST(req: Request) {
     console.log("Generating notes for user:", session.user.id);
 
     const result = streamText({
-        model: google("gemini-3-flash-preview"),
+        model: google(process.env.NOTEBOOK_AI_MODEL!),
         messages: await convertToModelMessages(context.messages),
         providerOptions: {
             google: {

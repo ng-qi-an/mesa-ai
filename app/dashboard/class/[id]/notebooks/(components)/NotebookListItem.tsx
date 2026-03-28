@@ -14,6 +14,7 @@ import { useRouter } from "next/navigation";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { DeleteNotebookDialog } from "./deleteNotebookDialog";
 import { useState } from "react";
+import { relativeTime } from "@/lib/utils/relativeTime";
 
 export default function NotebookListItem({notebook}: {notebook: NotebookSelect}){
     const router = useRouter();
@@ -41,7 +42,7 @@ export default function NotebookListItem({notebook}: {notebook: NotebookSelect})
                             </DropdownMenuContent>
                         </DropdownMenu>
                     </CardTitle>
-                    <p className="text-sm text-muted-foreground">Modified: {notebook.dateModified.toLocaleDateString()}</p>
+                    <p className="text-sm text-muted-foreground">{relativeTime(notebook.dateModified, {capitalize: true})}</p>
             </CardHeader>
         </Card>
         <DeleteNotebookDialog noteId={notebook.id} open={isDeleteOpen} onOpenChange={setIsDeleteOpen}/>

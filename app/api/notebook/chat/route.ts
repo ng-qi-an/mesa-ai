@@ -1,10 +1,7 @@
-import { streamText, Output, UIMessage, convertToModelMessages } from 'ai';
+import { streamText, UIMessage, convertToModelMessages } from 'ai';
 import { google } from "@ai-sdk/google";
-import { GetObjectCommand } from '@aws-sdk/client-s3';
-import { r2 } from '@/lib/r2';
 import { auth } from '@/lib/auth';
 import { headers } from 'next/headers';
-import createOrExtendCache from '@/lib/cache-actions/createOrExtendCache';
 
 // Allow streaming responses up to 5 minutes
 export const maxDuration = 300;

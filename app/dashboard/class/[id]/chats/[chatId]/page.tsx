@@ -9,7 +9,7 @@ export default async function Page({params}: {params: Promise<{chatId: string, i
         headers: await headers()
     })
     const { chatId, id } = await params;
-    const data = await db.query.chats.findFirst({where: (chat, {eq, and}) => and(eq(chat.userId, session?.user.id!), eq(chat.id, chatId))});
+    const data = await db.query.chats.findFirst({where: (chat, {eq, and}) => and(eq(chat.userId, session?.user.id!), eq(chat.id, chatId), eq(chat.classId, id))});
     if (!data){
         return redirect(`/dashboard/class/${id}/chats`);
     }

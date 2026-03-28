@@ -1,15 +1,35 @@
-import { MessageContent, MessageResponse } from "@/components/ai-elements/message";
+import { MessageAction, MessageActions, MessageContent, MessageResponse, MessageToolbar } from "@/components/ai-elements/message";
 import { Reasoning, ReasoningContent, ReasoningTrigger } from "@/components/ai-elements/reasoning";
 import { generateId, UIMessage } from "ai";
 import ChatAttachments from "./ChatAttachments";
+import { Source, Sources, SourcesContent, SourcesTrigger } from "../ai-elements/sources";
+import { CopyIcon, RefreshCcwIcon, Sparkle } from "lucide-react";
+import { ChatUIMessage } from "@/lib/utils/models";
 
-export default function ChatMessageContent({message, isLastMessage, isStreaming}: {message: UIMessage, isLastMessage: boolean, isStreaming: boolean}){
+export default function ChatMessageContent({message, isLastMessage, isStreaming}: {message: ChatUIMessage, isLastMessage: boolean, isStreaming: boolean}){
   const reasoningParts = message.parts.filter((part) => part.type === "reasoning");
   const fileParts = message.parts.filter((part)=> part.type == "file");
   const textParts = message.parts.filter((part) => part.type === "text");
+  const sourceParts = message.parts.filter(
+    (part) => part.type === "source-url" || part.type === "source-document"
+  );
+  const isGrounded = message.role === "assistant" && sourceParts.length > 0;
   return <>
     {fileParts.length > 0 && <ChatAttachments files={fileParts.map((f)=> ({...f, id: generateId()}))}/>}
-    {(reasoningParts.length > 0 || textParts.length > 0) && <MessageContent>
+    {(reasoningParts.length > 0 || textParts.length > 0) && <MessageContent className="group">
+        
+        {isGrounded && <Sources className="flex flex-wrap gap-2">
+            <SourcesTrigger className="w-full hover:underline text-muted-foreground data-[state=open]:text-foreground cursor-pointer" count={sourceParts.length}/>
+            {sourceParts.map((part, i) => {
+                  return <SourcesContent className="text-muted-foreground my-0 bg-card hover:bg-secondary px-2.5 py-1.5 rounded-md" key={`${message.id}-${i}`}>
+                    <Source
+                      key={`${message.id}-${i}`}
+                      href={part.type == "source-url" ? part.url : "#"}
+                      title={part.title || (part.type == "source-url" ? part.url : "Document")}
+                    />
+                  </SourcesContent>
+            })}
+          </Sources>}
         {reasoningParts.length > 0 && (
           <Reasoning className="w-full" isStreaming={isLastMessage && isStreaming && message.parts.at(-1)?.type === "reasoning"}>
             <ReasoningTrigger />
@@ -23,6 +43,27 @@ export default function ChatMessageContent({message, isLastMessage, isStreaming}
               </MessageResponse>
             );
         })}
+        {message.role == "assistant" && <MessageToolbar className={`${isLastMessage ? "opacity-100" : "opacity-0"} ${!isStreaming && "group-hover:opacity-100"} transition-opacity`}>
+          {message.metadata && <p className="text-xs text-muted-foreground flex items-center gap-2 cursor-default"><Sparkle className="size-3"/> {message.metadata.model}</p>}
+        <MessageActions>
+          <MessageAction
+            tooltip="Retry message"
+            onClick={() => {}}
+            label="Retry"
+          >
+            <RefreshCcwIcon className="size-3" />
+          </MessageAction>
+          <MessageAction
+            tooltip="Copy to Clipboard"
+            onClick={() =>
+              navigator.clipboard.writeText(textParts.map((part) => part.text).join("\n\n"))
+            }
+            label="Copy"
+          >
+            <CopyIcon className="size-3" />
+          </MessageAction>
+        </MessageActions>
+        </MessageToolbar>}
       </MessageContent>
     }
   </>
