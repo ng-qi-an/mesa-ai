@@ -2,6 +2,7 @@ import { text, pgTable, serial, date, timestamp, AnyPgColumn, jsonb } from "driz
 import { user } from "./auth-schema";
 import { UIMessage } from "ai";
 import { ChatUIMessage } from "../utils/models";
+import { QuizQuestionItemType } from "@/app/api/notebook/schema";
 export const classes = pgTable("classes", {
     id: text("id").primaryKey(),
     userId: text("user_id").notNull().references(() => user.id, { onDelete: "cascade" }),
@@ -91,3 +92,22 @@ export const chatFiles = pgTable("chat_files", {
 
 export type ChatFileInsert = typeof chatFiles.$inferInsert
 export type ChatFileSelect = typeof chatFiles.$inferSelect
+
+export const quizzes = pgTable("quizzes", {
+    id: text("id").primaryKey(),
+    userId: text("user_id").notNull().references(() => user.id, { onDelete: "cascade" }),
+    classId: text("class_id").notNull().references(() => classes.id, { onDelete: "cascade" }),
+    notebookId: text("notebook_id").references(() => notebook.id, { onDelete: "cascade" }),
+    name: text("name").notNull().default("New quiz"),
+    topics: jsonb("topics_chosen").notNull().$type<string[]>(),
+    difficulty: text("difficulty").notNull(),
+    questionTypes: jsonb("question_types").notNull().$type<string[]>(),
+    length: text("length").notNull(), 
+    questions: jsonb("questions").notNull().$type<QuizQuestionItemType[]>(),
+    instructions: text("instructions"),
+    dateCreated: timestamp("date_created").notNull().defaultNow(),
+    dateModified: timestamp("date_modified").notNull().defaultNow(),
+})
+
+export type QuizInsert = typeof quizzes.$inferInsert
+export type QuizSelect = typeof quizzes.$inferSelect

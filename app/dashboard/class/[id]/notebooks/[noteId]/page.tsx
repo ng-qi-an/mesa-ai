@@ -50,7 +50,7 @@ export default function Page(){
         </PageHeader>
         <LayoutGroup>
             <GenerateNotesDialog/>
-            <div className="flex-1 min-h-0 w-full flex px-4 pb-4 gap-3 mt-5">
+            <div className="flex-1 min-h-0 w-full flex px-4 pb-4 gap-3 mt-5 overflow-hidden">
                 <LeftNotebookSidebar/>
                 <NotebookPanel/>
                 <RightNotebookSidebar/>
