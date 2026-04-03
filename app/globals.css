@@ -225,3 +225,11 @@
     @apply bg-background text-foreground;
   }
 }
+
+[data-streamdown="strong"]{
+  color: var(--foreground);
+}
+
+.streamdown ol, .streamdown ul {
+  list-style-position: outside;
+}

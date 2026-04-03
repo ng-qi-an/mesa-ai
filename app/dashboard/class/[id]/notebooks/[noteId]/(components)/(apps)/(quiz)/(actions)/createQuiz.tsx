@@ -3,7 +3,7 @@
 import { noteMetaSchema, quizQuestionsSchema } from "@/app/api/notebook/schema";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { chats, quizzes } from "@/lib/schemas/schema";
+import { chats, quizResponses, quizzes } from "@/lib/schemas/schema";
 import { google } from "@ai-sdk/google";
 import { generateText, Output } from "ai";
 import { generateId } from "better-auth";
@@ -30,30 +30,38 @@ export default async function createQuiz(classId: string, {noteId, fileStoreId, 
         # Content guidelines
         ${fileStoreId ? "- Use the file_search tool to access the content of the notes and generate quiz questions based on that content." : "Use the files provided by the user to generate quiz questions."}
         - Only make notes based on these topics: ${topics.join(", ")}.
-        - Generate questions of the following types: ${questionTypes.join(", ")}.
+        - Generate questions only of the following types: ${questionTypes.join(", ")}. This setting takes highest prority, all other types will be disallowed.
         - Generate only ${length == "short" ? "7 questions for quick reviews" : length == "medium" ? "12 questions for a standard quiz" : "20 questions for comprehensive quizzes that test understanding of topics"}.
         
         # Question types
+        ${questionTypes.includes("multiple-choice") ? `
         **Multiple choice questions (MCQs):**
+        - Provide no more or less than *4 options* for each question, with only one correct answer.\n- The options should not be similar to each other at all.\n- Indicate which option is correct by setting the "answer" property nested in options to true.\n- Additionally, give a short explanation (in 1 sentence) as to why the option is correct or incorrect in the "explanation" property nested in options. This will be shown to the student after they answer the question to briefly reason their mistakes.\n" : ""}
         - Provide no more or less than *4 options* for each question, with only one correct answer.
         - The options should not be similar to each other at all.
         - Indicate which option is correct by setting the "answer" property nested in options to true.
         - Additionally, give a short explanation (in 1 sentence) as to why the option is correct or incorrect in the "explanation" property nested in options. This will be shown to the student after they answer the question to briefly reason their mistakes.
+        ` : ""}
+        ${questionTypes.includes("true-false") ? `
         **True-false questions:**
         - Require the student to determine whether a statement is true or false.
         - The statement should be concise and clearly true or false based on the content of the notes. It can be misleading or ambiguous depending on difficulty as described below. You should not mention "True or False" in the statement, just make a statement that can be evaluated as true or false.
         - Indicate the correct answer in the "trueFalseAnswer" property as a boolean.
         - Additionally, give a short explanation (in 1 sentence) as to why the option is correct or incorrect in the "explanation" property nested in options. This will be shown to the student after they answer the question to briefly reason their mistakes.
+        ` : ""}
+        ${questionTypes.includes("short-answer") ? `
         **Short answer questions:**
         - Require a brief, concise answer, typically a word, phrase, or one sentence.
         - The answer should be clear and specific.
         - Avoid open-ended questions that could have multiple valid answers. Those belong in long-answer questions.
         - Indicate the correct answer in the "textualAnswer" property.
+        ` : ""}
+        ${questionTypes.includes("long-answer") ? `
         **Long answer questions:**
         - Require a more detailed response, typically a few sentences or a short paragraph.
         - The answer should demonstrate a deeper understanding of the material and may involve critical thinking and synthesis of different concepts.
         - Indicate the correct answer in the "textualAnswer" property.
-        
+        ` : ""}
         # Difficulty
         **Easy questions:**
         - Easy to answer if the student understands the material, but not too complex.
@@ -86,7 +94,7 @@ export default async function createQuiz(classId: string, {noteId, fileStoreId, 
         prompt: "# User's instructions\n" + instructions,
     })
     if (finishReason == "stop"){
-        return await db.insert(quizzes).values({
+        const quiz =  await db.insert(quizzes).values({
             id: generateId(12),
             classId,
             notebookId: noteId || null,
@@ -98,7 +106,15 @@ export default async function createQuiz(classId: string, {noteId, fileStoreId, 
             length,
             questions: output.questions.map((q: any) => ({...q, id: generateId(12)})),
             instructions,
-        }).returning()   
+        }).returning()
+        await db.insert(quizResponses).values({
+            id: generateId(12),
+            quizId: quiz[0].id,
+            userId: session.user.id,
+            respondedQuestions: [],
+            completedQuiz: false,
+        })   
+        return quiz
     } else {
         throw new Error(`Quiz generation failed: ${rawFinishReason}`);
     }

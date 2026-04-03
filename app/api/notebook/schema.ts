@@ -28,3 +28,10 @@ export const quizQuestionsSchema = z.object({
 
 export type QuizQuestionsType = z.infer<typeof quizQuestionsSchema>;
 export type QuizQuestionItemType = QuizQuestionsType["questions"][number] & {id: string};
+
+export const quizTextAnswerExplanation = z.object({ 
+    isCorrect: z.boolean().describe("Whether the student's answer is correct or not."),
+    explanation: z.string().describe("A detailed explanation of why the student's answer is wrong, and why the suggested answer is correct."),
+})
+
+export type QuizTextAnswerExplanationType = z.infer<typeof quizTextAnswerExplanation>;

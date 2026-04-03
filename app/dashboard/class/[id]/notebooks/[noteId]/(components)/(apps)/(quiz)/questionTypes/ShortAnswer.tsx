@@ -1,10 +1,13 @@
+import { QuizTextAnswerExplanationType } from "@/app/api/notebook/schema";
 import { Field, FieldDescription, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
-import { Item, ItemContent, ItemDescription, ItemMedia, ItemTitle } from "@/components/ui/item";
 import { QuizSelect } from "@/lib/schemas/schema";
-import { Check, X } from "lucide-react";
+import AnswerReasoning from "./AnswerReasoning";
+import Hint from "./Hint";
+import { InputGroup, InputGroupButton, InputGroupInput } from "@/components/ui/input-group";
+import { Lightbulb } from "lucide-react";
 
-export default function ShortAnswer({question, response, setResponse, revealAnswer, onSubmit}:{question: QuizSelect["questions"][number], response: string, setResponse: (response: string) => void, revealAnswer: boolean, onSubmit: (response: string) => void}) {
+export default function ShortAnswer({question, response, setResponse, revealAnswer, onSubmit, answerReasoning}:{question: QuizSelect["questions"][number], response: string, setResponse: (response: string) => void, revealAnswer: boolean, onSubmit: (response: string) => void, answerReasoning?: QuizTextAnswerExplanationType}) {
     return <form onSubmit={(e)=>{
         e.preventDefault();
         if (!revealAnswer) {
@@ -13,8 +16,21 @@ export default function ShortAnswer({question, response, setResponse, revealAnsw
     }} className="flex flex-col gap-3 mt-8 px-4">
         <Field>
             <FieldLabel>Short answer:</FieldLabel>
-            <Input value={response} onChange={(e) => setResponse(e.target.value)} disabled={revealAnswer} placeholder="Type your response here..." />
+            <InputGroup>
+                <InputGroupInput value={response} onChange={(e) => setResponse(e.target.value)} disabled={revealAnswer} placeholder="Type your response here..." />
+                <Hint hint={question.hint} align="end">
+                    <InputGroupButton
+                        aria-label="Hint"
+                        title="Hint"
+                        size="xs"
+                        className="mr-1"
+                    >
+                        Hint <Lightbulb/>
+                    </InputGroupButton>
+                </Hint>
+            </InputGroup>
             <FieldDescription>Answer using words, phrases or one sentence.</FieldDescription>
         </Field>
+        {revealAnswer && <AnswerReasoning answerReasoning={answerReasoning!} suggestedAnswer={question.textualAnswer!} />}
     </form>
 }

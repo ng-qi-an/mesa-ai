@@ -1,6 +1,8 @@
 import { Item, ItemContent, ItemDescription, ItemMedia, ItemTitle } from "@/components/ui/item";
 import { QuizSelect } from "@/lib/schemas/schema";
-import { Check, X } from "lucide-react";
+import { Check, Lightbulb, X } from "lucide-react";
+import Hint from "./Hint";
+import { Button } from "@/components/ui/button";
 
 export default function MCQList({question, response, setResponse, revealAnswer, onSelectAnswer}:{question: QuizSelect["questions"][number], response: string, setResponse: (response: string) => void, revealAnswer: boolean, onSelectAnswer?: (answer: string) => void}) {
     return <div className="flex flex-col gap-3 mt-8 px-4">
@@ -27,5 +29,6 @@ export default function MCQList({question, response, setResponse, revealAnswer, 
                 </ItemContent>
             </Item>
         })}
+        <Hint hint={question.hint}><Button variant="outline" size="icon-sm" ><Lightbulb/></Button></Hint>
     </div>
 }

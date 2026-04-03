@@ -4,7 +4,7 @@ import AppsPanel from "../AppsPanel";
 import { useState } from "react";
 import ChatsPanel from "../(apps)/(chats)/ChatsPanel";
 import { useNotebook } from "@/components/providers/notebook-provider";
-import QuizPanel from "../(apps)/(quiz)/QuizPanel";
+import QuizControllerPanel from "../(apps)/(quiz)/QuizControllerPanel";
 
 export default function RightNotebookSidebar(){
     const noteCtx = useNotebook();
@@ -22,7 +22,7 @@ export default function RightNotebookSidebar(){
             {sidebarTool == "Chat" ?
                 <ChatsPanel setSidebarTool={setSidebarTool}/>
             : sidebarTool == "Quiz" ?
-                <QuizPanel setSidebarTool={setSidebarTool}/>
+                <QuizControllerPanel setSidebarTool={setSidebarTool}/>
             : <>
                 <SourcesPanel/>
                 <AppsPanel setSidebarTool={setSidebarTool}/>

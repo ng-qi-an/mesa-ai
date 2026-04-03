@@ -1,8 +1,8 @@
-import { text, pgTable, serial, date, timestamp, AnyPgColumn, jsonb } from "drizzle-orm/pg-core";
+import { text, pgTable, serial, date, timestamp, AnyPgColumn, jsonb, boolean } from "drizzle-orm/pg-core";
 import { user } from "./auth-schema";
 import { UIMessage } from "ai";
 import { ChatUIMessage } from "../utils/models";
-import { QuizQuestionItemType } from "@/app/api/notebook/schema";
+import { QuizQuestionItemType, QuizTextAnswerExplanationType } from "@/app/api/notebook/schema";
 export const classes = pgTable("classes", {
     id: text("id").primaryKey(),
     userId: text("user_id").notNull().references(() => user.id, { onDelete: "cascade" }),
@@ -111,3 +111,17 @@ export const quizzes = pgTable("quizzes", {
 
 export type QuizInsert = typeof quizzes.$inferInsert
 export type QuizSelect = typeof quizzes.$inferSelect
+
+export const quizResponses = pgTable("quiz_responses", {
+    id: text("id").primaryKey(),
+    userId: text("user_id").notNull().references(() => user.id, { onDelete: "cascade" }),
+    quizId: text("quiz_id").notNull().references(() => quizzes.id, { onDelete: "cascade" }),
+    respondedQuestions: jsonb("responded_questions").notNull().$type<(QuizQuestionItemType & {response: string, answerReasoning?: QuizTextAnswerExplanationType})[]>().default([]),
+    attemptingQuestionId: text("attemptingQuestionId"),
+    completedQuiz: boolean("completed_quiz").notNull().default(false),
+    dateCreated: timestamp("date_created").notNull().defaultNow(),
+    dateModified: timestamp("date_modified").notNull().defaultNow(),
+})
+
+export type QuizResponseInsert = typeof quizResponses.$inferInsert
+export type QuizResponseSelect = typeof quizResponses.$inferSelect
