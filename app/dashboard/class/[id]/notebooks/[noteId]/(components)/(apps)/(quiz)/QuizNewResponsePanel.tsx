@@ -2,7 +2,7 @@
 
 import { QuizResponseSelect, QuizSelect } from "@/lib/schemas/schema";
 import QuizActionsDropdown from "./QuizActionsDropdown";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ArrowRight, Check, ChevronLeft, ChevronRight } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import { Card, CardHeader, CardTitle } from "@/components/ui/card";
 import { useEffect, useState } from "react";
@@ -59,7 +59,7 @@ export default function QuizNewResponsePanel({quiz, setQuiz, response, responses
     }
     async function markAnswer(isOption: boolean, questionResponse: string){
         console.log("Marking answer...", {isOption, questionResponse, activeQuestion})
-        if (!activeQuestion || !questionResponse) return;
+        if (!activeQuestion) return;
         setMarking(true);
         if (isOption){
             setRevealAnswer(true);
@@ -100,31 +100,48 @@ export default function QuizNewResponsePanel({quiz, setQuiz, response, responses
                 <EmptyHeader>Question not found</EmptyHeader>
                 <EmptyContent>The question you are looking for does not exist. Please try again.</EmptyContent>
             </Empty>}
-            <div className="flex w-full gap-2 px-2 pb-1">
-                <Button disabled={marking} variant={"secondaryRaised"} size={'lg'} onClick={()=>{
-                    const prevQuestion = quiz.questions[activeIndex - 1];
-                    if (prevQuestion) {    
-                        setActiveQuestionId(prevQuestion.id)
-                    } else {
-                        setSelectedResponseId("");
-                        setIsAttempting(false);
-                    }
-                }} className="flex-1">Back</Button>
-                {!revealAnswer ?
-                <Button disabled={!questionResponse || marking} variant={questionResponse ? 'raised' : "secondaryRaised"} size={'lg'} className="flex-1" onClick={()=> markAnswer(!activeQuestion?.textualAnswer, questionResponse)}>
-                    {marking ? <Spinner/> : "Check"}
-                </Button>
-                : <Button variant={"raised"} size={'lg'} onClick={async ()=> {
-                    const nextQuestion = quiz.questions[activeIndex + 1];
-                    if (nextQuestion) {    
-                        setActiveQuestionId(nextQuestion.id)
-                        setResponses(await saveResponseAttempt(response.id, {attemptingQuestionId: nextQuestion.id}, responses));
-                    } else {
-                        setResponses(await saveResponseAttempt(response.id, {completedQuiz: true}, responses));
-                        setSelectedResponseId(response.id);
-                        setIsAttempting(false);
-                    }
-                }} className="flex-1">{quiz.questions[activeIndex + 1] ? "Continue" : "Finish"}</Button>}
+            <div className="flex flex-col">
+                {!revealAnswer ? 
+                    <Button variant={"link"} className="mb-3 text-muted-foreground hover:text-foreground" onClick={()=>{
+                        markAnswer(!activeQuestion?.textualAnswer, questionResponse);
+                    }}>Skip this question <ArrowRight/></Button>
+                : answerReasoning && !answerReasoning.isCorrect && 
+                    <Button variant={"link"} className="mb-3 text-muted-foreground hover:text-foreground" onClick={async()=>{
+                        const newReasoning = {isCorrect: true, explanation: `Manually marked by student as correct.`}
+                        setAnswerReasoning(newReasoning);
+                        setResponses(await saveResponseAttempt(response.id, {respondedQuestions: compileFinalQuestions(questionResponse, newReasoning)}, responses ));
+                    }}>Mark my answer as correct <Check/></Button>
+                }
+                <div className="flex w-full gap-2 px-2 pb-1">
+                    <Button disabled={marking} variant={"secondaryRaised"} size={'lg'} onClick={()=>{
+                        const prevQuestion = quiz.questions[activeIndex - 1];
+                        if (prevQuestion) {    
+                            setActiveQuestionId(prevQuestion.id)
+                        } else {
+                            setSelectedResponseId("");
+                            setIsAttempting(false);
+                        }
+                    }} className="flex-1">Back</Button>
+                    {!revealAnswer ?
+                    <Button disabled={!questionResponse || marking} variant={questionResponse ? 'raised' : "secondaryRaised"} size={'lg'} className="flex-1" onClick={()=> {
+                        if (!questionResponse) return;
+                        markAnswer(!activeQuestion?.textualAnswer, questionResponse)
+                    }}>
+                        {marking ? <Spinner/> : "Check"}
+                    </Button>
+                    : <Button variant={"raised"} size={'lg'} onClick={async ()=> {
+                        const nextQuestion = quiz.questions[activeIndex + 1];
+                        if (nextQuestion) {    
+                            setActiveQuestionId(nextQuestion.id)
+                            setResponses(await saveResponseAttempt(response.id, {attemptingQuestionId: nextQuestion.id}, responses));
+                        } else {
+                            setMarking(true);
+                            setResponses(await saveResponseAttempt(response.id, {completedQuiz: true}, responses));
+                            setSelectedResponseId(response.id);
+                            setIsAttempting(false);
+                        }
+                    }} className="flex-1">{quiz.questions[activeIndex + 1] ? "Continue" : "Finish"}</Button>}
+                </div>
             </div>
         </div>
     </Card>

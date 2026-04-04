@@ -13,7 +13,7 @@ export default function ShortAnswer({question, response, setResponse, revealAnsw
         if (!revealAnswer) {
             onSubmit(response);
         }
-    }} className="flex flex-col gap-3 mt-8 px-4">
+    }} className="flex flex-col gap-3 px-4">
         <Field>
             <FieldLabel>Short answer:</FieldLabel>
             <InputGroup>

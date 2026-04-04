@@ -16,7 +16,7 @@ export default function QuizQuestion({quiz, question, response, setResponse, rev
             <Badge variant={"secondary"} className="capitalize">{question.difficulty}</Badge>
             <span className="text-muted-foreground text-xs">{quiz.questions.indexOf(question) + 1} / {quiz.questions.length}</span>
         </div>
-        <p className="text-base text-foreground/95 mt-3 px-6 text-justify">{question.question}</p>
+        <p className="text-base text-foreground/95 mt-3 px-6 mb-8 text-justify">{question.question}</p>
         {question.type == "multiple-choice" ? 
             <MCQList question={question} response={response} setResponse={setResponse} revealAnswer={revealAnswer} onSelectAnswer={(answer)=> onSubmit(true, answer)} /> 
         : question.type == "true-false" ? 

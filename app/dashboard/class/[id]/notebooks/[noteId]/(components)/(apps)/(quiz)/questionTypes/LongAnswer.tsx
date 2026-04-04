@@ -13,7 +13,7 @@ export default function LongAnswer({question, response, setResponse, revealAnswe
         if (!revealAnswer) {
             onSubmit(response);
         }
-    }} className="flex flex-col gap-3 mt-8 px-4 h-full">
+    }} className="flex flex-col gap-3 px-4 h-full">
         <Field className="h-full max-h-[200px]">
             <FieldLabel>Long answer</FieldLabel>
             <FieldDescription>Provide a detailed response to the question.</FieldDescription>

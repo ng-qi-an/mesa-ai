@@ -5,7 +5,7 @@ import Hint from "./Hint";
 import { Button } from "@/components/ui/button";
 
 export default function MCQList({question, response, setResponse, revealAnswer, onSelectAnswer}:{question: QuizSelect["questions"][number], response: string, setResponse: (response: string) => void, revealAnswer: boolean, onSelectAnswer?: (answer: string) => void}) {
-    return <div className="flex flex-col gap-3 mt-8 px-4">
+    return <div className="flex flex-col gap-3 px-4">
         {question.options!.map((option, index) => {
             return <Item key={index} variant={revealAnswer ? "outline" : "muted"} className={`${revealAnswer ? option.answer ? "border-green-500" : option.value == response ? "border-destructive" : "opacity-50 cursor-default" : "cursor-pointer hover:bg-secondary active:translate-y-0.5 active:scale-[0.99] transition-transform"}`} onClick={()=> {
                 if (revealAnswer) return;
