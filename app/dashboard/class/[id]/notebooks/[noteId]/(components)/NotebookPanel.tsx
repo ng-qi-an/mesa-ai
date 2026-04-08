@@ -9,6 +9,7 @@ import { ArrowUp, CircleAlert, Moon, Notebook, RefreshCw, Settings2, Sidebar, Sp
 import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useRef, useState } from "react";
 import { math } from '@streamdown/math';
+//@ts-ignore
 import 'katex/dist/katex.min.css';
 import remarkGfm from 'remark-gfm'
 import rehypeSlug from 'rehype-slug'

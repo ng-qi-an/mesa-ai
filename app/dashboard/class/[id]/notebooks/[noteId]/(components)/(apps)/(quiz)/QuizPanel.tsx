@@ -60,7 +60,7 @@ export default function QuizPanel({quiz: importedQuiz, setSelectedQuizId}: {quiz
                 <Spinner /> 
             </div>
             : selectedResponseId ? 
-                <QuizResponseDetails response={responses.find(r => r.id === selectedResponseId)!} setSelectedResponseId={setSelectedResponseId} />
+                <QuizResponseDetails response={responses.find(r => r.id === selectedResponseId)!} />
             : <div className="px-2 pb-2 pt-4">
                 {incompleteAttempt ? <Item variant="outline">
                     <ItemMedia variant="icon">

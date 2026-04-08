@@ -47,12 +47,12 @@ export default function FileSelectorDialog({ open, setOpen, onConfirm }: { open:
             }
             setOpen(x)
         }}>
-            <DialogContent className="md:max-w-xl h-full max-h-[95vh] md:h-max flex flex-col">
+            <DialogContent className="sm:max-w-xl h-full max-h-[95vh] sm:h-max flex flex-col">
                 <DialogHeader className="h-max">
                     <DialogTitle>Mesa Drive</DialogTitle>
                     <DialogDescription>Select files from Mesa Drive to add.</DialogDescription>
                 </DialogHeader>
-                <div className="flex flex-col overflow-auto w-full h-full">
+                <div className="flex flex-col overflow-auto w-full h-full sm:h-max">
                     <div className="flex items-center justify-between">
                         <FileBrowserBreadcrumbs nests={nests} setNests={setNests} classNames={{page: 'font-medium text-base', link: 'text-base'}}/>
                         <CreateNewButton nests={nests}>
@@ -67,16 +67,14 @@ export default function FileSelectorDialog({ open, setOpen, onConfirm }: { open:
                     : <>                   
                         <div className="flex w-full overflow-auto mt-3">
                             <FileBrowser selected={selectedFiles.map(f=>f.id)} className="w-full" files={files} hideColumns={["dateModified"]} enableCheckbox onItemSelect={(file) => {
-                                if (file.contentType != "application/x-directory") {
+                                if (file.contentType == "application/x-directory") {
+                                    setNests([...nests, file])
+                                } else {
                                     if (selectedFiles.some(f=>f.id == file.id)){
                                         setSelectedFiles(selectedFiles.filter(f=>f.id != file.id && f.contentType != "application/x-directory"));
                                     } else {
                                         setSelectedFiles([...selectedFiles.filter(f=>f.contentType != "application/x-directory"), file]);
                                     }
-                                }
-                            }} onSecondaryItemSelect={async (file)=>{
-                                if (file.contentType == "application/x-directory") {
-                                    setNests([...nests, file])
                                 }
                             }}/>
                         </div>
@@ -87,7 +85,7 @@ export default function FileSelectorDialog({ open, setOpen, onConfirm }: { open:
                     <DialogClose asChild>
                         <Button variant="outline">Cancel</Button>
                     </DialogClose>
-                    <Button type="submit" disabled={loading || selectedFiles.length === 0} onClick={()=> onConfirm(selectedFiles)}>{selectedFiles.length === 0 ? "Select files" : `Select ${selectedFiles.length} file${selectedFiles.length != 1 ? "s" : ""}`}</Button>
+                    <Button type="submit" disabled={selectedFiles.length === 0} onClick={()=> onConfirm(selectedFiles)}>{selectedFiles.length === 0 ? "Select files" : `Select ${selectedFiles.length} file${selectedFiles.length != 1 ? "s" : ""}`}</Button>
                 </DialogFooter>
             </DialogContent>
         </Dialog>
