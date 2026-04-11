@@ -20,18 +20,26 @@ import createClassServer from "@/lib/actions/classes/createClass";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Spinner } from "@/components/ui/spinner";
-import { subjectsList } from "@/lib/subjectsList";
+import { availableSubjects, subjectsList } from "@/lib/subjects/subjectsList";
 
 
 export default function CreateClassDialog({showCreate, setShowCreate}: {showCreate: boolean, setShowCreate: (show: boolean) => void}) {
     const [name, setName] = useState('');
     const [theme, setTheme] = useState('');
-    const [subject, setSubject] = useState('');
+    const [subject, setSubject] = useState('generic' as keyof typeof availableSubjects);
     const [icon, setIcon] = useState('presentation');
     const [iconPickerOpen, setIconPickerOpen] = useState(false);
     const [creating, setCreating] = useState(false);
     const router = useRouter();
-    return <Dialog open={showCreate} onOpenChange={setShowCreate}>
+    return <Dialog open={showCreate} onOpenChange={(x)=>{
+        if (!x){
+            setName('')
+            setTheme('')
+            setIcon("presentation")
+            setSubject('generic')
+        }
+        setShowCreate(x)
+    }}>
         <DialogContent className={cn(theme, "h-max max-h-[90vh] sm:max-w-[500px] overflow-auto gap-4 p-0")}>
             <form onSubmit={async(e)=>{
                 e.preventDefault();
@@ -84,9 +92,15 @@ export default function CreateClassDialog({showCreate, setShowCreate}: {showCrea
                         </div>
                         <Field>
                             <FieldLabel htmlFor="username">Subject</FieldLabel>
-                            <Select required value={subject} onValueChange={(v) => {
+                            <Select required value={subject} onValueChange={(v: keyof typeof availableSubjects) => {
+                                const oldSubject = subject;
                                 setSubject(v)
-                                setIcon(subjectsList.find(s => s.name === v)?.iconName || 'presentation')
+                                if (icon == "presentation" || icon == availableSubjects[oldSubject]?.iconName){
+                                    setIcon(availableSubjects[v].iconName)
+                                }
+                                if (!name.trim() || name == availableSubjects[oldSubject]?.name){
+                                    setName(availableSubjects[v].name)
+                                }
                             }}>
                                 <SelectTrigger>
                                     <SelectValue placeholder="Select a subject"/>
@@ -94,7 +108,7 @@ export default function CreateClassDialog({showCreate, setShowCreate}: {showCrea
                                 <SelectContent>
                                     {subjectsList.map((subject) => {
                                         return (
-                                            <SelectItem key={subject.name} value={subject.name}>
+                                            <SelectItem key={subject.name} value={subject.name.toLowerCase()}>
                                                 <subject.icon className="size-4 mr-2 inline-block" />
                                                 {subject.name}
                                             </SelectItem>
@@ -102,7 +116,7 @@ export default function CreateClassDialog({showCreate, setShowCreate}: {showCrea
                                     })}
                                 </SelectContent>
                             </Select>
-                            <FieldDescription className="dark:text-white/70">Mesa AI will generate {subject} prompts. Cannot be changed later.</FieldDescription>
+                            <FieldDescription className="dark:text-white/70">Content will be generate based on <b>{subject}</b> instructions.</FieldDescription>
                         </Field>
                         <Field>
                             <FieldLabel htmlFor="username">Theme</FieldLabel>
@@ -115,9 +129,14 @@ export default function CreateClassDialog({showCreate, setShowCreate}: {showCrea
                                     <SelectItem value="red"><Circle className="red fill-primary"/> Red</SelectItem>
                                     <SelectItem value="orange"><Circle className="orange fill-primary"/> Orange</SelectItem>
                                     <SelectItem value="green"><Circle className="green fill-primary"/> Green</SelectItem>
+                                    <SelectItem value="teal"><Circle className="teal fill-primary"/> Teal</SelectItem>
+                                    <SelectItem value="blue"><Circle className="blue fill-primary"/> Blue</SelectItem>
+                                    <SelectItem value="indigo"><Circle className="indigo fill-primary"/> Indigo</SelectItem>
+                                    <SelectItem value="purple"><Circle className="purple fill-primary"/> Purple</SelectItem>
+                                    <SelectItem value="pink"><Circle className="pink fill-primary"/> Pink</SelectItem>
                                 </SelectContent>
                             </Select>
-                            <FieldDescription className="dark:text-white/70">Color theme used across your class.</FieldDescription>
+                            <FieldDescription className="dark:text-white/70">Color theme used across this class.</FieldDescription>
                         </Field>
                     </FieldGroup>
                 </FieldSet>
@@ -126,7 +145,8 @@ export default function CreateClassDialog({showCreate, setShowCreate}: {showCrea
                         setShowCreate(false)
                         setName('')
                         setTheme('')
-                        setSubject('')
+                        setIcon("presentation")
+                        setSubject('generic')
                     }}>Cancel</Button>
                     <Button disabled={creating}>Create {creating && <Spinner/>} </Button>
                 </DialogFooter>

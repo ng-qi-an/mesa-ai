@@ -12,5 +12,5 @@ export default async function getAllClassesServer() {
     if (!session) {
         throw new Error("Unauthorized")
     }
-    return await db.select().from(classes).where(eq(classes.userId, session.user.id));
+    return (await db.select().from(classes).where(eq(classes.userId, session.user.id))).sort((a, b) => b.dateCreated.getTime() - a.dateCreated.getTime());
 }

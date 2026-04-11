@@ -141,7 +141,7 @@ export default function ChatMessagesPanel({setSelectedChatId, initialChat}: {set
                         // noteCtx.setCache(newCache.name!, noteCtx.files.map(f=>f.id));
                         // await SaveToNotebook(noteCtx.noteId, {cache: {name: newCache.name!, fileIds: noteCtx.files.map(f=>f.id)}});
 
-                        const r = await SendChatMessage({message, files, sendMessage, thinkingLevel, chatId: chat.id, bodyOptions: {fileStoreId: _class.fileStoreId, fileIds: noteCtx.files.map(f=>f.id)}});
+                        const r = await SendChatMessage({message, files, sendMessage, thinkingLevel, chatId: chat.id, bodyOptions: {fileStoreId: _class.fileStoreId, fileIds: noteCtx.files.map(f=>f.id), subject: _class.subject}});
                         console.log("SendChatMessage result:", r);
                         if (r === "failed_uploads") {
                             toast.warning("Some files failed to upload.");

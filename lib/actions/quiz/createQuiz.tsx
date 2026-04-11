@@ -9,8 +9,9 @@ import { generateText, Output } from "ai";
 import { generateId } from "better-auth";
 import { headers } from "next/headers";
 import { quizQuestionsSchema } from "./quizSchema";
+import { availableSubjects } from "@/lib/subjects/subjectsList";
 
-export default async function createQuiz(classId: string, {noteId, fileStoreId, fileIds, name, topics, difficulty, questionTypes, length, instructions}: {noteId?: string, fileStoreId: string, fileIds: string[], name: string, topics: string[], difficulty: string, questionTypes: string[], length: string, instructions: string}) {
+export default async function createQuiz(classId: string, {noteId, fileStoreId, fileIds, name, subject, topics, difficulty, questionTypes, length, instructions}: {noteId?: string, fileStoreId: string, fileIds: string[], name: string, subject: keyof typeof availableSubjects, topics: string[], difficulty: string, questionTypes: string[], length: string, instructions: string}) {
     const session = await auth.api.getSession({
         headers: await headers()
     })
@@ -28,8 +29,8 @@ export default async function createQuiz(classId: string, {noteId, fileStoreId, 
         } : undefined,
         toolChoice: "required",
         system: `
-        # Role
-        You are a quiz generator for students based on the content of their notes.
+        # Subject-specific guidelines
+        ${availableSubjects[subject].instructions.quiz}
         
         # Content guidelines
         ${fileStoreId ? "- Use the file_search tool to access the content of the notes and generate quiz questions based on that content." : "Use the files provided by the user to generate quiz questions."}

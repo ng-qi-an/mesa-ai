@@ -1,31 +1,21 @@
 'use client';
 import {
   Field,
-  FieldContent,
-  FieldDescription,
-  FieldError,
   FieldGroup,
   FieldLabel,
-  FieldLegend,
-  FieldSeparator,
   FieldSet,
-  FieldTitle,
 } from "@/components/ui/field"
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Button } from "../../../../../components/ui/button";
-import { Circle } from "lucide-react";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
 import { useState } from "react";
-import { Tooltip, TooltipContent, TooltipTrigger } from "../../../../../components/ui/tooltip";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
-import IconPicker from "../../../../../components/ui/icon-picker";
+import IconPicker from "@/components/ui/icon-picker";
 import { DynamicIcon } from "lucide-react/dynamic";
-import createClassServer from "@/lib/actions/classes/createClass";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Spinner } from "@/components/ui/spinner";
-import { subjectsList } from "@/lib/subjectsList";
 import { useClass } from "@/components/providers/class-provider";
 import createTopicServer from "@/lib/actions/topics/createTopic";
 

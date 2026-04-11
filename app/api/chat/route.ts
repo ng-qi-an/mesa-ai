@@ -2,6 +2,7 @@ import { streamText, UIMessage, convertToModelMessages } from 'ai';
 import { google } from "@ai-sdk/google";
 import { createOpenRouter } from '@openrouter/ai-sdk-provider';
 import { chatModels, ChatUIMessage, Model } from '@/lib/utils/models';
+import { availableSubjects } from '@/lib/subjects/subjectsList';
 
 const maxDuration = 180;
 
@@ -10,14 +11,19 @@ type ChatRequestType = {
     forceSearch: boolean;
     chatModelIndex?: number;
     messages: ChatUIMessage[];
+    subject: keyof typeof availableSubjects;
 }
 
 const openrouter = createOpenRouter({
   apiKey: process.env.OPENROUTER_API_KEY!,
 });
 
-function createChatStream({model, context, messages}: {model: Model; context: ChatRequestType; messages: Awaited<ReturnType<typeof convertToModelMessages>>;}) {
+function createChatStream({model, context, messages}: {model: Model; context: ChatRequestType; messages: Awaited<ReturnType<typeof convertToModelMessages>>}) {
     return streamText({
+        system: `
+        ${availableSubjects[context.subject].instructions.chat}
+        **Math formula**: If you need to use a math formula, use LaTeX format and STRICTLY wrap it in double dollar signs. For example, if you want to express the formula for the area of a circle, you would write: $$A = \pi r^2$$.
+        `,
         model: model.provider == "google" ? google(model.name) : openrouter.chat(model.name),
         messages,
         tools: model.provider === "google" ? {
@@ -38,7 +44,10 @@ function createChatStream({model, context, messages}: {model: Model; context: Ch
 
 
 export async function POST(req: Request) {
-  const context: ChatRequestType = await req.json();
+    const context: ChatRequestType = await req.json();
+    if (!context.subject) {
+        throw new Error("Subject is required");
+    }
     const messages = await convertToModelMessages(context.messages);
     const modelIndex = Number.isInteger(context.chatModelIndex) ? Number(context.chatModelIndex) : 0;
     const model = chatModels[modelIndex];

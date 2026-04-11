@@ -3,14 +3,16 @@ import { user } from "./auth-schema";
 import { UIMessage } from "ai";
 import { ChatUIMessage } from "../utils/models";
 import { QuizQuestionItemType, QuizTextAnswerExplanationType } from "../actions/quiz/quizSchema";
+import { availableSubjects } from "../subjects/subjectsList";
 export const classes = pgTable("classes", {
     id: text("id").primaryKey(),
     userId: text("user_id").notNull().references(() => user.id, { onDelete: "cascade" }),
     fileStoreId: text("file_store_id"),
     name: text("name").notNull(),
-    subject: text("subject").notNull(),
+    subject: text("subject").notNull().$type<keyof typeof availableSubjects>(),
     theme: text("theme").notNull(),
     icon: text("icon").notNull(),
+    dateCreated: timestamp("date_created").notNull().defaultNow(),
 });
 
 export type ClassInsert = typeof classes.$inferInsert
@@ -22,6 +24,7 @@ export const topics = pgTable("topics", {
     classId: text("class_id").notNull().references(() => classes.id, { onDelete: "cascade" }),
     name: text("name").notNull(),
     icon: text("icon").notNull(),
+    dateCreated: timestamp("date_created").notNull().defaultNow(),
 });
 
 export type TopicInsert = typeof topics.$inferInsert

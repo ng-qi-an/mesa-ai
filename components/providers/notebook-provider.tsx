@@ -12,6 +12,7 @@ import { FileSelect, NotebookSelect } from "@/lib/schemas/schema";
 import { useParams } from "next/navigation";
 import SaveToNotebook from "@/app/dashboard/class/[id]/notebooks/[noteId]/(actions)/saveToNotebook";
 import { useClass } from "./class-provider";
+import { availableSubjects } from "@/lib/subjects/subjectsList";
 
 export type NotebookContextType = {
     // Ui States
@@ -29,6 +30,7 @@ export type NotebookContextType = {
     noteId: string;
     name: string;
     setName: (name: string) => void;
+    subject: keyof typeof availableSubjects;
     files: FileSelect[];
     sourceFiles: string[];
     setSourceFiles: (fileIds: string[]) => void;
@@ -148,7 +150,7 @@ export default function NotebookProvider({children, data}: {children: React.Reac
                     payload.name = res.object.header;
                 }
                 await SaveToNotebook(noteId, payload);
-                generateNotes({noteId, instructions: `${defaultNotesInstructions(resolvedLength, resolvedInstructions, Object.keys((weights)))}`, length: resolvedLength, fileIds: files.map(f=>f.id), topicWeights: weights, setCollapseSections, sendNotesFollowup, fileStoreId: _class.fileStoreId!});
+                generateNotes({noteId, instructions: `${defaultNotesInstructions(resolvedLength, _class.subject, resolvedInstructions, Object.keys((weights)))}`, length: resolvedLength, fileIds: files.map(f=>f.id), topicWeights: weights, setCollapseSections, sendNotesFollowup, fileStoreId: _class.fileStoreId!});
             }
         },
         onError: (err)=>{
@@ -168,7 +170,7 @@ export default function NotebookProvider({children, data}: {children: React.Reac
                 parts: [
                     {
                         type: 'text',
-                        text: defaultNotesInstructions(length, instructions, Object.keys(topicWeights))
+                        text: defaultNotesInstructions(length, _class.subject, instructions, Object.keys(topicWeights))
                     }
                 ]
             },
@@ -266,6 +268,7 @@ export default function NotebookProvider({children, data}: {children: React.Reac
             setShowGenerateNotesDialog,
         // Content States
             noteId,
+            subject: _class.subject,
             name,
             setName,
             files, 

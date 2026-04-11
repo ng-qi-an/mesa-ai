@@ -3,11 +3,12 @@ import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import createFileStore from "@/lib/file-search-actions/createFileStore";
 import { classes } from "@/lib/schemas/schema";
+import { availableSubjects } from "@/lib/subjects/subjectsList";
 import { generateId } from "better-auth";
 import { and, eq } from "drizzle-orm";
 import { headers } from "next/headers";
 
-export default async function createClassServer( name: string, subject: string, theme: string, icon: string) {
+export default async function createClassServer( name: string, subject: keyof typeof availableSubjects, theme: string, icon: string) {
     const session = await auth.api.getSession({
         headers: await headers()
     })

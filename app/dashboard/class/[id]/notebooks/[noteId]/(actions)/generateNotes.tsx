@@ -1,6 +1,7 @@
 'use client';
 import { useClass } from "@/components/providers/class-provider";
 import { useNotebook } from "@/components/providers/notebook-provider";
+import { availableSubjects } from "@/lib/subjects/subjectsList";
 
 function lengthModeGuidelines(length: string) {
     const normalizedLength = ["concise", "balanced", "detailed"].includes(length) ? length : "balanced";
@@ -47,8 +48,10 @@ ${instructions}
 `
 
 
-export const defaultNotesInstructions = (length: string, customInstructions?: string, topics?: string[]) => `
-    ## Content Guidelines
+export const defaultNotesInstructions = (length: string, subject: keyof typeof availableSubjects, customInstructions?: string, topics?: string[]) => `
+    ## Subject specific guidelines
+    ${availableSubjects[subject].instructions.notebook}
+    ## Formatting Guidelines
     ### No title!
     - The title and summary of the note is already provided and should not be repeated in the content.
     - Start directly with the first topic heading. Do not provide a summary or introduction paragraph.
@@ -60,12 +63,6 @@ export const defaultNotesInstructions = (length: string, customInstructions?: st
     - Active voice preferred
     - Allocate word count proportionally to topic weight percentages
     - A topic with 40% weight should receive ~40% of the content depth
-    ### Structure Each Topic Section
-    1. Brief intro (what is this and why does it matter?)
-    2. Core explanation with multiple examples
-    3. Key relationships, comparisons, and trade-offs
-    4. Common misconceptions and how to correct them
-    5. Practical implications or real-world application when relevant
     
     ## Topics
     ${topics?.map(topic => `- ${topic}`).join("\n") || "No topics specified."}
@@ -76,11 +73,6 @@ export const defaultNotesInstructions = (length: string, customInstructions?: st
     - Do not merge, rename, skip, or reorder topics.
     - Topic weights control depth, not whether a topic gets a section.
     - If the source has limited content for a topic, still include that topic heading with a brief "limited coverage in source" explanation.
-
-    ## Weight handling
-    - Allocate explanation depth proportionally to the topic weights.
-    - Higher-weight topics should receive proportionally more detail, examples, and subpoints.
-    - Lower-weight topics should still be covered, but more briefly.
     
     ## Formatting Rules
         ### Headings
@@ -88,9 +80,7 @@ export const defaultNotesInstructions = (length: string, customInstructions?: st
         - Use H2 (##) for main topic sections
         - Use H3 (###) for subtopics within sections
         - Use H4 (####) sparingly for detailed breakdowns
-        ### [VERY IMPORTANT]: Math formatting
-        - When generating math equations using Latex format, always use 2 dollar signs ($$) rather than 1 dollar sign ($). For example, instead of $$x = \frac{-b \pm \sqrt{b^2 - 4ac}}{2a}$$ use $x = \frac{-b \pm \sqrt{b^2 - 4ac}}{2a}$
-        ### Images
+        ### Image Query Format
         If you want to illustrate a concept with an image, insert a placeholder in the following format:
         [image: <short description or very short query>]
         - Example: [image: cell division diagram]
@@ -107,24 +97,8 @@ export const defaultNotesInstructions = (length: string, customInstructions?: st
         - Numbered lists for sequences, steps, or ranked items
         - Keep list items concise — expand in paragraphs if needed
         - Tables for summarising comparisons, pros/cons, or structured data
-    ## Edge Case Handling
-        ### If the document is very short:
-        - Focus on depth over breadth
-        - Add contextual explanations the source may assume
-        - Still respect topic weight ratios
-        ### If topic weights don't add to 100%:
-        - Normalize proportionally
-        - Example: weights of 30, 30, 20 → treat as 37.5%, 37.5%, 25%
-        ### If a weighted topic isn't in the document:
-        - Mention it briefly with a note that the source doesn't cover it
-        - Redistribute that weight to related topics
-        ### If the source contains errors or unclear passages:
-        - Interpret reasonably and present the most logical understanding
-        - Don't invent information not supported by the source
-        ### If the source is highly technical:
-        - Define jargon on first use
-        - Build up from fundamentals before diving deep
-        - Use analogies to bridge complex concepts
+
+    ##
 
     ${customInstructions?.trim() ? `
     ## Custom user iinstructions

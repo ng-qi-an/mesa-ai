@@ -26,7 +26,7 @@ export default function MainSidebarHeader({_class, classes}: {_class: ClassSelec
                         </div>
                         <div className="flex flex-col gap-0.5 leading-none group-data-[collapsible=icon]:hidden">
                             <span className="font-medium">{_class.name}</span>
-                            <span className="text-xs text-muted-foreground">Mesa ai</span>
+                            <span className="text-xs text-muted-foreground capitalize">{_class.subject}</span>
                         </div>
                         <ChevronsUpDown className="ml-auto group-data-[collapsible=icon]:hidden" />
                         </SidebarMenuButton>
@@ -60,7 +60,7 @@ export default function MainSidebarHeader({_class, classes}: {_class: ClassSelec
                             </div>
                             <div className="flex flex-col gap-0.5 leading-none">
                                 <span className="font-medium">{_classx.name}</span>
-                                <span className="text-xs text-muted-foreground">{_classx.subject}</span>
+                                <span className="text-xs text-muted-foreground capitalize">{_classx.subject}</span>
                             </div>
                         </DropdownMenuItem>
                         })}

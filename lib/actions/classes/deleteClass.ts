@@ -8,6 +8,7 @@ import getAllClassesServer from "./getAllClasses";
 import deleteFileStore from "@/lib/file-search-actions/deleteFileStore";
 import { DeleteObjectsCommand } from "@aws-sdk/client-s3";
 import { r2 } from "@/lib/r2";
+import { ApiError } from "@google/genai";
 
 export default async function deleteClassServer(classId: string) {
     const session = await auth.api.getSession({
@@ -25,21 +26,29 @@ export default async function deleteClassServer(classId: string) {
     if (!_class) {
         throw new Error("Class not found")
     }
-    const command = new DeleteObjectsCommand({
-        Bucket: process.env.R2_BUCKET_NAME!,
-        Delete: {
-            Objects: _class.files.map(file => ({
-                Key: `user-files/${session!.user.id!}/${file.id}`
-            }))
-        }
-    })
-    if (_class.fileStoreId) {
-        await deleteFileStore(_class.fileStoreId);
-    }
     try {
-        await r2.send(command)
+        if (_class.fileStoreId) {
+            await deleteFileStore(_class.fileStoreId);
+        }
     } catch (error) {
-        throw error;
+        if (!(error instanceof ApiError && error.message.includes("not found"))){
+            throw error
+        }
+    }
+    if (_class.files.length > 0) {
+        const command = new DeleteObjectsCommand({
+            Bucket: process.env.R2_BUCKET_NAME!,
+            Delete: {
+                Objects: _class.files.map(file => ({
+                    Key: `user-files/${session!.user.id!}/${file.id}`
+                }))
+            }
+        })
+        try {
+            await r2.send(command)
+        } catch (error) {
+            throw error;
+        }
     }
     await db.delete(classes).where(eq(classes.id, classId));
     return await getAllClassesServer();

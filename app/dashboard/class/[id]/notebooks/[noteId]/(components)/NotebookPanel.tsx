@@ -8,7 +8,7 @@ import { TypographyLead } from "@/components/ui/typography/lead";
 import { ArrowUp, CircleAlert, Moon, Notebook, RefreshCw, Settings2, Sidebar, Sparkles, StopCircle, Sun } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useRef, useState } from "react";
-import { math } from '@streamdown/math';
+import { createMathPlugin } from '@streamdown/math';
 //@ts-ignore
 import 'katex/dist/katex.min.css';
 import remarkGfm from 'remark-gfm'
@@ -24,6 +24,10 @@ import NoteSettingsDialog from "./(modals)/NoteSettingsDialog";
 import { Streamdown } from "streamdown";
 import { useTheme } from "next-themes";
 import checkFileStoreMatch from "../(actions)/checkFileStoreMatch";
+
+const math = createMathPlugin({
+  singleDollarTextMath: true,
+});
 
 export default function NotebookPanel(){
     const noteCtx = useNotebook()
@@ -211,7 +215,7 @@ export default function NotebookPanel(){
                                 Stop generating
                             </Button>
                         : <></>)
-                        : !checkFileStoreMatch(noteCtx.sourceFiles, noteCtx.files.map(f=> f.id)) ?
+                        : (noteCtx.sourceFiles.length > 0 && !checkFileStoreMatch(noteCtx.sourceFiles, noteCtx.files.map(f=> f.id))) ?
                             <Button variant={'raised'} disabled={noteCtx!.files.length < 1} size={'lg'} className="px-4" onClick={() => {
                                 noteCtx?.setShowGenerateNotesDialog(true);
                             }}>
@@ -231,7 +235,7 @@ export default function NotebookPanel(){
                                     <ArrowUp/>
                                 </Button>
                             </form>
-                        : (!noteCtx?.metaObject || !noteCtx.metaObject.header) && <Button variant={'raised'} disabled={noteCtx!.files.length < 1} size={'lg'} className="px-4" onClick={() => {
+                        : (!noteCtx?.metaObject || !noteCtx.metaObject.header || !noteCtx.isGenerating && noteCtx.notesHistory.length === 0) && <Button variant={'raised'} disabled={noteCtx!.files.length < 1} size={'lg'} className="px-4" onClick={() => {
                             noteCtx?.setShowGenerateNotesDialog(true);
                         }}>
                             <Sparkles/>
