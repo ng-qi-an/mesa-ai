@@ -1,11 +1,10 @@
-import { QuizTextAnswerExplanationType } from "@/app/api/notebook/schema";
 import { Field, FieldDescription, FieldLabel } from "@/components/ui/field";
-import { Input } from "@/components/ui/input";
 import { QuizSelect } from "@/lib/schemas/schema";
 import AnswerReasoning from "./AnswerReasoning";
 import Hint from "./Hint";
 import { InputGroup, InputGroupButton, InputGroupInput } from "@/components/ui/input-group";
 import { Lightbulb } from "lucide-react";
+import { QuizTextAnswerExplanationType } from "@/lib/actions/quiz/quizSchema";
 
 export default function ShortAnswer({question, response, setResponse, revealAnswer, onSubmit, answerReasoning}:{question: QuizSelect["questions"][number], response: string, setResponse: (response: string) => void, revealAnswer: boolean, onSubmit: (response: string) => void, answerReasoning?: QuizTextAnswerExplanationType}) {
     return <form onSubmit={(e)=>{

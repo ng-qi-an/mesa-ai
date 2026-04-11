@@ -44,11 +44,11 @@ export default function ChatsLayout({children, chats}: {chats: ChatSelect[], chi
         }
     }, [])
     return <div className="flex h-screen w-full">
-        <div className="flex flex-col sm:min-w-[17rem] sm:max-w-[17rem] border-r h-full">
+        <div className="flex flex-col sm:min-w-[17rem] sm:max-w-[17rem] border-r h-screen">
             <p onClick={()=> router.push(`/dashboard/class/${id}/chats`)} className="cursor-pointer flex items-center shrink-0 h-16 px-6 font-medium border-b hover:text-foreground/70">Chats</p>
-            <div className="flex flex-col px-3 py-4 pt-4 h-full gap-1">
+            <div className="flex flex-col px-3 py-4 pt-4 h-full gap-1 overflow-auto h-full">
                 {chats.length > 0 ? <>
-                <div onClick={()=> router.push(`/dashboard/class/${id}/chats`)} className={`w-full flex gap-3 group cursor-pointer rounded-lg items-center px-3 pr-1 py-1 h-10 mb-3 ${!chatId ? "bg-secondary/50" : "hover:bg-card"}`}>
+                <div onClick={()=> router.push(`/dashboard/class/${id}/chats`)} className={`w-full flex gap-3 group cursor-pointer rounded-lg items-center px-3 pr-1 py-1 h-10 shrink-0 mb-3 ${!chatId ? "bg-secondary/50" : "hover:bg-card"}`}>
                     <MessageSquarePlus className="size-4"/>
                     <p className="text-sm truncate">New chat</p>
                     <div onClick={(e)=> e.stopPropagation()} className="ml-auto opacity-0 group-hover:opacity-100">

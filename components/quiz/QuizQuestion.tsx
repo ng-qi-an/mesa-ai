@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import MCQList from "./questionTypes/MCQList";
 import TrueFalseList from "./questionTypes/TrueFalseList";
 import ShortAnswer from "./questionTypes/ShortAnswer";
-import { QuizTextAnswerExplanationType } from "@/app/api/notebook/schema";
+import { QuizTextAnswerExplanationType } from "@/lib/actions/quiz/quizSchema";
 import LongAnswer from "./questionTypes/LongAnswer";
 
 export default function QuizQuestion({quiz, question, response, setResponse, revealAnswer, answerReasoning, onSubmit}:{quiz: QuizSelect, question: QuizSelect["questions"][number], response: string, setResponse: (response: string)=> void, revealAnswer: boolean, answerReasoning?: QuizTextAnswerExplanationType, onSubmit: (isOptions: boolean, questionResponse: string) => void}) {

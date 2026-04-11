@@ -32,3 +32,5 @@ export const chatModels: Model[] = [
         provider: "openrouter",
     },
 ];
+
+export const fileSearchMetaQuery = (fileIds: string[]) => fileIds.map(id => `file_id="${id}"`).join(" OR ");

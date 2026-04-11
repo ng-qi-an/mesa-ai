@@ -4,6 +4,7 @@ import "./globals.css";
 import { ThemeProvider } from "@/components/providers/theme-provider";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Toaster } from "@/components/ui/sonner";
+import { SpeedInsights } from "@vercel/speed-insights/next"
 
 const inter = Inter({subsets:['latin'],variable:'--font-sans'});
 
@@ -32,6 +33,7 @@ export default function RootLayout({
       <body
         className={`${inter.variable} ${geistMono.variable} antialiased h-screen overflow-auto`}
       >
+        <SpeedInsights/>
         <ThemeProvider
           attribute="class"
           defaultTheme="system"

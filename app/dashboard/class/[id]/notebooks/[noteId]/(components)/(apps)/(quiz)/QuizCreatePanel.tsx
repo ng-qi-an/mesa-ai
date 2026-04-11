@@ -13,12 +13,14 @@ import { Input } from "@/components/ui/input";
 import { Combobox, ComboboxChip, ComboboxChips, ComboboxChipsInput, ComboboxContent, ComboboxEmpty, ComboboxInput, ComboboxItem, ComboboxList, ComboboxValue, useComboboxAnchor } from "@/components/ui/combobox";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Textarea } from "@/components/ui/textarea";
-import { quizQuestionTypes } from "@/lib/utils/quizQuestionTypes";
+import { quizQuestionTypes } from "@/lib/actions/quiz/quizQuestionTypes";
 import { Item, ItemContent, ItemDescription, ItemTitle } from "@/components/ui/item";
-import createQuiz from "./(actions)/createQuiz";
+import createQuiz from "@/lib/actions/quiz/createQuiz";
 import { Spinner } from "@/components/ui/spinner";
+import { useClass } from "@/components/providers/class-provider";
 export default function QuizCreatePanel({quizList, setQuizList, setSelectedQuizId}: {quizList: QuizSelect[], setQuizList: (quizzes: QuizSelect[]) => void, setSelectedQuizId: (id: string) => void}){
     const noteCtx = useNotebook();
+    const { _class } = useClass();
     const { id } = useParams();
     const [creating, setCreating] = useState(false);
     const anchor = useComboboxAnchor();
@@ -34,7 +36,7 @@ export default function QuizCreatePanel({quizList, setQuizList, setSelectedQuizI
     async function createHandler(){
         setCreating(true);
         try {
-            const result = await createQuiz(id as string, {noteId: noteCtx.noteId!, fileStoreId: noteCtx.fileStoreId!, name, topics: selectedTopics, difficulty, questionTypes: selectedQuestionTypes.map((t) => t.value), length, instructions});
+            const result = await createQuiz(id as string, {noteId: noteCtx.noteId!, fileStoreId: _class.fileStoreId!, fileIds: noteCtx.files.map((f) => f.id), name, topics: selectedTopics, difficulty, questionTypes: selectedQuestionTypes.map((t) => t.value), length, instructions});
             console.log("Created quiz:", result);
             setQuizList([...result, ...quizList]);
             setSelectedQuizId(result[0].id);

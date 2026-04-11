@@ -15,15 +15,13 @@ export async function createNotebook(classId: string){
         throw new Error("Unauthorized")
     }
     const id = generateId(12);
-    const store = await createFileStore(id);
     try {
-    return await db.insert(notebook).values({
-        id: id,
-        userId: session.user.id,
-        classId,
-        fileStoreId: store.name!,
-        name: "New Notebook"
-    }).returning();
+        return await db.insert(notebook).values({
+            id: id,
+            userId: session.user.id,
+            classId,
+            name: "New Notebook"
+        }).returning();
     } catch (error) {
         console.log("Error creating notebook in DB:", error);
         await deleteFileStore(id);

@@ -46,13 +46,16 @@ export default async function addFilesToStore(fileIds: string[], fileStoreId: st
             });
             console.log("Uploaded file to Google GenAI:", storeFile.name);
         }
-        const fileData = await db.select({name: files.name}).from(files).where(eq(files.id, id))
+        const fileData = await db.select({name: files.name, id: files.id}).from(files).where(eq(files.id, id))
         console.log("Storefile name", storeFile.name)
         return await ai.fileSearchStores.importFile({
             config: {
                 customMetadata: [{
                     key: 'file_name',
                     stringValue: fileData[0].name
+                }, {
+                    key: "file_id",
+                    stringValue: fileData[0].id
                 }]
             },
             fileSearchStoreName: fileStoreId,
@@ -62,7 +65,7 @@ export default async function addFilesToStore(fileIds: string[], fileStoreId: st
     while (ops.some(op => !op.done)) {
         await Promise.all(ops.map(async (op, index) => {
             if (!op.done) {
-                ops[index] =  await ai.operations.get({operation: op});
+                ops[index] = await ai.operations.get({operation: op});
             }
         }))
         console.log("Checking file import status:", ops.map(op => ({name: op.name,done: op.done})));

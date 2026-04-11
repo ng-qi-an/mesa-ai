@@ -1,4 +1,4 @@
-import { QuizTextAnswerExplanationType } from "@/app/api/notebook/schema";
+import { QuizTextAnswerExplanationType } from "@/lib/actions/quiz/quizSchema";
 import { Item, ItemContent, ItemDescription, ItemMedia, ItemTitle } from "@/components/ui/item";
 import { Check, X } from "lucide-react";
 import { Streamdown } from "streamdown";

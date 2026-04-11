@@ -32,6 +32,7 @@ export const classesRelations = relations(classes, ({ one, many }) => ({
         references: [user.id],
     }),
     topics: many(topics),
+    files: many(files),
     notebooks: many(notebook)
 }))
 

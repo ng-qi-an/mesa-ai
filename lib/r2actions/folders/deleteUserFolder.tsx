@@ -7,6 +7,7 @@ import { db } from "../../db";
 import { files } from "../../schemas/schema";
 import { and, eq, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
+import deleteStoreFiles from "@/lib/file-search-actions/deleteStoreFiles";
 
 
 
@@ -33,6 +34,15 @@ export default async function deleteUserFolder(folderId: string, confirmation: b
         // If confirmation is not provided, return the list of items that would be deleted
         return allItems.rows;
     }
+    const folderRecord = await db.query.files.findFirst({
+        where: eq(files.id, folderId),
+        with: {
+            class: true
+        }
+    })
+    if (!folderRecord) {
+        throw new Error("Folder not found");
+    }
     console.log("Deleting folder and all nested items for user:", session.user.id, "with folder id:", folderId, "Items to delete:", allItems.rows.length);
     const command = new DeleteObjectsCommand({
         Bucket: process.env.R2_BUCKET_NAME!,
@@ -42,6 +52,9 @@ export default async function deleteUserFolder(folderId: string, confirmation: b
             }))
         }
     })
+    if (folderRecord.class.fileStoreId){
+        await deleteStoreFiles(folderRecord.class.fileStoreId, allItems.rows.map((row: any) => row.id));
+    }
     try {
         const res = await r2.send(command)
         if (!res.Deleted || res.Deleted.length !== allItems.rows.length) {

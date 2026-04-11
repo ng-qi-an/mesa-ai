@@ -1,9 +1,8 @@
 'use client';
 import { useState } from "react";
-import { ChatSelect, QuizSelect } from "@/lib/schemas/schema";
+import { QuizSelect } from "@/lib/schemas/schema";
 import QuizListPanel from "./QuizListPanel";
 import QuizCreatePanel from "./QuizCreatePanel";
-import QuizNewResponsePanel from "./QuizNewResponsePanel";
 import QuizPanel from "./QuizPanel";
 export default function QuizControllerPanel({setSidebarTool}: {setSidebarTool: (tool: string) => void}){
     const [selectedQuizId, setSelectedQuizId] = useState("");

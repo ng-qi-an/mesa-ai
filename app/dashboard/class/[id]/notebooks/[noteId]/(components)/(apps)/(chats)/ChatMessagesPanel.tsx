@@ -21,10 +21,7 @@ import { Message, MessageContent, MessageResponse } from "@/components/ai-elemen
 import { MessageSquareIcon } from "lucide-react";
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport } from "ai";
-import createOrExtendCache from "@/lib/cache-actions/createOrExtendCache";
-import createCache from "@/lib/cache-actions/createCache";
 import { useNotebook } from "@/components/providers/notebook-provider";
-import checkCacheMatch from "../../../(actions)/checkCacheMatch";
 import { Shimmer } from "@/components/ai-elements/shimmer";
 import ChatInputFooter from "@/components/chat/ChatInputFooter";
 import SendChatMessage, { ChatAttachmentType } from "@/lib/actions/chat/sendChatMessage";
@@ -36,9 +33,11 @@ import ChatInputHeader from "@/components/chat/ChatInputHeader";
 import ChatMessageContent from "@/components/chat/ChatMessageContent";
 import ChatActionsDropdown from "./ChatActionsDropdown";
 import { allowedMimeTypes } from "@/lib/utils";
+import { useClass } from "@/components/providers/class-provider";
 
 export default function ChatMessagesPanel({setSelectedChatId, initialChat}: {setSelectedChatId: (chat: string) => void, initialChat: ChatSelect}){
     const noteCtx = useNotebook();
+    const {_class} = useClass();
     const [text, setText] = useState<string>("");
     const [chat, setChat] = useState<ChatSelect>(initialChat);
     const [files, setFiles] = useState<ChatAttachmentType[]>([]);
@@ -142,7 +141,7 @@ export default function ChatMessagesPanel({setSelectedChatId, initialChat}: {set
                         // noteCtx.setCache(newCache.name!, noteCtx.files.map(f=>f.id));
                         // await SaveToNotebook(noteCtx.noteId, {cache: {name: newCache.name!, fileIds: noteCtx.files.map(f=>f.id)}});
 
-                        const r = await SendChatMessage({message, files, sendMessage, thinkingLevel, chatId: chat.id, bodyOptions: {fileStoreId: noteCtx.fileStoreId}});
+                        const r = await SendChatMessage({message, files, sendMessage, thinkingLevel, chatId: chat.id, bodyOptions: {fileStoreId: _class.fileStoreId, fileIds: noteCtx.files.map(f=>f.id)}});
                         console.log("SendChatMessage result:", r);
                         if (r === "failed_uploads") {
                             toast.warning("Some files failed to upload.");

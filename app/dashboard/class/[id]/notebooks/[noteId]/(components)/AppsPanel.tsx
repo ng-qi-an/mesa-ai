@@ -2,8 +2,7 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { ChevronDown, FileText, ListTodo, MessageSquare, Mic, Minus, MoreVertical, WalletCards } from "lucide-react";
-import { useContext } from "react";
+import { ChevronDown, ListTodo, MessageSquare, Mic, MoreVertical, WalletCards } from "lucide-react";
 import { motion } from "motion/react";
 import { useNotebook } from "@/components/providers/notebook-provider";
 

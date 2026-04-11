@@ -11,6 +11,7 @@ import { DeepPartial } from "better-auth";
 import { FileSelect, NotebookSelect } from "@/lib/schemas/schema";
 import { useParams } from "next/navigation";
 import SaveToNotebook from "@/app/dashboard/class/[id]/notebooks/[noteId]/(actions)/saveToNotebook";
+import { useClass } from "./class-provider";
 
 export type NotebookContextType = {
     // Ui States
@@ -26,12 +27,11 @@ export type NotebookContextType = {
     setShowGenerateNotesDialog: (show: boolean) => void;
     // Content States
     noteId: string;
-    fileStoreId: string;
     name: string;
     setName: (name: string) => void;
     files: FileSelect[];
-    fileStoreFiles: string[];
-    setFileStoreFiles: (fileIds: string[]) => void;
+    sourceFiles: string[];
+    setSourceFiles: (fileIds: string[]) => void;
     // setCache: (name: string, fileIds: string[]) => void;
     // cache: {name: string, fileIds: string[]} | null;
     setFiles: (files: FileSelect[] | ((files: FileSelect[]) => FileSelect[])) => void;
@@ -79,9 +79,10 @@ export function useNotebook() {
     return context;
 }
 
-export default function NotebookProvider({children, data}: {children: React.ReactNode, data: NotebookSelect & {files: FileSelect[], fileStoreFiles: string[]}}) {
+export default function NotebookProvider({children, data}: {children: React.ReactNode, data: NotebookSelect & {files: FileSelect[]}}) {
     // UI States
     const {noteId}:{noteId: string} = useParams();
+    const {_class} = useClass();
     const [collapseSections, setCollapseSections] = useState(data.content ? false :true);
     const [collapsedSources, setCollapsedSources] = useState(false);
     const [collapsedApps, setCollapsedApps] = useState(false);
@@ -104,7 +105,7 @@ export default function NotebookProvider({children, data}: {children: React.Reac
     const [name, setName] = useState(data.name);
     const [files, setFiles] = useState<FileSelect[]>(data.files || []);
     const [retryCount, setRetryCount] = useState(0);
-    const [fileStoreFiles, setFileStoreFiles] = useState<string[]>(data.fileStoreFiles || []);
+    const [sourceFiles, setSourceFiles] = useState<string[]>(data.sourceFiles || []);
     const instructionsRef = useRef<string>(data.instructions || "");
     const [instructionsState, setInstructionsState] = useState<string>(data.instructions || "");
     const setInstructions = (newInstructions: string) => {
@@ -147,7 +148,7 @@ export default function NotebookProvider({children, data}: {children: React.Reac
                     payload.name = res.object.header;
                 }
                 await SaveToNotebook(noteId, payload);
-                generateNotes({noteId, instructions: `${defaultNotesInstructions(resolvedLength, resolvedInstructions, Object.keys((weights)))}`, length: resolvedLength, fileIds: files.map(f=>f.id), topicWeights: weights, setCollapseSections, sendNotesFollowup, fileStoreId: data.fileStoreId!});
+                generateNotes({noteId, instructions: `${defaultNotesInstructions(resolvedLength, resolvedInstructions, Object.keys((weights)))}`, length: resolvedLength, fileIds: files.map(f=>f.id), topicWeights: weights, setCollapseSections, sendNotesFollowup, fileStoreId: _class.fileStoreId!});
             }
         },
         onError: (err)=>{
@@ -265,13 +266,12 @@ export default function NotebookProvider({children, data}: {children: React.Reac
             setShowGenerateNotesDialog,
         // Content States
             noteId,
-            fileStoreId: data.fileStoreId!,
             name,
             setName,
             files, 
             setFiles, 
-            fileStoreFiles,
-            setFileStoreFiles,
+            sourceFiles,
+            setSourceFiles,
             activeSection, 
             setActiveSection, 
             topicWeights, 

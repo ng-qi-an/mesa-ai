@@ -1,8 +1,5 @@
 import { Atom, BookOpen, DraftingCompass, Globe, Presentation, RulerDimensionLine, Scroll, Stethoscope } from "lucide-react";
 
-const specialIcons = ['presentation', 'globe', 'scroll', 'drafting-compass', 'ruler-dimension-line', 'atom', 'stethoscope', 'book-open-text'];
-
-
 export const subjectsList = [
     {
         name: 'Geography',

@@ -28,8 +28,7 @@ export default async function DemoLayout({children, params}: {children: ReactNod
     if (!data){
         return redirect(`/dashboard/class/${id}/notebooks`)
     }
-    const fileStoreFiles = (await getStoreFiles(data.fileStoreId!)).ids;
-    return <NotebookProvider data={{ ...data, fileStoreFiles }}>
+    return <NotebookProvider data={{ ...data }}>
         {children}
     </NotebookProvider>
 }

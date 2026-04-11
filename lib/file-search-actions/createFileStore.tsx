@@ -2,11 +2,8 @@
 import { GoogleGenAI } from "@google/genai";
 import { auth } from "../auth";
 import { headers } from "next/headers";
-import { db } from "../db";
-import { notebook } from "../schemas/schema";
-import { eq } from "drizzle-orm";
 
-export default async function createFileStore(noteId: string){
+export default async function createFileStore(classId: string){
     const ai = new GoogleGenAI({
         apiKey: process.env.GOOGLE_GENERATIVE_AI_API_KEY,
     });
@@ -17,8 +14,7 @@ export default async function createFileStore(noteId: string){
         throw new Error("Not authenticated");
     }
     const fileSearchStore = await ai.fileSearchStores.create({
-        config: { displayName: noteId }
+        config: { displayName: classId }
     });
-    await db.update(notebook).set({fileStoreId: fileSearchStore.name!}).where(eq(notebook.id, noteId));
     return fileSearchStore;
 }

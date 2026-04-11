@@ -1,5 +1,5 @@
 import { QuizResponseSelect } from "@/lib/schemas/schema";
-import getNumberOfCorrectAnswers from "./(actions)/GetNumberOfCorrectAnswers";
+import getNumberOfCorrectAnswers from "../../lib/actions/quiz/GetNumberOfCorrectAnswers";
 import { CircularProgressbarWithChildren } from 'react-circular-progressbar';
 import { Star } from "lucide-react";
 import MCQList from "./questionTypes/MCQList";

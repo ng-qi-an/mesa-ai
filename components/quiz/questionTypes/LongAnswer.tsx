@@ -1,4 +1,4 @@
-import { QuizTextAnswerExplanationType } from "@/app/api/notebook/schema";
+import { QuizTextAnswerExplanationType } from "@/lib/actions/quiz/quizSchema";
 import { Field, FieldDescription, FieldLabel } from "@/components/ui/field";
 import { Textarea } from "@/components/ui/textarea";
 import { QuizSelect } from "@/lib/schemas/schema";

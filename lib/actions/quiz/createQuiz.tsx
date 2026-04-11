@@ -1,26 +1,30 @@
 'use server';
 
-import { noteMetaSchema, quizQuestionsSchema } from "@/app/api/notebook/schema";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { chats, quizResponses, quizzes } from "@/lib/schemas/schema";
+import { quizResponses, quizzes } from "@/lib/schemas/schema";
+import { fileSearchMetaQuery } from "@/lib/utils/models";
 import { google } from "@ai-sdk/google";
 import { generateText, Output } from "ai";
 import { generateId } from "better-auth";
 import { headers } from "next/headers";
+import { quizQuestionsSchema } from "./quizSchema";
 
-export default async function createQuiz(classId: string, {noteId, fileStoreId, name, topics, difficulty, questionTypes, length, instructions}: {noteId?: string, fileStoreId: string, name: string, topics: string[], difficulty: string, questionTypes: string[], length: string, instructions: string}) {
+export default async function createQuiz(classId: string, {noteId, fileStoreId, fileIds, name, topics, difficulty, questionTypes, length, instructions}: {noteId?: string, fileStoreId: string, fileIds: string[], name: string, topics: string[], difficulty: string, questionTypes: string[], length: string, instructions: string}) {
     const session = await auth.api.getSession({
         headers: await headers()
     })
     if (!session || !session.user) {
         throw new Error("Not authenticated");
     }
+    if (!fileIds || fileIds.length === 0) {
+        throw new Error("At least one file ID is required");
+    }
     const { rawFinishReason, finishReason, output } = await generateText({
         model: google("gemini-3.1-flash-lite-preview"),
         output: Output.object({ schema: quizQuestionsSchema }),
         tools: fileStoreId ? {
-            file_search: google.tools.fileSearch({fileSearchStoreNames: [fileStoreId]}),
+            file_search: google.tools.fileSearch({fileSearchStoreNames: [fileStoreId], metadataFilter: fileSearchMetaQuery(fileIds)}),
         } : undefined,
         toolChoice: "required",
         system: `

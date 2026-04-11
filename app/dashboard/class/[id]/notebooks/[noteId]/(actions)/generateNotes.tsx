@@ -1,9 +1,6 @@
 'use client';
+import { useClass } from "@/components/providers/class-provider";
 import { useNotebook } from "@/components/providers/notebook-provider";
-import createCache from "@/lib/cache-actions/createCache";
-import createOrExtendCache from "@/lib/cache-actions/createOrExtendCache";
-import checkCacheMatch from "./checkCacheMatch";
-import SaveToNotebook from "./saveToNotebook";
 
 function lengthModeGuidelines(length: string) {
     const normalizedLength = ["concise", "balanced", "detailed"].includes(length) ? length : "balanced";
@@ -169,6 +166,7 @@ export async function generateNotes({noteId, instructions, fileIds, topicWeights
         }, {
             body: {
                 topicWeights: topicWeights,
+                fileIds,
                 fileStoreId: fileStoreId,
             }
         })
@@ -179,7 +177,8 @@ export async function generateNotes({noteId, instructions, fileIds, topicWeights
 
 
 export function useGenerateNotes(){
-    const { setCollapseSections, files, instructions, topicWeights, sendNotesFollowup, length, noteId, fileStoreId } = useNotebook();
+    const { setCollapseSections, files, instructions, topicWeights, sendNotesFollowup, length, noteId } = useNotebook();
+    const { _class: {fileStoreId} } = useClass();
 
     return {
         generateNotes: async(customProps?: Record<string, any>) => {

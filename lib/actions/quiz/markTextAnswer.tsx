@@ -1,14 +1,19 @@
 'use server';
-import { quizTextAnswerExplanation } from "@/app/api/notebook/schema";
 import { google } from "@ai-sdk/google";
 import { generateText, Output } from "ai";
+import { quizTextAnswerExplanation } from "./quizSchema";
 
 export default async function markTextAnswer({response, questionTitle, correctAnswer, longText, hint}: {response: string, questionTitle: string, correctAnswer: string, longText: boolean, hint: string}) {
     const { rawFinishReason, finishReason, output } = await generateText({
-        model: google("gemini-3.1-flash-lite-preview"),
+        model: google("gemini-3-flash-preview"),
         output: Output.object({
             schema: quizTextAnswerExplanation,
         }),
+        providerOptions: {
+            thinkingConfig: {
+                thinkingLevel: "minimal",
+            }
+        },
         system: `
         # Role
         You are a marker for student's text answers in a quiz.
@@ -39,7 +44,7 @@ export default async function markTextAnswer({response, questionTitle, correctAn
         - If the student's answer is incorrect, the explanation should be detailed and clearly explain why the student's answer is wrong, and why the correct answer is right. The explanation should aim to help the student understand their mistake and learn the correct concept.
         - You can use markdown formatting to enhance the clarity of your explanation, such as bolding key terms or words such as "**incomplete**, **correct**, **incorrect**".
         `,
-        prompt: "This is the question: " + questionTitle + "\nHere is the student's response:\n" + response,
+        prompt: "This is the question: " + questionTitle + "\nStudent's response:\n" + response,
     })
     if (finishReason == "stop"){
         console.log("Marking result:", output.explanation);

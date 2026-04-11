@@ -2,10 +2,11 @@ import { text, pgTable, serial, date, timestamp, AnyPgColumn, jsonb, boolean } f
 import { user } from "./auth-schema";
 import { UIMessage } from "ai";
 import { ChatUIMessage } from "../utils/models";
-import { QuizQuestionItemType, QuizTextAnswerExplanationType } from "@/app/api/notebook/schema";
+import { QuizQuestionItemType, QuizTextAnswerExplanationType } from "../actions/quiz/quizSchema";
 export const classes = pgTable("classes", {
     id: text("id").primaryKey(),
     userId: text("user_id").notNull().references(() => user.id, { onDelete: "cascade" }),
+    fileStoreId: text("file_store_id"),
     name: text("name").notNull(),
     subject: text("subject").notNull(),
     theme: text("theme").notNull(),
@@ -51,7 +52,8 @@ export const notebook = pgTable("notebook", {
     topicWeights: jsonb("topic_weights").$type<{[key: string]: number}>(),
     length: text("length"),
     instructions: text("instructions"),
-    fileStoreId: text("file_store_id").notNull(),
+    sourceFiles: jsonb("source_files").$type<string[]>().default([]),
+    fileStoreId: text("file_store_id"),
     content: text("content"),
     dateCreated: timestamp("date_created").notNull().defaultNow(),
     dateModified: timestamp("date_modified").notNull().defaultNow(),

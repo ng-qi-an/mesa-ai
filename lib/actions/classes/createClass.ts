@@ -1,6 +1,7 @@
 'use server';
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
+import createFileStore from "@/lib/file-search-actions/createFileStore";
 import { classes } from "@/lib/schemas/schema";
 import { generateId } from "better-auth";
 import { and, eq } from "drizzle-orm";
@@ -17,12 +18,18 @@ export default async function createClassServer( name: string, subject: string, 
     if (existingClass) {
         throw new Error("already_exists")
     }
+    const classId = generateId(9);
+    const store = await createFileStore(classId);
+    if (!store || !store.name) {
+        throw new Error("Failed to create file store")
+    }
     return await db.insert(classes).values({
-        id: generateId(9),
+        id: classId,
         name: name,
         subject: subject,
         theme: theme,
         icon: icon,
         userId: session.user.id,
+        fileStoreId: store.name
     }).returning();
 }

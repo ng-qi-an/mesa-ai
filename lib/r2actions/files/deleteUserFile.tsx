@@ -6,6 +6,7 @@ import { files } from "../../schemas/schema";
 import { and, eq, isNull } from "drizzle-orm";
 import { DeleteObjectCommand } from "@aws-sdk/client-s3";
 import { r2 } from "@/lib/r2";
+import deleteStoreFiles from "@/lib/file-search-actions/deleteStoreFiles";
 
 
 export default async function deleteUserFile(fileId: string, parent: string){
@@ -17,25 +18,33 @@ export default async function deleteUserFile(fileId: string, parent: string){
     }
     console.log("Deleting file:", fileId, "parent:", parent, "for user:", session.user.id);
     try {
+        const fileRecord = await db.query.files.findFirst({
+            where: (files, {eq})=> eq(files.id, fileId),
+            with: {
+                class: true
+            }
+        })
+        if (!fileRecord) {
+            throw new Error("File not found in database");
+        }
         await db.delete(files).where(and(
             eq(files.userId, session.user.id),
             eq(files.id, fileId),
             !parent ? isNull(files.parentId) : eq(files.parentId, parent)
-        ))
-    } catch (error) {
-        console.log("Error deleting file in database:", error);
-        throw error;
-    }
-    const command = new DeleteObjectCommand({
-        Bucket: process.env.R2_BUCKET_NAME!,
-        Key: `user-files/${session!.user.id!}/${fileId}`,
-    })
-    try {
+        )).returning()
+        const command = new DeleteObjectCommand({
+            Bucket: process.env.R2_BUCKET_NAME!,
+            Key: `user-files/${session!.user.id!}/${fileId}`,
+        })
         const res = await r2.send(command)
         if (res.DeleteMarker){
             console.log("File deleted from R2:", fileId);
         }
+        if (fileRecord.class.fileStoreId){
+            await deleteStoreFiles(fileRecord.class.fileStoreId, [fileRecord.id]);
+        }
     } catch (error) {
-        console.log("Error deleting file from R2:", error);
+        console.error("Error deleting file:", error);
+        throw new Error("Failed to delete file");
     }
 }

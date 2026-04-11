@@ -19,7 +19,6 @@ import { Input } from "@/components/ui/input";
 import { Shimmer } from "@/components/ai-elements/shimmer";
 import { Badge } from "@/components/ui/badge";
 import { useNotebook } from "@/components/providers/notebook-provider";
-import checkCacheMatch from "../(actions)/checkCacheMatch";
 import { useGenerateNotes } from "../(actions)/generateNotes";
 import NoteSettingsDialog from "./(modals)/NoteSettingsDialog";
 import { Streamdown } from "streamdown";
@@ -110,7 +109,7 @@ export default function NotebookPanel(){
                     : ""
                     }
                 </Shimmer>
-                : noteCtx.fileStoreFiles.length > 0 &&  !checkFileStoreMatch(noteCtx.fileStoreFiles, noteCtx.files.map(f=> f.id)) && 
+                : noteCtx.sourceFiles.length > 0 &&  !checkFileStoreMatch(noteCtx.sourceFiles, noteCtx.files.map(f=> f.id)) && 
                 <Tooltip>
                     <TooltipTrigger asChild>
                         <Badge variant="destructive" className="cursor-default ml-auto mr-28">
@@ -212,7 +211,7 @@ export default function NotebookPanel(){
                                 Stop generating
                             </Button>
                         : <></>)
-                        : noteCtx?.isStoringFiles && !checkFileStoreMatch(noteCtx.fileStoreFiles, noteCtx.files.map(f=> f.id)) ?
+                        : !checkFileStoreMatch(noteCtx.sourceFiles, noteCtx.files.map(f=> f.id)) ?
                             <Button variant={'raised'} disabled={noteCtx!.files.length < 1} size={'lg'} className="px-4" onClick={() => {
                                 noteCtx?.setShowGenerateNotesDialog(true);
                             }}>

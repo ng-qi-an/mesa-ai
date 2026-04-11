@@ -1,19 +1,19 @@
 import { QuizResponseSelect, QuizSelect } from "@/lib/schemas/schema";
 import { useEffect, useState } from "react";
-import getQuizResponsesList from "./(actions)/getQuizResponsesList";
+import getQuizResponsesList from "@/lib/actions/quiz/getQuizResponsesList";
 import { toast } from "sonner";
 import { Card, CardHeader, CardTitle } from "@/components/ui/card";
 import { ArrowRight, ChevronLeft, ListTodo, PenLine, RotateCw, Star } from "lucide-react";
-import QuizActionsDropdown from "./QuizActionsDropdown";
+import QuizActionsDropdown from "@/components/quiz/QuizActionsDropdown";
 import { Spinner } from "@/components/ui/spinner";
 import { Separator } from "@/components/ui/separator";
 import QuizNewResponsePanel from "./QuizNewResponsePanel";
-import QuizResponseDetails from "./QuizResponseDetails";
+import QuizResponseDetails from "@/components/quiz/QuizResponseDetails";
 import { relativeTime } from "@/lib/utils/relativeTime";
-import getNumberOfCorrectAnswers from "./(actions)/GetNumberOfCorrectAnswers";
+import getNumberOfCorrectAnswers from "@/lib/actions/quiz/GetNumberOfCorrectAnswers";
 import { Item, ItemMedia, ItemActions, ItemContent, ItemTitle, ItemDescription } from "@/components/ui/item";
 import { Button } from "@/components/ui/button";
-import createEmptyResponse from "./(actions)/createEmptyResponse";
+import createEmptyResponse from "@/lib/actions/quiz/createEmptyResponse";
 export default function QuizPanel({quiz: importedQuiz, setSelectedQuizId}: {quiz: QuizSelect, setSelectedQuizId: (id: string) => void}){
     const [quiz, setQuiz] = useState(importedQuiz);
     const [isAttempting, setIsAttempting] = useState(false);

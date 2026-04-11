@@ -2,7 +2,7 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { ChevronLeft, MessageSquare, MessageSquarePlus, MoreVertical, Pencil, Trash } from "lucide-react";
+import { ChevronLeft, MessageSquare, MessageSquarePlus } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useNotebook } from "@/components/providers/notebook-provider";
@@ -12,7 +12,6 @@ import { toast } from "sonner";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty";
 import createChat from "@/lib/actions/chat/createChat";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { relativeTime } from "@/lib/utils/relativeTime";
 import ChatActionsDropdown from "./ChatActionsDropdown";
 import { useParams } from "next/navigation";

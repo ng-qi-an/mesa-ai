@@ -5,12 +5,14 @@ import { GetObjectCommand } from '@aws-sdk/client-s3';
 import { r2 } from '@/lib/r2';
 import { auth } from '@/lib/auth';
 import { headers } from 'next/headers';
+import { fileSearchMetaQuery } from '@/lib/utils/models';
 
 // Allow streaming responses up to 5 minutes
 export const maxDuration = 300;
 
 type NotebookRequestType = {
     fileStoreId: string;
+    fileIds: string[];
     instructions: string;
     length: string;
 }
@@ -27,12 +29,15 @@ export async function POST(req: Request) {
     if (!context.fileStoreId) {
         throw new Error("File store ID is required");
     }
+    if (!context.fileIds || context.fileIds.length === 0) {
+        throw new Error("At least one file ID is required");
+    }
 
     const result = streamText({
-        model: google("gemini-3.1-flash-lite-preview"),
+        model: google("gemini-3-flash-preview"),
         output: Output.object({ schema: noteMetaSchema }),
         tools: {
-            file_search: google.tools.fileSearch({fileSearchStoreNames: [context.fileStoreId]}),
+            file_search: google.tools.fileSearch({fileSearchStoreNames: [context.fileStoreId], metadataFilter: fileSearchMetaQuery(context.fileIds)}),
         },
         system: `
         ## Output Guidelines

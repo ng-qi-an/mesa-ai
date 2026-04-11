@@ -1,24 +1,19 @@
 'use client';
 
 import { QuizResponseSelect, QuizSelect } from "@/lib/schemas/schema";
-import QuizActionsDropdown from "./QuizActionsDropdown";
+import QuizActionsDropdown from "@/components/quiz/QuizActionsDropdown";
 import { ArrowRight, Check, ChevronLeft, ChevronRight } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import { Card, CardHeader, CardTitle } from "@/components/ui/card";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { quizQuestionTypes } from "@/lib/utils/quizQuestionTypes";
-import MCQList from "./questionTypes/MCQList";
-import TrueFalseList from "./questionTypes/TrueFalseList";
-import ShortAnswer from "./questionTypes/ShortAnswer";
-import { QuizTextAnswerExplanationType } from "@/app/api/notebook/schema";
-import markTextAnswer from "./(actions)/markTextAnswer";
+import { QuizTextAnswerExplanationType } from "@/lib/actions/quiz/quizSchema";
+import markTextAnswer from "@/lib/actions/quiz/markTextAnswer";
 import { toast } from "sonner";
 import { Spinner } from "@/components/ui/spinner";
-import QuizQuestion from "./QuizQuestion";
+import QuizQuestion from "@/components/quiz/QuizQuestion";
 import { Empty, EmptyContent, EmptyHeader } from "@/components/ui/empty";
-import saveResponseAttempt from "./(actions)/saveResponseAttempt";
+import saveResponseAttempt from "@/lib/actions/quiz/saveResponseAttempt";
 
 export default function QuizNewResponsePanel({quiz, setQuiz, response, responses, setResponses, setSelectedQuizId, setSelectedResponseId, setIsAttempting}: {quiz: QuizSelect, setQuiz: (quiz: QuizSelect) => void, response: QuizResponseSelect, responses: QuizResponseSelect[], setResponses: (responses: QuizResponseSelect[]) => void, setSelectedQuizId: (id: string) => void, setSelectedResponseId: (id: string) => void, setIsAttempting: (attempting: boolean) => void}) {
     const [activeQuestionId, setActiveQuestionId] = useState(response.attemptingQuestionId || quiz.questions[0].id);

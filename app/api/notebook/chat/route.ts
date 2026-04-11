@@ -2,12 +2,14 @@ import { streamText, UIMessage, convertToModelMessages } from 'ai';
 import { google } from "@ai-sdk/google";
 import { auth } from '@/lib/auth';
 import { headers } from 'next/headers';
+import { fileSearchMetaQuery } from '@/lib/utils/models';
 
 // Allow streaming responses up to 5 minutes
 export const maxDuration = 300;
 
 type NotebookRequestType = {
     fileStoreId: string;
+    fileIds: string[];
     thinkingLevel: "minimal" | "low" | "medium";
     messages: UIMessage[];
 }
@@ -24,13 +26,16 @@ export async function POST(req: Request) {
     if (!context.fileStoreId){
         throw new Error("Missing file store ID");
     }
+    if (!context.fileIds || context.fileIds.length === 0) {
+        throw new Error("At least one file ID is required");
+    }
     console.log("Messages received in API route:", JSON.stringify(context.messages, null, 2));
-
+    console.log("Meta query", context.fileIds.map(id => `file_id="${id}"`).join(" OR "));
     const result = streamText({
-        model: google("gemini-3.1-flash-lite-preview"),
+        model: google("gemini-3-flash-preview"),
         messages: await convertToModelMessages(context.messages),
         tools: {
-            file_search: google.tools.fileSearch({fileSearchStoreNames: [context.fileStoreId]}),
+            file_search: google.tools.fileSearch({fileSearchStoreNames: [context.fileStoreId], metadataFilter: fileSearchMetaQuery(context.fileIds)}),
         },
         system: `
         You are an assistant for a user who has access to a set of ai-generated notes based on the sources provided with file_search. 

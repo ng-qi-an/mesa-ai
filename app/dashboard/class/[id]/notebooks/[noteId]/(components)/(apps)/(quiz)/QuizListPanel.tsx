@@ -6,15 +6,14 @@ import { ChevronLeft, ListPlus, ListTodo, MessageSquarePlus } from "lucide-react
 import { useEffect, useState } from "react";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useNotebook } from "@/components/providers/notebook-provider";
-import { ChatSelect, QuizSelect } from "@/lib/schemas/schema";
+import { QuizSelect } from "@/lib/schemas/schema";
 import { toast } from "sonner";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty";
-import createChat from "@/lib/actions/chat/createChat";
 import { relativeTime } from "@/lib/utils/relativeTime";
 import { useParams } from "next/navigation";
-import QuizActionsDropdown from "./QuizActionsDropdown";
-import getQuizList from "./(actions)/getQuizList";
+import QuizActionsDropdown from "@/components/quiz/QuizActionsDropdown";
+import getQuizList from "@/lib/actions/quiz/getQuizList";
 export default function QuizListPanel({setSidebarTool, quizList, setQuizList, setSelectedQuizId}: {setSidebarTool: (tool: string) => void, quizList: QuizSelect[], setQuizList: (quizzes: QuizSelect[]) => void, setSelectedQuizId: (id: string) => void}){
     const noteCtx = useNotebook();
     const { id } = useParams();
