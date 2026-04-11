@@ -12,9 +12,9 @@ export async function embedImages(content: string): Promise<string> {
     await Promise.all(queries.map(async (query) => {
         console.log(`Searching for image with query: "${query}"`);
         try {
-            const res = await fetch(`https://search.hackclub.com/res/v1/images/search?q=${encodeURIComponent(query)}&count=1`, {
+            const res = await fetch(`https://api.search.brave.com/res/v1/images/search?q=${encodeURIComponent(query)}&count=1`, {
                 headers: {
-                    Authorization: `Bearer ${process.env.HACKCLUB_SEARCH_API_KEY}`
+                    "X-Subscription-Token": `${process.env.BRAVE_SEARCH_API_KEY}`
                 }
             });
             if (res.ok) {
