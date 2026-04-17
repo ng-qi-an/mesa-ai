@@ -10,6 +10,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AlertCircleIcon } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import socialSignIn from "../socialSignIn";
 
 export default function LogIn(){
     const [errors, setErrors] = useState<any[]>([]);
@@ -76,8 +77,12 @@ export default function LogIn(){
                         </FieldGroup>
                     </FieldSet>
                 </CardContent>
-                <CardFooter className="flex-col gap-2">
-                    <Button disabled={loading} type="submit" size={'lg'} variant={"raised"} className="w-full">
+                <CardFooter className="flex flex-col gap-2">
+                    <div className="flex flex-row w-full gap-2 mt-1">
+                        <Button className="min-w-0 flex-1" type="button" variant={"secondary"} onClick={async()=> await socialSignIn("google")}>Google</Button>
+                        <Button className="min-w-0 flex-1" type="button" variant={"secondary"}>Passkey</Button>
+                    </div>
+                    <Button disabled={loading} type="submit" variant={"raised"} className="w-full">
                         {loading ? <Spinner /> : "Log In"}
                     </Button>
                     <Link href="/auth/sign-up">
