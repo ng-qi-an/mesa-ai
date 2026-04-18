@@ -5,6 +5,7 @@ import { nextCookies } from "better-auth/next-js";
 import { sendVerificationEmail } from "@/components/emails/emailActions";
 
 export const auth = betterAuth({
+    trustedOrigins: ["http://localhost:3000", "https://mesa-ai.vercel.app"],
     session: {
         disableSessionRefresh: true
     },
