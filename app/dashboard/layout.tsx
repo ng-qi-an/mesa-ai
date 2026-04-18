@@ -3,8 +3,8 @@
 import Logo from "@/components/logo";
 import { authClient } from "@/lib/auth-client";
 import { AnimatePresence, motion } from "motion/react";
-import { useRouter } from "next/navigation";
-import { useEffect } from "react";
+import { useRouter } from "nextjs-toploader/app";
+import { Suspense, useEffect } from "react";
 export default function DashboardLayout({children}: {children: React.ReactNode}) {
     const {data, isPending} = authClient.useSession();
     const router = useRouter();

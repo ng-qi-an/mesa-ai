@@ -7,7 +7,7 @@ import { authClient } from "@/lib/auth-client";
 import { cn } from "@/lib/utils";
 import { ChevronDown, Circle, Computer, DraftingCompass, Ellipsis, ExternalLink, Eye, Globe, LaptopMinimal, Moon, Plus, Presentation, Scroll, Settings2, Sun, Trash, Trash2Icon } from "lucide-react";
 import { useTheme } from "next-themes";
-import { useRouter } from "next/navigation";
+import { useRouter } from "nextjs-toploader/app";
 import React, { Fragment, useEffect, useState } from "react";
 import { ClassSelect } from "@/lib/schemas/schema";
 import getAllClassesServer from "@/lib/actions/classes/getAllClasses";

@@ -7,7 +7,7 @@ import { FileBrowserProvider } from "@/components/providers/file-browser-provide
 import PageHeader from "../../(components)/PageHeader";
 import CreateNewButton from "@/components/file-browser/CreateNewButton";
 import { FileSelect } from "@/lib/schemas/schema";
-import { useRouter } from "next/navigation";
+import { useRouter } from "nextjs-toploader/app";
 import { useClass } from "@/components/providers/class-provider";
 import FileBrowserBreadcrumbs from "@/components/file-browser/FileBrowserBreadcrumbs";
 import { ChevronDown, Search } from "lucide-react";

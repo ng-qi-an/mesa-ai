@@ -17,7 +17,8 @@ import { chatModels, ChatUIMessage } from "@/lib/utils/models";
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport } from "ai";
 import { ArrowRight, Cross, MessageSquareIcon, X } from "lucide-react";
-import { useRouter, useSearchParams } from "next/navigation"
+import { useSearchParams } from "next/navigation"
+import { useRouter } from "nextjs-toploader/app"
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 

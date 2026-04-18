@@ -1,6 +1,7 @@
 import { SidebarGroupLabel, SidebarGroup, SidebarGroupContent, SidebarMenuItem, SidebarMenuButton, SidebarMenu } from "@/components/ui/sidebar";
 import { FolderOpen, ListTodo, Map, Notebook, WalletCards } from "lucide-react";
-import { useParams, usePathname, useRouter } from "next/navigation";
+import { useParams, usePathname } from "next/navigation";
+import { useRouter } from "nextjs-toploader/app";
 
 export default function MainSidebarLibrary(){
     const links = [{

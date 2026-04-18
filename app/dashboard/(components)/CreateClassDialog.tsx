@@ -17,7 +17,7 @@ import { cn } from "@/lib/utils";
 import IconPicker from "../../../components/ui/icon-picker";
 import { DynamicIcon } from "lucide-react/dynamic";
 import createClassServer from "@/lib/actions/classes/createClass";
-import { useRouter } from "next/navigation";
+import { useRouter } from "nextjs-toploader/app";
 import { toast } from "sonner";
 import { Spinner } from "@/components/ui/spinner";
 import { availableSubjects, subjectsList } from "@/lib/subjects/subjectsList";

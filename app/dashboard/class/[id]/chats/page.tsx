@@ -10,7 +10,7 @@ import { ChatAttachmentType } from "@/lib/actions/chat/sendChatMessage";
 import revalidateData from "@/lib/actions/revalidateData";
 import { allowedMimeTypes } from "@/lib/utils";
 import { Sparkle, Sparkles } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { useRouter } from "nextjs-toploader/app";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 

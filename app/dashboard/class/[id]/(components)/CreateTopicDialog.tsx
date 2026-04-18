@@ -13,7 +13,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import { cn } from "@/lib/utils";
 import IconPicker from "@/components/ui/icon-picker";
 import { DynamicIcon } from "lucide-react/dynamic";
-import { useRouter } from "next/navigation";
+import { useRouter } from "nextjs-toploader/app";
 import { toast } from "sonner";
 import { Spinner } from "@/components/ui/spinner";
 import { useClass } from "@/components/providers/class-provider";

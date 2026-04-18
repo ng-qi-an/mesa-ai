@@ -2,7 +2,8 @@
 import { ChatSelect } from "@/lib/schemas/schema";
 import { relativeTime } from "@/lib/utils/relativeTime";
 import { MessageSquare, Notebook } from "lucide-react";
-import { useParams, usePathname, useRouter } from "next/navigation";
+import { useParams, usePathname } from "next/navigation";
+import { useRouter } from "nextjs-toploader/app";
 import ChatActionsDropdown from "../../notebooks/[noteId]/(components)/(apps)/(chats)/ChatActionsDropdown";
 import revalidateData from "@/lib/actions/revalidateData";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";

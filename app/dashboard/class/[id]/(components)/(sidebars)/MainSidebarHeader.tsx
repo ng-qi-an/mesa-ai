@@ -5,7 +5,8 @@ import { ClassSelect } from "@/lib/schemas/schema";
 import { cn } from "@/lib/utils";
 import { ArrowLeft, ChevronsUpDown, Search } from "lucide-react";
 import { DynamicIcon } from "lucide-react/dynamic";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
+import { useRouter } from "nextjs-toploader/app";
 
 export default function MainSidebarHeader({_class, classes}: {_class: ClassSelect, classes: ClassSelect[]}) {
     const router = useRouter();

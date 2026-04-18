@@ -10,7 +10,7 @@ import { Spinner } from "@/components/ui/spinner";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AlertCircleIcon } from "lucide-react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter } from "nextjs-toploader/app";
 
 export default function SignUp(){
     // const [state, formAction, pending] = useActionState(createUser, {errors: null} as { errors: any[] | null });
