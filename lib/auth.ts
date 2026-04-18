@@ -3,9 +3,15 @@ import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { db } from "./db"; // your drizzle instance
 import { nextCookies } from "better-auth/next-js";
 import { sendVerificationEmail } from "@/components/emails/emailActions";
+import { dash } from "@better-auth/infra";
 
 export const auth = betterAuth({
     trustedOrigins: ["http://localhost:3000", "https://mesa-ai.vercel.app"],
+    experimental: {
+        joins: true, // Enable database joins for better performance
+    },
+    appName: "Mesa AI",
+    ipAddressHeaders: ["x-vercel-forwarded-for", "x-forwarded-for"],
     session: {
         disableSessionRefresh: true
     },
@@ -29,5 +35,8 @@ export const auth = betterAuth({
             clientSecret: process.env.GOOGLE_CLIENT_SECRET!, 
         } 
     }, 
-    plugins: [nextCookies()] 
+    plugins: [
+        nextCookies(),
+        dash()
+    ] 
 });
