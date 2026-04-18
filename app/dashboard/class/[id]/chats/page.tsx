@@ -25,7 +25,7 @@ export default function NewChat(){
         if (promptInputRef.current) {
             promptInputRef.current.focus();
         }
-    })
+    }, [])
 
     return <div className="flex flex-col h-full overflow-auto items-center justify-center">
         <Empty className="w-full p-0 px-4 h-max flex-0 mb-5">

@@ -95,9 +95,6 @@ export default function ChatPage({chat}:{chat: ChatSelect}){
                 }
             }
         })();
-        if (promptInputRef.current) {
-            promptInputRef.current.focus();
-        }
         return ()=>{
             stop();
         }
@@ -174,7 +171,7 @@ export default function ChatPage({chat}:{chat: ChatSelect}){
         >
             {files.length > 0 && <ChatInputHeader files={files} setFiles={setFiles} />}
             <PromptInputBody>
-                <PromptInputTextarea ref={promptInputRef} autoFocus onChange={(e) => setText(e.target.value)} value={text}/>
+                <PromptInputTextarea ref={promptInputRef} onChange={(e) => setText(e.target.value)} value={text}/>
             </PromptInputBody>
             <ChatInputFooter files={files} setFiles={setFiles} text={text} thinkingLevel={thinkingLevel} setThinkingLevel={setThinkingLevel} 
                 onStop={()=>{
