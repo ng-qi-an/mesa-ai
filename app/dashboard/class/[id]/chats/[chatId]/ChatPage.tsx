@@ -8,6 +8,7 @@ import ChatInputHeader from "@/components/chat/ChatInputHeader";
 import ChatMessageContent from "@/components/chat/ChatMessageContent";
 import Logo from "@/components/logo";
 import { useChatContext } from "@/components/providers/chat-provider";
+import { useClass } from "@/components/providers/class-provider";
 import { Button } from "@/components/ui/button";
 import saveToChat from "@/lib/actions/chat/saveToChat";
 import SendChatMessage, { ChatAttachmentType } from "@/lib/actions/chat/sendChatMessage";
@@ -26,6 +27,7 @@ export default function ChatPage({chat}:{chat: ChatSelect}){
     const search = useSearchParams();
     const chatCtx = useChatContext();
     const router = useRouter();
+    const { _class } = useClass();
 
     const [text, setText] = useState("");
     const [previousText, setPreviousText] = useState("");
@@ -147,7 +149,7 @@ export default function ChatPage({chat}:{chat: ChatSelect}){
             </div>
             <Button variant={"outline"} onClick={()=> router.push(`/dashboard/class/${chat.classId}/notebooks/${chat.notebookId}`)}>Go to notebook <ArrowRight/></Button>
         </div>
-        : <PromptInput autoFocus globalDrop multiple accept={allowedMimeTypes.join(",")} className="mt-4 px-2 max-w-xl w-full shrink-0"
+        : <PromptInput autoFocus globalDrop multiple accept={allowedMimeTypes.join(",")} className="mt-4 px-4 max-w-xl w-full shrink-0"
             onSubmit={async(message: PromptInputMessage) => {
                 if (!message.text.trim() || status == "submitted" || status == "streaming") {
                     return;
@@ -159,7 +161,7 @@ export default function ChatPage({chat}:{chat: ChatSelect}){
                 setPreviousFiles(files);
                 setText("");
                 setFiles([]);
-                const r = await SendChatMessage({message: message, files: files, sendMessage, thinkingLevel: thinkingLevel, chatId: chat.id});
+                const r = await SendChatMessage({message: message, files: files, sendMessage, thinkingLevel: thinkingLevel, chatId: chat.id, bodyOptions: {subject: _class.subject}});
                 console.log("SendChatMessage result:", r);
                 if (r === "failed_uploads") {
                     toast.warning("Some files failed to upload.");

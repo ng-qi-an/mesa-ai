@@ -9,13 +9,13 @@ import { useRouter } from "nextjs-toploader/app";
 import { useState } from "react";
 import { Fragment } from "react/jsx-runtime";
 
-export default function PageHeader({pages, children, titleEditable, onTitleSubmit, actionsClassName}: {pages: {name: string, href?: string}[], children?: React.ReactNode, titleEditable?: boolean, onTitleSubmit?: (newTitle: string) => void, actionsClassName?: string}) {
+export default function PageHeader({pages, children, sidebarButton=<SidebarTrigger className="mr-2" />, titleEditable, onTitleSubmit, actionsClassName}: {pages: {name: string, href?: string}[], sidebarButton?: React.ReactNode, children?: React.ReactNode, titleEditable?: boolean, onTitleSubmit?: (newTitle: string) => void, actionsClassName?: string}) {
     const {_class} = useClass();
     const router = useRouter();
     const [editingTitle, setEditingTitle] = useState(false);
     return <header className="flex h-16 shrink-0 items-center gap-2 border-b transition-[width,height] ease-linear relative">
         <div className="flex w-full items-center gap-1 px-4 lg:gap-2">
-            <SidebarTrigger className="mr-2" />
+            {sidebarButton}
             <Breadcrumb className="min-w-0 flex-1">
               <BreadcrumbList className="flex-nowrap">
               {pages.map((page, index) => index == pages.length - 1 ? 

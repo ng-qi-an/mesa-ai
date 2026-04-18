@@ -28,7 +28,7 @@ export default function NewChat(){
     })
 
     return <div className="flex flex-col h-full overflow-auto items-center justify-center">
-        <Empty className="w-full p-0 h-max flex-0 mb-5">
+        <Empty className="w-full p-0 px-4 h-max flex-0 mb-5">
             <EmptyMedia variant={"icon"} className="size-max p-3">
                 <Sparkle className="size-10" strokeWidth={2}/>
             </EmptyMedia>
@@ -38,7 +38,7 @@ export default function NewChat(){
             </EmptyHeader>
         </Empty>
         <div className="max-w-lg w-full">
-            <PromptInput globalDrop multiple accept={allowedMimeTypes.join(",")} className="mt-4 px-2"
+            <PromptInput globalDrop multiple accept={allowedMimeTypes.join(",")} className="mt-4 px-4"
                 onSubmit={async(message: PromptInputMessage) => {
                     if (!message.text.trim()) {
                         return;
