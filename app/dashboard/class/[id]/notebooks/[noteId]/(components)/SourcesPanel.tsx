@@ -14,13 +14,15 @@ import { useState } from "react";
 import { addNotebookFiles } from "../(actions)/addNotebookFiles";
 import { deleteNotebookFile } from "../(actions)/deleteNotebookFile";
 import { toast } from "sonner";
+import { useSidebar } from "@/components/ui/sidebar";
 
 export default function SourcesPanel(){
     const [showFileSelector, setShowFileSelector] = useState(false);
+    const {isMobile} = useSidebar();
     const noteCtx = useNotebook();
     const isCollapsed = noteCtx?.collapsedSources;
 
-    return <Card size="sm" className={`${isCollapsed ? "h-max" : noteCtx?.collapsedApps ? "h-full max-h-full" : "shrink-0  h-full max-h-[230px]"} rounded-md ring-neutral-200 dark:ring-neutral-900 overflow-hidden ${isCollapsed && "gap-0!"}`}>
+    return <Card size="sm" className={`${isMobile ? "h-full w-full" : (isCollapsed ? "h-max" : noteCtx?.collapsedApps ? "h-full max-h-full" : "shrink-0  h-full max-h-[230px]")} rounded-md ring-neutral-200 dark:ring-neutral-900 overflow-hidden ${!isMobile && isCollapsed && "gap-0!"}`}>
             <FileSelectorDialog open={showFileSelector} setOpen={setShowFileSelector} onConfirm={async(files) => {
                 const finalFiles = files.filter((file)=> noteCtx.files.every((f) => f.id !== file.id))
                 if (finalFiles.length === 0){
@@ -32,12 +34,12 @@ export default function SourcesPanel(){
                 setShowFileSelector(false);
             }}/>
             <CardHeader className="items-center group flex cursor-pointer relative">
-                <motion.div
+                {!isMobile && <motion.div
                     animate={{ rotate: !isCollapsed ? 0 : -90 }}
                     transition={{ type: "spring", bounce: 0.15, duration: 0.4 }}
                 >
                     <ChevronDown className="text-muted-foreground group-hover:text-foreground size-4"/>
-                </motion.div>
+                </motion.div>}
                 <CardTitle 
                 onClick={()=> {
                     if (noteCtx?.collapsedSources){
@@ -68,12 +70,12 @@ export default function SourcesPanel(){
             <motion.div 
                 className="grid"
                 initial={false}
-                animate={{ gridTemplateRows: isCollapsed ? "0fr" : "1fr", opacity: isCollapsed ? 0 : 1 }}
+                animate={!isMobile ? { gridTemplateRows: isCollapsed ? "0fr" : "1fr", opacity: isCollapsed ? 0 : 1 } : {gridTemplateRows: "1fr"}}
                 transition={{ type: "spring", bounce: 0.15, duration: 0.4 }}
             >
                 <div className="overflow-hidden">
                     <div className={`gap-3 flex flex-col px-2 pb-2 h-full overflow-y-auto`}>
-                        {!isCollapsed && <Separator className="mb-2" />}
+                        {(isMobile || !isCollapsed) && <Separator className="mb-2" />}
                         {false ? [...Array(3)].map((_, index) => (
                             <Skeleton key={index} className="h-10 w-full"/>
                         ))

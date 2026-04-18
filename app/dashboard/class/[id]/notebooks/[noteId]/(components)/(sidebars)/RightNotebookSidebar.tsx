@@ -5,26 +5,28 @@ import { useState } from "react";
 import ChatsPanel from "../(apps)/(chats)/ChatsPanel";
 import { useNotebook } from "@/components/providers/notebook-provider";
 import QuizControllerPanel from "../(apps)/(quiz)/QuizControllerPanel";
+import { useSidebar } from "@/components/ui/sidebar";
 
 export default function RightNotebookSidebar(){
     const noteCtx = useNotebook();
+    const {isMobile} = useSidebar();
     const [sidebarTool, setSidebarTool] = useState("");
     return <motion.div 
         layout
-        animate={{
+        animate={!isMobile ? {
             width: noteCtx.collapsedRightSidebar ? 0 : 400,
             opacity: noteCtx.collapsedRightSidebar ? 0 : 1
-        }}
+        } : {}}
         transition={{ type: "spring", bounce: 0.15, duration: 0.4 }}
         className="h-full flex flex-col gap-3 shrink-0">
-        <div className="w-[400px] h-full flex flex-col gap-3">
+        <div className="w-full sm:w-[400px] h-full flex flex-col gap-3">
             
             {sidebarTool == "Chat" ?
                 <ChatsPanel setSidebarTool={setSidebarTool}/>
             : sidebarTool == "Quiz" ?
                 <QuizControllerPanel setSidebarTool={setSidebarTool}/>
             : <>
-                <SourcesPanel/>
+                {!isMobile && <SourcesPanel/>}
                 <AppsPanel setSidebarTool={setSidebarTool}/>
             </>
             }

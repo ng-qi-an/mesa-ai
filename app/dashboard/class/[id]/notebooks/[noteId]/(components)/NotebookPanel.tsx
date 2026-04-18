@@ -172,7 +172,7 @@ export default function NotebookPanel(){
                 : <div className="relative h-full overflow-hidden">
                     {noteCtx?.metaObject && noteCtx.isGenerating && <div className="flex flex-col absolute items-center justify-center top-0 left-0 h-full w-full">
                         <p className="w-[80%] gap-10 text-justify leading-10 overflow-hidden">
-                            {noteCtx.metaObject.topics?.filter((topic): topic is string => topic !== undefined).map((topic:string, index:number)=> {
+                            {noteCtx.metaObject.topics?.filter((topic:string) => topic !== undefined).map((topic:string, index:number)=> {
                                 return <motion.span layout initial={{opacity: 0}} animate={{opacity: index % 2 == 0 ? 0.15 : 0.3}} key={index} className={`sm:text-2xl md:text-3xl lg:text-4xl xl:text-5xl 2xl:text-6xl text-muted-foreground font-bold break-all ${(index % 2 ? "pulse-darker" : "pulse-lighter")} `}> {topic}</motion.span>
                             })}
                         </p>
@@ -208,7 +208,7 @@ export default function NotebookPanel(){
                 </div>
                 }
                 <AnimatePresence mode="wait">
-                    <motion.div key={noteCtx?.isContentGenerating ? 'stopGeneratingButton' : 'generateButton'} initial={{scale: 0.95, opacity: 0}} animate={{scale: 1, opacity: 1}} exit={{scale: 0.95, opacity: 0}} className="absolute bottom-2 z-20 left-0 w-full flex px-4 justify-center">
+                    <motion.div key={noteCtx?.isContentGenerating ? 'stopGeneratingButton' : 'generateButton'} initial={{scale: 0.95, opacity: 0}} animate={{scale: 1, opacity: 1}} exit={{scale: 0.95, opacity: 0}} className="absolute bottom-2 z-10 left-0 w-full flex px-4 justify-center">
                         {noteCtx?.isGenerating ? (noteCtx?.isContentGenerating ?
                             <Button variant={'secondaryRaised'} size={'lg'} className="px-4" onClick={() => noteCtx?.stopGeneration()}>
                                 <StopCircle/>

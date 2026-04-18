@@ -5,10 +5,12 @@ import { Separator } from "@/components/ui/separator";
 import { ChevronDown, ListTodo, MessageSquare, Mic, MoreVertical, WalletCards } from "lucide-react";
 import { motion } from "motion/react";
 import { useNotebook } from "@/components/providers/notebook-provider";
+import { useSidebar } from "@/components/ui/sidebar";
 
 export default function AppsPanel({setSidebarTool}: {setSidebarTool: (tool: string) => void}){
     const noteCtx = useNotebook();
     const isCollapsed = noteCtx.collapsedApps
+    const {isMobile} = useSidebar();
     
     const Apps = [
         {
@@ -30,12 +32,12 @@ export default function AppsPanel({setSidebarTool}: {setSidebarTool: (tool: stri
     ]
     return <Card size="sm" className={`rounded-md ring-neutral-200 dark:ring-neutral-900 ${isCollapsed ? "h-max shrink-0 gap-0!" : "h-full"}`}>
             <CardHeader className="items-center group flex cursor-pointer relative">
-                <motion.div
+                {!isMobile && <motion.div
                     animate={{ rotate: !isCollapsed ? 0 : -90 }}
                     transition={{ type: "spring", bounce: 0.15, duration: 0.4 }}
                 >
                     <ChevronDown className="text-muted-foreground group-hover:text-foreground size-4"/>
-                </motion.div>
+                </motion.div>}
                 <CardTitle 
                 onClick={()=> {
                     if (noteCtx?.collapsedApps){
