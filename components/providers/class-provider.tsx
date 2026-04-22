@@ -1,7 +1,9 @@
 'use client';
 
+import BetaNoticeDialog from "@/app/dashboard/class/[id]/(components)/BetaNoticeDialog";
+import getUserUpdateVersion from "@/lib/actions/getUserUpdateVersion";
 import { ClassSelect, TopicSelect } from "@/lib/schemas/schema";
-import { createContext, useContext } from "react";
+import { createContext, useContext, useEffect, useState } from "react";
 
 export type ClassContextType = {
     _class: ClassSelect & {topics: TopicSelect[]}
@@ -17,7 +19,25 @@ export function useClass() {
     return context;
 }
 export function ClassProvider({children, _class}: {children: React.ReactNode, _class: ClassSelect & {topics: TopicSelect[]}}) {
+    const [showbeta, setShowBeta] = useState(false);
+    useEffect(()=>{
+        (async()=>{
+            const newestVersion = "beta";
+            var currentVersion = window.localStorage.getItem("updateVersion");
+            if (!currentVersion || currentVersion !== newestVersion) {
+                console.log("Outdated update version...")
+                currentVersion = await getUserUpdateVersion(newestVersion)
+                if (currentVersion == newestVersion) {
+                    window.localStorage.setItem("updateVersion", newestVersion);
+                } else {
+                    console.log("User has not seen update notice, showing notice...")
+                    setShowBeta(true);
+                }
+            }
+        })();
+    }, [])
     return <ClassContext.Provider value={{_class}}>
+        <BetaNoticeDialog showBeta={showbeta} setShowBeta={()=> setShowBeta(false)} />
         {children}
      </ClassContext.Provider>
 }

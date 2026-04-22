@@ -1,7 +1,7 @@
 'use client';
 import { ComponentExample } from "@/components/component-example";
-import { sendVerificationEmail } from "@/components/emails/emailActions";
-import VerifyEmail from "@/components/emails/VerifyEmail";
+import { sendVerificationEmail } from "@/lib/actions/email/sendVerificationEmail";
+import VerifyEmail from "@/components/email/VerifyEmail";
 import { Button } from "@/components/ui/button";
 
 export default function Page() {

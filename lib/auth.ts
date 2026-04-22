@@ -2,8 +2,10 @@ import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { db } from "./db"; // your drizzle instance
 import { nextCookies } from "better-auth/next-js";
-import { sendVerificationEmail } from "@/components/emails/emailActions";
+import { sendVerificationEmail } from "@/lib/actions/email/sendVerificationEmail";
 import { dash } from "@better-auth/infra";
+import { passkey } from "@better-auth/passkey"
+import { admin } from "better-auth/plugins"
 
 export const auth = betterAuth({
     trustedOrigins: ["http://localhost:3000", "https://mesa-ai.vercel.app"],
@@ -13,7 +15,7 @@ export const auth = betterAuth({
     appName: "Mesa AI",
     ipAddressHeaders: ["x-vercel-forwarded-for", "x-forwarded-for"],
     session: {
-        disableSessionRefresh: true
+        
     },
     emailAndPassword: { 
         enabled: true,
@@ -37,6 +39,8 @@ export const auth = betterAuth({
     }, 
     plugins: [
         nextCookies(),
-        dash()
+        dash(),
+        passkey(), 
+        admin()
     ] 
 });

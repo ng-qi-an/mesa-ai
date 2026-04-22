@@ -18,6 +18,7 @@ import { toast } from "sonner";
 import { Spinner } from "@/components/ui/spinner";
 import { useClass } from "@/components/providers/class-provider";
 import createTopicServer from "@/lib/actions/topics/createTopic";
+import revalidateData from "@/lib/actions/revalidateData";
 
 
 export default function CreateTopicDialog({showCreate, setShowCreate}: {showCreate: boolean, setShowCreate: (show: boolean) => void}) {
@@ -41,6 +42,8 @@ export default function CreateTopicDialog({showCreate, setShowCreate}: {showCrea
                 try {
                     const response = await createTopicServer(name, icon, _class.id)
                     console.log(response)
+                    setShowCreate(false);
+                    await revalidateData(`/dashboard/class/${_class.id}/topic/${response[0].id}`);
                     router.push(`/dashboard/class/${_class.id}/topic/${response[0].id}`)
                 } catch (error) {
                     if (error instanceof Error && error.message === "already_exists") {
@@ -68,8 +71,8 @@ export default function CreateTopicDialog({showCreate, setShowCreate}: {showCrea
                                         setIcon(name)
                                         setIconPickerOpen(false)
                                     }} open={iconPickerOpen} onOpenChange={setIconPickerOpen}>
-                                        <Button size={"icon-lg"} className={`transition-colors size-22 rounded-lg bg-primary  hover:bg-primary/80`}>
-                                            <DynamicIcon name={icon as any} className={`text-primary-foreground size-8`} strokeWidth={2}/>
+                                        <Button size={"icon-lg"} className={`transition-colors size-22 rounded-lg`} variant={"secondary"}>
+                                            <DynamicIcon name={icon as any} className={`text-secondary-foreground size-8`} strokeWidth={2}/>
                                         </Button>
                                     </IconPicker>
                                     </span> 

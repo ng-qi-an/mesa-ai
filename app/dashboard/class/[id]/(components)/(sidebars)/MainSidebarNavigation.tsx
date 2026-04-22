@@ -8,15 +8,18 @@ export default function MainSidebarNavigation(){
         name: "Dashboard",
         href: "",
         icon: Home
-    }, {
+    }, 
+    {
         name: "Chat",
         href: "/chats",
         icon: MessageSquare
-    }, {
-        name: "Guided Study",
-        href: "/guided-study",
-        icon: BookOpen
-    }, {
+    }, 
+    // {
+    //     name: "Guided Study",
+    //     href: "/guided-study",
+    //     icon: BookOpen
+    // }, 
+    {
         name: "Preferences",
         href: "/preferences",
         icon: Settings2

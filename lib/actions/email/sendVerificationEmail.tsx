@@ -1,6 +1,6 @@
 'use server';
 import { Resend } from 'resend';
-import VerifyEmail from './VerifyEmail';
+import VerifyEmail from '@/components/email/VerifyEmail';
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 

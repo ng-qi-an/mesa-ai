@@ -4,6 +4,12 @@ import { UIMessage } from "ai";
 import { ChatUIMessage } from "../utils/models";
 import { QuizQuestionItemType, QuizTextAnswerExplanationType } from "../actions/quiz/quizSchema";
 import { availableSubjects } from "../subjects/subjectsList";
+
+export const userMeta = pgTable("user_meta", {
+    userId: text("user_id").primaryKey().references(() => user.id, { onDelete: "cascade" }),
+    updateVersion: text("update_version").notNull().default("unknown"),
+})
+
 export const classes = pgTable("classes", {
     id: text("id").primaryKey(),
     userId: text("user_id").notNull().references(() => user.id, { onDelete: "cascade" }),

@@ -1,4 +1,4 @@
-import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
+import { SidebarProvider } from "@/components/ui/sidebar";
 import MainSidebar from "./(components)/(sidebars)/MainSidebar";
 import { redirect } from "next/navigation";
 import getAllClassesServer from "@/lib/actions/classes/getAllClasses";
@@ -20,9 +20,9 @@ export default async function ClassLayout({children, params}: {children: React.R
             <SidebarProvider>
                 <MainSidebar classes={classes} _class={_class} />
                 <Suspense fallback={<div className="w-full h-screen flex items-center justify-center">Loading...</div>}>
-                <main className={cn(_class.theme, "w-full h-screen flex flex-col")}>
-                    {children}
-                </main>
+                    <main className={cn(_class.theme, "w-full h-screen flex flex-col")}>
+                        {children}
+                    </main>
                 </Suspense>
             </SidebarProvider>
         </ClassProvider>

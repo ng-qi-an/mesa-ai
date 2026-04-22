@@ -8,19 +8,18 @@ export default function MainSidebarLibrary(){
         name: "Drive",
         href: "/drive",
         icon: FolderOpen
-    }, {
+    }, 
+    {
         name: "Notebooks",
         href: "/notebooks",
         icon: Notebook
-    }, {
+    }, 
+    {
         name: "Flashcards",
         href: "/flashcards",
         icon: WalletCards
-    }, {
-        name: "Mindmaps",
-        href: "/mindmaps",
-        icon: Map
-    }, {
+    },
+    {
         name: "Quizzes",
         href: "/quizzes",
         icon: ListTodo
