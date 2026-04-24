@@ -1,5 +1,4 @@
 'use client';
-import { ComponentExample } from "@/components/component-example";
 import { sendVerificationEmail } from "@/lib/actions/email/sendVerificationEmail";
 import VerifyEmail from "@/components/email/VerifyEmail";
 import { Button } from "@/components/ui/button";
