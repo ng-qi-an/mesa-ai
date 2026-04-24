@@ -7,9 +7,9 @@ const resend = new Resend(process.env.RESEND_API_KEY);
 export async function sendVerificationEmail(email: string, url: string) {
     'use server';
     const { data, error } = await resend.emails.send({
-      from: 'Mesa AI <mesa-onboarding@ngqian.dev>',
+      from: 'Mesa Onboarding <mesa@ngqian.com>',
       to: [email],
-      subject: 'Mesa AI - Verify your email address',
+      subject: 'Welcome to Mesa AI - Verify your email address',
       react: VerifyEmail({ url: url }),
     });
     if (error) {

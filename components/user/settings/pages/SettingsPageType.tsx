@@ -3,6 +3,7 @@ import UserGeneral from "./UserGeneral";
 import { User } from "better-auth";
 import { authClient } from "@/lib/auth-client";
 import UserSecurity from "./UserSecurity";
+import UserAbout from "./UserAbout";
 
 export type settingsPageType = {
     name: string,
@@ -51,5 +52,6 @@ export const settingsPages: Record<string, settingsPageType> = {
         title: "About Mesa AI",
         description: "Learn more about Mesa AI and its features.",
         icon: Info,
+        page: UserAbout,
     }
 };

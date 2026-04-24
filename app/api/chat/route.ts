@@ -22,23 +22,24 @@ function createChatStream({model, context, messages}: {model: Model; context: Ch
     return streamText({
         system: `
         ${availableSubjects[context.subject].instructions.chat}
-        **Math formula**: If you need to use a math formula, use LaTeX format and STRICTLY wrap it in double dollar signs. For example, if you want to express the formula for the area of a circle, you would write: $$A = \pi r^2$$.
         `,
-        model: model.provider == "google" ? google(model.name) : openrouter.chat(model.name),
+        model: openrouter.chat(chatModels[0].name, {models: chatModels.map(m => m.name), reasoning: {
+            effort: context.thinkingLevel,
+        }}),
         messages,
-        tools: model.provider === "google" ? {
-            google_search: google.tools.googleSearch({}),
-        } : undefined,
-        toolChoice: "auto",
-        providerOptions: model.name.startsWith("gemini-3") ? {
-            google: {
-                thinkingConfig: {
-                    thinkingLevel: context.thinkingLevel,
-                    includeThoughts: true,
-                },
-            },
-        } : undefined,
-        timeout: {stepMs: model.timeoutMs, totalMs: maxDuration * 1000},
+        // tools: model.provider === "google" ? {
+        //     google_search: google.tools.googleSearch({}),
+        // } : undefined,
+        // toolChoice: "auto",
+        // providerOptions: model.name.startsWith("gemini-3") ? {
+        //     google: {
+        //         thinkingConfig: {
+        //             thinkingLevel: context.thinkingLevel,
+        //             includeThoughts: true,
+        //         },
+        //     },
+        // } : undefined,
+        // timeout: {stepMs: model.timeoutMs, totalMs: maxDuration * 1000},
     });
 }
 

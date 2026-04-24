@@ -11,6 +11,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AlertCircleIcon } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "nextjs-toploader/app";
+import socialSignIn from "../socialSignIn";
 
 export default function SignUp(){
     // const [state, formAction, pending] = useActionState(createUser, {errors: null} as { errors: any[] | null });
@@ -94,6 +95,9 @@ export default function SignUp(){
                     </FieldSet>
                 </CardContent>
                 <CardFooter className="flex-col gap-2">
+                    <div className="flex flex-row w-full gap-2 mt-1">
+                        <Button className="min-w-0 flex-1" type="button" variant={"secondary"} onClick={async()=> await socialSignIn("google")}>Sign up with Google</Button>
+                    </div>
                     <Button disabled={loading} type="submit" size={'lg'} variant={"raised"} className="w-full">
                         {loading ? <Spinner /> : "Sign Up"}
                     </Button>

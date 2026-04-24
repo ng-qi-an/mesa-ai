@@ -49,7 +49,7 @@ export default function ChatPage({chat}:{chat: ChatSelect}){
                     // await SendChatMessage({message: {text: chatCtx.newText, files: chatCtx.newFiles}, files: chatCtx.newFiles, sendMessage, thinkingLevel: chatCtx.newThinkingLevel, chatId: chat.id, bodyOptions: {chatModelIndex: chatModelIndex + 1}});
                     setTimeout(()=>{
                         console.log("Regenerating with fallback model:", chatModels[chatModelIndex + 1].name);
-                        regenerate({body: {chatModelIndex: chatModelIndex + 1}});
+                        regenerate({body: {chatModelIndex: chatModelIndex + 1, subject: _class.subject}});
                     }, 0)
                     setChatModelIndex(chatModelIndex + 1)
                 } else {
@@ -82,7 +82,7 @@ export default function ChatPage({chat}:{chat: ChatSelect}){
                     chatCtx.setNewFiles([]);
                     setThinkingLevel(chatCtx.newThinkingLevel);
                     chatCtx.setNewThinkingLevel("minimal");
-                    const r = await SendChatMessage({message: {text: chatCtx.newText, files: chatCtx.newFiles}, files: chatCtx.newFiles, sendMessage, thinkingLevel: chatCtx.newThinkingLevel, chatId: chat.id, bodyOptions: {chatModelIndex}});
+                    const r = await SendChatMessage({message: {text: chatCtx.newText, files: chatCtx.newFiles}, files: chatCtx.newFiles, sendMessage, thinkingLevel: chatCtx.newThinkingLevel, chatId: chat.id, bodyOptions: {chatModelIndex, subject: _class.subject}});
                     console.log("SendChatMessage result:", r);
                     if (r === "failed_uploads") {
                         toast.warning("Some files failed to upload.");

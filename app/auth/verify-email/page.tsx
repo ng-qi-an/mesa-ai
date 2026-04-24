@@ -11,10 +11,10 @@ export default function VerifyEmailRequired(){
     const { data: session } = authClient.useSession()
     return session && <div className="h-screen w-full flex flex-col items-center justify-center">
         <Card className="w-full max-w-md">
-            <CardHeader>
+            <CardHeader className="items-center flex flex-col">
                 <img src="/email.png" style={{width: "200px", marginBottom: 20}}/>
                 <CardTitle className="mt-4 text-lg">Verify Your Email</CardTitle>
-                <CardDescription>
+                <CardDescription className="text-center">
                     Please check your email and follow the instructions to verify your account.
                 </CardDescription>
             </CardHeader>

@@ -17,7 +17,7 @@ import {
 import { cn } from "@/lib/utils";
 import { cjk } from "@streamdown/cjk";
 import { code } from "@streamdown/code";
-import { math } from "@streamdown/math";
+import { createMathPlugin } from "@streamdown/math";
 import { mermaid } from "@streamdown/mermaid";
 import { ChevronLeftIcon, ChevronRightIcon } from "lucide-react";
 import {
@@ -34,6 +34,11 @@ import { Streamdown } from "streamdown";
 export type MessageProps = HTMLAttributes<HTMLDivElement> & {
   from: UIMessage["role"];
 };
+
+const math = createMathPlugin({
+  singleDollarTextMath: true,
+});
+
 
 export const Message = ({ className, from, ...props }: MessageProps) => (
   <div
