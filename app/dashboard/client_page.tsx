@@ -26,6 +26,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
 import revalidateData from "@/lib/actions/revalidateData";
+import UserDropdown from "@/components/user/UserDropdown";
 
 export default function DashboardPage({classes}: {classes: ClassSelect[]}) {
     const router = useRouter()
@@ -36,35 +37,11 @@ export default function DashboardPage({classes}: {classes: ClassSelect[]}) {
         <div className="w-full max-w-5xl">
             <div className="flex items-center w-full justify-between">
                 <h1 className="text-2xl font-medium">Mesa AI</h1>
-                <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                        <Button variant={'ghost'} size={"icon-lg"} className={"text-base"}>
-                            <img style={{height: 30, width: 30}} className="rounded-sm" src={session!.user.image || `https://api.dicebear.com/9.x/notionists-neutral/svg?seed=${session!.user.name}`}/>
-                        </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent className="w-[150px]">
-                        <DropdownMenuLabel>{session!.user.name}</DropdownMenuLabel>
-                        <DropdownMenuSeparator/>
-                        <DropdownMenuItem>Account settings</DropdownMenuItem>
-                        <DropdownMenuSub>
-                            <DropdownMenuSubTrigger>Theme</DropdownMenuSubTrigger>
-                            <DropdownMenuSubContent className="w-[150px]">
-                                <DropdownMenuCheckboxItem checked={theme === 'light'} onCheckedChange={() => setTheme('light')}><Sun/> Light</DropdownMenuCheckboxItem>
-                                <DropdownMenuCheckboxItem checked={theme === 'dark'} onCheckedChange={() => setTheme('dark')}><Moon/> Dark</DropdownMenuCheckboxItem>
-                                <DropdownMenuCheckboxItem checked={theme === 'system'} onCheckedChange={() => setTheme('system')}><LaptopMinimal/> System</DropdownMenuCheckboxItem>
-                            </DropdownMenuSubContent>
-                        </DropdownMenuSub>
-                        <DropdownMenuItem variant="destructive" onClick={async ()=>{
-                            await authClient.signOut({
-                                fetchOptions: {
-                                    onSuccess: () => {
-                                        router.push("/auth/log-in"); // redirect to login page
-                                    },
-                                },
-                            });
-                        }}>Log out</DropdownMenuItem>
-                    </DropdownMenuContent>
-                </DropdownMenu>
+                <UserDropdown user={session.user}>
+                    <Button variant={'ghost'} size={"icon-lg"} className={"text-base"}>
+                        <img style={{height: 30, width: 30}} className="rounded-sm" src={session!.user.image || `https://api.dicebear.com/9.x/notionists-neutral/svg?seed=${session!.user.name}`}/>
+                    </Button>
+                </UserDropdown>
             </div>
             <div className="w-full flex flex-col grid sm:grid-cols-2 lg:grid-cols-3 mt-6 md:mt-10 gap-4">
                 {classes.map((_class, index)=>{

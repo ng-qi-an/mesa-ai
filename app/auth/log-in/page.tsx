@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Field, FieldDescription, FieldError, FieldGroup, FieldLabel, FieldSet } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { loginUser } from "./loginAction";
 import { Spinner } from "@/components/ui/spinner";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -11,11 +11,24 @@ import { AlertCircleIcon } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "nextjs-toploader/app";
 import socialSignIn from "../socialSignIn";
+import passkeyLogin from "../passkeyLogin";
+import { authClient } from "@/lib/auth-client";
 
 export default function LogIn(){
     const [errors, setErrors] = useState<any[]>([]);
     const [loading, setLoading] = useState(false);
     const router = useRouter()
+    useEffect(() => {
+        if (!PublicKeyCredential.isConditionalMediationAvailable ||
+            !PublicKeyCredential.isConditionalMediationAvailable()) {
+            return;
+        }
+        try {
+            void passkeyLogin(true);
+        } catch (error) {
+            console.error("Error during conditional passkey login:", error);
+        }
+    }, [])
 
     return <div className="h-screen w-full flex flex-col items-center justify-center">
         <form className="w-full max-w-md" onSubmit={async(e)=>{
@@ -59,6 +72,7 @@ export default function LogIn(){
                                     name="email"
                                     type="email"
                                     placeholder="john@example.com"
+                                    autoComplete="email webauthn"
                                     required
                                     disabled={loading}
                                 />
@@ -68,7 +82,7 @@ export default function LogIn(){
                             </Field>
                             <Field>
                                 <FieldLabel htmlFor="password">Password</FieldLabel>
-                                <Input id="password" name="password" type="password" required disabled={loading} />
+                                <Input id="password" name="password" type="password" required disabled={loading} autoComplete="current-password webauthn"/>
                                 {errors && errors.filter((x)=> x.path.includes("password")).map((y)=>{
                                     return <FieldError key={'passwordError'}>{y.message}</FieldError>
                                 })}
@@ -80,7 +94,7 @@ export default function LogIn(){
                 <CardFooter className="flex flex-col gap-2">
                     <div className="flex flex-row w-full gap-2 mt-1">
                         <Button className="min-w-0 flex-1" type="button" variant={"secondary"} onClick={async()=> await socialSignIn("google")}>Google</Button>
-                        <Button className="min-w-0 flex-1" type="button" variant={"secondary"}>Passkey</Button>
+                        <Button className="min-w-0 flex-1" type="button" variant={"secondary"} onClick={async()=> await passkeyLogin()}>Passkey</Button>
                     </div>
                     <Button disabled={loading} type="submit" variant={"raised"} className="w-full">
                         {loading ? <Spinner /> : "Log In"}
