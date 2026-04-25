@@ -2,7 +2,7 @@
 
 import { QuizResponseSelect, QuizSelect } from "@/lib/schemas/schema";
 import QuizActionsDropdown from "@/components/quiz/QuizActionsDropdown";
-import { ArrowRight, Check, ChevronLeft, ChevronRight } from "lucide-react";
+import { ArrowRight, Check, ChevronLeft } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import { Card, CardHeader, CardTitle } from "@/components/ui/card";
 import { useEffect, useState } from "react";

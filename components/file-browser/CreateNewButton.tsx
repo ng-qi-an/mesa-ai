@@ -1,7 +1,6 @@
 'use client';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Button } from "@/components/ui/button";
-import { ChevronDown, CloudUpload, FolderPlus, Upload } from "lucide-react";
+import { CloudUpload, FolderPlus, Upload } from "lucide-react";
 import { useRef, useState } from "react";
 import CreateFolderDialog from "./dialogs/CreateFolderDialog";
 import { FileSelect } from "@/lib/schemas/schema";

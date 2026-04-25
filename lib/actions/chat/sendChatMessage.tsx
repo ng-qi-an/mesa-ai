@@ -1,9 +1,6 @@
 'use client';
 import { PromptInputMessage } from "@/components/ai-elements/prompt-input";
-import { auth } from "@/lib/auth";
-import { db } from "@/lib/db";
 import getAddUserFileURL from "@/lib/r2actions/files/getAddUserFileUrl";
-import { chatFiles } from "@/lib/schemas/schema";
 import { FileUIPart } from "ai";
 import addFileToChatFilesDb from "../../../components/chat/addFileToChatFilesDb";
 

@@ -1,5 +1,4 @@
-import { streamText, UIMessage, convertToModelMessages } from 'ai';
-import { google } from "@ai-sdk/google";
+import { streamText, convertToModelMessages } from 'ai';
 import { createOpenRouter } from '@openrouter/ai-sdk-provider';
 import { chatModels, ChatUIMessage, Model } from '@/lib/utils/models';
 import { availableSubjects } from '@/lib/subjects/subjectsList';

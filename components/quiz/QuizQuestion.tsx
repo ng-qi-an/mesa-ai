@@ -1,7 +1,6 @@
 'use client';
 
 import { QuizSelect } from "@/lib/schemas/schema";
-import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import MCQList from "./questionTypes/MCQList";
 import TrueFalseList from "./questionTypes/TrueFalseList";

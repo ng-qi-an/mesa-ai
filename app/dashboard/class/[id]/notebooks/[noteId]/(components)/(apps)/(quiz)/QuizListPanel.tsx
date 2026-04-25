@@ -2,7 +2,7 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { ChevronLeft, ListPlus, ListTodo, MessageSquarePlus } from "lucide-react";
+import { ChevronLeft, ListPlus, ListTodo } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useNotebook } from "@/components/providers/notebook-provider";

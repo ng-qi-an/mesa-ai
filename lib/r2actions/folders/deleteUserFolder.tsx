@@ -2,11 +2,10 @@
 import { headers } from "next/headers";
 import { auth } from "../../auth";
 import { r2 } from "../../r2";
-import { DeleteObjectsCommand, PutObjectCommand } from "@aws-sdk/client-s3";
+import { DeleteObjectsCommand } from "@aws-sdk/client-s3";
 import { db } from "../../db";
 import { files } from "../../schemas/schema";
-import { and, eq, sql } from "drizzle-orm";
-import { revalidatePath } from "next/cache";
+import { eq, sql } from "drizzle-orm";
 import deleteStoreFiles from "@/lib/file-search-actions/deleteStoreFiles";
 
 

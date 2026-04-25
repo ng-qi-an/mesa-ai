@@ -3,7 +3,6 @@ import { headers } from "next/headers";
 import { auth } from "../../auth";
 import { db } from "../../db";
 import { files } from "../../schemas/schema";
-import { generateId } from "better-auth";
 import { and, eq } from "drizzle-orm";
 
 

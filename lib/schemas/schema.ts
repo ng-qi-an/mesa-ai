@@ -1,6 +1,5 @@
-import { text, pgTable, serial, date, timestamp, AnyPgColumn, jsonb, boolean } from "drizzle-orm/pg-core";
+import { text, pgTable, serial, timestamp, AnyPgColumn, jsonb, boolean } from "drizzle-orm/pg-core";
 import { user } from "./auth-schema";
-import { UIMessage } from "ai";
 import { ChatUIMessage } from "../utils/models";
 import { QuizQuestionItemType, QuizTextAnswerExplanationType } from "../actions/quiz/quizSchema";
 import { availableSubjects } from "../subjects/subjectsList";

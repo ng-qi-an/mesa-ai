@@ -23,7 +23,7 @@ export function ClassProvider({children, _class}: {children: React.ReactNode, _c
     useEffect(()=>{
         (async()=>{
             const newestVersion = "beta";
-            var currentVersion = window.localStorage.getItem("updateVersion");
+            let currentVersion = window.localStorage.getItem("updateVersion");
             if (!currentVersion || currentVersion !== newestVersion) {
                 console.log("Outdated update version...")
                 currentVersion = await getUserUpdateVersion(newestVersion)

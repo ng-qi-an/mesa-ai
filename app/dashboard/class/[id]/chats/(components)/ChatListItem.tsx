@@ -1,7 +1,6 @@
 'use client';
 import { ChatSelect } from "@/lib/schemas/schema";
-import { relativeTime } from "@/lib/utils/relativeTime";
-import { MessageSquare, Notebook } from "lucide-react";
+import { Notebook } from "lucide-react";
 import { useParams, usePathname } from "next/navigation";
 import { useRouter } from "nextjs-toploader/app";
 import ChatActionsDropdown from "../../notebooks/[noteId]/(components)/(apps)/(chats)/ChatActionsDropdown";

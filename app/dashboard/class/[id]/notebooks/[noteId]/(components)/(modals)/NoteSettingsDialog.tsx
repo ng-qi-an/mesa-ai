@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import { Slider } from "@/components/ui/slider";
 import { Textarea } from "@/components/ui/textarea";
-import { useContext, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { buildNotesUpdatePrompt, useGenerateNotes } from "../../(actions)/generateNotes";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import SaveToNotebook from "../../(actions)/saveToNotebook";

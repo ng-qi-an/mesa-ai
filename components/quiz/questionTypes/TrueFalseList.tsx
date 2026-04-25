@@ -1,4 +1,4 @@
-import { Item, ItemContent, ItemDescription, ItemMedia, ItemTitle } from "@/components/ui/item";
+import { Item, ItemContent, ItemMedia, ItemTitle } from "@/components/ui/item";
 import { QuizSelect } from "@/lib/schemas/schema";
 import { Check, Lightbulb, X } from "lucide-react";
 import Hint from "./Hint";

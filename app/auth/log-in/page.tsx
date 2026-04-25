@@ -12,7 +12,6 @@ import Link from "next/link";
 import { useRouter } from "nextjs-toploader/app";
 import socialSignIn from "../socialSignIn";
 import passkeyLogin from "../passkeyLogin";
-import { authClient } from "@/lib/auth-client";
 
 export default function LogIn(){
     const [errors, setErrors] = useState<any[]>([]);

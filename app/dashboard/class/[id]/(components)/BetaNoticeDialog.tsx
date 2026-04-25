@@ -1,14 +1,12 @@
 'use client';
-import { useClass } from "@/components/providers/class-provider";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogFooter, DialogTitle } from "@/components/ui/dialog";
 import changeUserUpdateVersion from "@/lib/actions/changeUserUpdateVersion";
 import { cn } from "@/lib/utils";
 import { ArrowRight } from "lucide-react";
 import Image from "next/image";
 
 export default function BetaNoticeDialog({showBeta, setShowBeta}: {showBeta: boolean, setShowBeta: (show: boolean) => void}){
-    const {_class} = useClass();
     return <Dialog open={showBeta} onOpenChange={setShowBeta}>
         <DialogContent className={cn("h-max max-h-[90vh] sm:max-w-[500px] overflow-auto gap-4 p-0")}>
             <Image src="/MesaBetaBanner.png" alt="Mesa AI beta banner" className="w-full h-auto dark:invert" width={1200} height={520} priority />

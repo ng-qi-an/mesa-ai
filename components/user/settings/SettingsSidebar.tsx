@@ -1,8 +1,6 @@
 'use client';
 import Banner from "@/components/banner";
 import { Button } from "@/components/ui/button";
-import { authClient } from "@/lib/auth-client";
-import { LogOut } from "lucide-react";
 import { useRouter } from "nextjs-toploader/app";
 export default function SettingsSidebar({pagesList, activePage, setActivePage}: {pagesList: any[], activePage: string, setActivePage: (page: any) => void}){
     const router = useRouter();

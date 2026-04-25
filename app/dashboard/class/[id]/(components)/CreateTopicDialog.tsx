@@ -11,7 +11,6 @@ import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
-import IconPicker from "@/components/ui/icon-picker";
 import { DynamicIcon } from "lucide-react/dynamic";
 import { useRouter } from "nextjs-toploader/app";
 import { toast } from "sonner";
@@ -19,6 +18,9 @@ import { Spinner } from "@/components/ui/spinner";
 import { useClass } from "@/components/providers/class-provider";
 import createTopicServer from "@/lib/actions/topics/createTopic";
 import revalidateData from "@/lib/actions/revalidateData";
+import dynamic from "next/dynamic";
+
+const IconPicker = dynamic(() => import("@/components/ui/icon-picker"), { ssr: false })
 
 
 export default function CreateTopicDialog({showCreate, setShowCreate}: {showCreate: boolean, setShowCreate: (show: boolean) => void}) {
@@ -66,7 +68,7 @@ export default function CreateTopicDialog({showCreate, setShowCreate}: {showCrea
                             <Tooltip>
                                 <TooltipTrigger asChild>
                                     <span>
-                                    <IconPicker selected={icon} onSelect={(name) => {
+                                    <IconPicker selected={icon} onSelect={(name:string) => {
                                         console.log(name)
                                         setIcon(name)
                                         setIconPickerOpen(false)

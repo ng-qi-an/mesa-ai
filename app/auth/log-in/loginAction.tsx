@@ -2,7 +2,6 @@
 
 import { auth } from '@/lib/auth';
 import { APIError } from 'better-auth';
-import { redirect } from 'next/navigation';
 import { z } from 'zod'
  
 export async function loginUser(formData: FormData) {

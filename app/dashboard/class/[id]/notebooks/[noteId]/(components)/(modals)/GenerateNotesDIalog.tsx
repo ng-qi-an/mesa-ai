@@ -2,9 +2,9 @@ import { useNotebook } from "@/components/providers/notebook-provider";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
-import { useContext, useState } from "react";
+import { useState } from "react";
 import { useGenerateMeta } from "../../(actions)/useGenerateMeta";
-import { Field, FieldContent, FieldDescription, FieldLabel, FieldLegend, FieldSet, FieldTitle } from "@/components/ui/field";
+import { Field, FieldContent, FieldDescription, FieldLabel, FieldSet, FieldTitle } from "@/components/ui/field";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 
 export default function GenerateNotesDialog(){

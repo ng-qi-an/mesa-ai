@@ -1,6 +1,6 @@
 'use client';
 
-import { Sidebar, SidebarContent, SidebarRail } from "@/components/ui/sidebar";
+import { Sidebar, SidebarContent } from "@/components/ui/sidebar";
 import { authClient } from "@/lib/auth-client";
 import { ClassSelect } from "@/lib/schemas/schema";
 import MainSidebarHeader from "./MainSidebarHeader";

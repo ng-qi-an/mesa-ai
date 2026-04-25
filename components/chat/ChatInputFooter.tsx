@@ -4,7 +4,6 @@ import Logo from "@/components/logo";
 import { Button } from "@/components/ui/button";
 import { DropdownMenuItem, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import { Spinner } from "@/components/ui/spinner";
-import { FileUIPart } from "ai";
 import { Square } from "lucide-react";
 import { Dispatch, SetStateAction, useEffect, useState } from "react";
 import { ChatAttachmentType } from "../../lib/actions/chat/sendChatMessage";
@@ -26,7 +25,7 @@ export default function ChatInputFooter({thinkingLevel, setThinkingLevel, text, 
                 const existingIds = x.map((file) => file.id);
                 const finalFiles = selected
                     .filter((file) => !existingIds.includes(file.id))
-                    .map((file) => ({ id: file.id, filename: file.name, type: "file" as "file", url: "", mediaType: file.contentType, drive: true}));
+                    .map((file) => ({ id: file.id, filename: file.name, type: "file" as const, url: "", mediaType: file.contentType, drive: true}));
                 console.log("Adding files to prompt attachments:", finalFiles);
                 return [...x, ...finalFiles];
             });
