@@ -1,8 +1,6 @@
 import { streamText, Output } from 'ai';
 import { google } from "@ai-sdk/google";
 import { noteMetaSchema } from '../schema';
-import { GetObjectCommand } from '@aws-sdk/client-s3';
-import { r2 } from '@/lib/r2';
 import { auth } from '@/lib/auth';
 import { headers } from 'next/headers';
 import { fileSearchMetaQuery } from '@/lib/utils/models';

@@ -1,6 +1,6 @@
 import { MessageAction, MessageActions, MessageContent, MessageResponse, MessageToolbar } from "@/components/ai-elements/message";
 import { Reasoning, ReasoningContent, ReasoningTrigger } from "@/components/ai-elements/reasoning";
-import { generateId, UIMessage } from "ai";
+import { generateId } from "ai";
 import ChatAttachments from "./ChatAttachments";
 import { Source, Sources, SourcesContent, SourcesTrigger } from "../ai-elements/sources";
 import { CopyIcon, RefreshCcwIcon, Sparkle } from "lucide-react";

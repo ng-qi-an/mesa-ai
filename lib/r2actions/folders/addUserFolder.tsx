@@ -7,7 +7,6 @@ import { db } from "../../db";
 import { files } from "../../schemas/schema";
 import { generateId } from "better-auth";
 import { and, eq } from "drizzle-orm";
-import { revalidatePath } from "next/cache";
 
 
 

@@ -2,7 +2,7 @@
 import { FileSelect } from "@/lib/schemas/schema"
 import { mimeToReadable } from "@/lib/utils"
 import { ColumnDef } from "@tanstack/react-table"
-import { ArrowDown, ArrowUp, ArrowUpDown, File, Folder, MoreHorizontal } from "lucide-react"
+import { ArrowDown, ArrowUp, File, Folder } from "lucide-react"
  
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"

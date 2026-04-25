@@ -4,7 +4,6 @@ import { db } from "@/lib/db";
 import { quizResponses, QuizResponseSelect } from "@/lib/schemas/schema";
 import { generateId } from "better-auth";
 import { headers } from "next/headers";
-import getQuizResponsesList from "./getQuizResponsesList";
 
 export default async function createEmptyResponse(quizId: string, responses: QuizResponseSelect[]) {
     const session = await auth.api.getSession({

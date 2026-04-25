@@ -1,8 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { authClient } from "@/lib/auth-client";
 import { Account } from "better-auth";
-import { ExternalLink, Unlink, X } from "lucide-react";
-import { useState } from "react";
+import { ExternalLink, X } from "lucide-react";
 import { toast } from "sonner";
 
 export default function AccountCard({account, linked, syncAccounts}:{account: Partial<Account>, linked: boolean, syncAccounts: () => void}){

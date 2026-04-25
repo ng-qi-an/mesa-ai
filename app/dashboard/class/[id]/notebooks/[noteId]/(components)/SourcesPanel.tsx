@@ -8,7 +8,7 @@ import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { ChevronDown, File, FileText, MoreVertical, Pen, Plus, Trash2, X } from "lucide-react";
+import { ChevronDown, File, FileText, MoreVertical, Pen, Plus, Trash2 } from "lucide-react";
 import { motion } from "motion/react";
 import { useState } from "react";
 import { addNotebookFiles } from "../(actions)/addNotebookFiles";

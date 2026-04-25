@@ -2,15 +2,13 @@
 import CreateClassDialog from "@/app/dashboard/(components)/CreateClassDialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuSub, DropdownMenuSubContent, DropdownMenuSubTrigger, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { authClient } from "@/lib/auth-client";
-import { cn } from "@/lib/utils";
-import { ChevronDown, Circle, Computer, DraftingCompass, Ellipsis, ExternalLink, Eye, Globe, LaptopMinimal, Moon, Plus, Presentation, Scroll, Settings2, Sun, Trash, Trash2Icon } from "lucide-react";
+import { Ellipsis, ExternalLink, Plus, Settings2, Trash, Trash2Icon } from "lucide-react";
 import { useTheme } from "next-themes";
 import { useRouter } from "nextjs-toploader/app";
-import React, { Fragment, useEffect, useState } from "react";
+import React, { useState } from "react";
 import { ClassSelect } from "@/lib/schemas/schema";
-import getAllClassesServer from "@/lib/actions/classes/getAllClasses";
 import { DynamicIcon } from "lucide-react/dynamic";
 import deleteClassServer from "@/lib/actions/classes/deleteClass";
 import {

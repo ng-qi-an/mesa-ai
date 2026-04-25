@@ -1,5 +1,5 @@
 import { SidebarGroupLabel, SidebarGroup, SidebarGroupContent, SidebarMenuItem, SidebarMenuButton, SidebarMenu } from "@/components/ui/sidebar";
-import { FolderOpen, ListTodo, Map, Notebook, WalletCards } from "lucide-react";
+import { FolderOpen, ListTodo, Notebook, WalletCards } from "lucide-react";
 import { useParams, usePathname } from "next/navigation";
 import { useRouter } from "nextjs-toploader/app";
 

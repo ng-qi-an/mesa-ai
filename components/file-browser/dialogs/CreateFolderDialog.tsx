@@ -11,7 +11,6 @@ import addUserFolder from "@/lib/r2actions/folders/addUserFolder";
 import { FileSelect } from "@/lib/schemas/schema";
 import { FolderPlus } from "lucide-react";
 import { usePathname } from "next/navigation";
-import { useRouter } from "nextjs-toploader/app";
 import { useState } from "react";
 import { toast } from "sonner";
 

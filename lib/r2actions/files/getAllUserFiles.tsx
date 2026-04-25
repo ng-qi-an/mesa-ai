@@ -1,5 +1,3 @@
-import { auth } from "@/lib/auth";
-import { headers } from "next/headers";
 
 // export default async function getAllUserFiles({classId, notebookId}: {classId?: string, notebookId?: string}){
 //     const session = await auth.api.getSession({

@@ -1,5 +1,5 @@
 import { SidebarGroupLabel, SidebarGroup, SidebarGroupAction, SidebarGroupContent, SidebarMenuItem, SidebarMenuButton, SidebarMenu, SidebarMenuAction } from "@/components/ui/sidebar";
-import { BookOpen, MoreVertical, Plus } from "lucide-react";
+import { MoreVertical, Plus } from "lucide-react";
 import { useParams, usePathname } from "next/navigation";
 import { useRouter } from "nextjs-toploader/app";
 import { useState } from "react";

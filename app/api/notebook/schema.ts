@@ -1,4 +1,3 @@
-import { quizQuestionTypes } from '@/lib/actions/quiz/quizQuestionTypes';
 import { z } from 'zod';
 
 export const noteMetaSchema = z.object({

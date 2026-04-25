@@ -12,12 +12,12 @@ import { useClass } from "@/components/providers/class-provider";
 import { Button } from "@/components/ui/button";
 import saveToChat from "@/lib/actions/chat/saveToChat";
 import SendChatMessage, { ChatAttachmentType } from "@/lib/actions/chat/sendChatMessage";
-import { chats, ChatSelect } from "@/lib/schemas/schema";
+import { ChatSelect } from "@/lib/schemas/schema";
 import { allowedMimeTypes } from "@/lib/utils";
 import { chatModels, ChatUIMessage } from "@/lib/utils/models";
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport } from "ai";
-import { ArrowRight, Cross, MessageSquareIcon, X } from "lucide-react";
+import { ArrowRight, MessageSquareIcon } from "lucide-react";
 import { useSearchParams } from "next/navigation"
 import { useRouter } from "nextjs-toploader/app"
 import { useEffect, useRef, useState } from "react";

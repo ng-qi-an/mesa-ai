@@ -14,7 +14,6 @@ import SaveToNotebook from "./(actions)/saveToNotebook";
 import { toast } from "sonner";
 import MobileTabbar from "./(components)/(sidebars)/MobileTabbar";
 import SourcesPanel from "./(components)/SourcesPanel";
-import AppsPanel from "./(components)/AppsPanel";
 
 export default function Page(){
     const {isMobile, setOpen} = useSidebar();

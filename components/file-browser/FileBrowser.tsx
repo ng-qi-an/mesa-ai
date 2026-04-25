@@ -1,6 +1,6 @@
 "use client"
 import { FileBrowserItem, fileColumns } from "./FileBrowserColumns";
-import { FileBrowserTable, FileBrowserTableMiscProps, FileBrowserTableProps } from "./FileBrowserTable"
+import { FileBrowserTable, FileBrowserTableMiscProps } from "./FileBrowserTable"
 
 export default function FileBrowser({files, hideColumns, hideFileTypes, onItemSelect, onSecondaryItemSelect, className, selected, setSelected, enableCheckbox}: {hideColumns?: string[], hideFileTypes?: string[], files: FileBrowserItem[]} &FileBrowserTableMiscProps<FileBrowserItem, any>) {
     if (!onItemSelect){

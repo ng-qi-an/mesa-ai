@@ -1,6 +1,6 @@
 'use client';
 import { Input } from "@/components/ui/input";
-import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "../../ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "../../ui/dialog";
 import { Field, FieldDescription, FieldGroup, FieldLabel, FieldSet } from "../../ui/field";
 import { Button } from "@/components/ui/button";
 import { authClient } from "@/lib/auth-client";

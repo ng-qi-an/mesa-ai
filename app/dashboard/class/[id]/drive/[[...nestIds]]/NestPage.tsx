@@ -10,7 +10,7 @@ import { FileSelect } from "@/lib/schemas/schema";
 import { useRouter } from "nextjs-toploader/app";
 import { useClass } from "@/components/providers/class-provider";
 import FileBrowserBreadcrumbs from "@/components/file-browser/FileBrowserBreadcrumbs";
-import { ChevronDown, Search } from "lucide-react";
+import { ChevronDown } from "lucide-react";
 
 export default function NestPage({nests, files, revalidateData}: {nests: FileSelect[], files: FileSelect[], revalidateData: (...args: any[]) => Promise<void>}) {
     const router = useRouter();

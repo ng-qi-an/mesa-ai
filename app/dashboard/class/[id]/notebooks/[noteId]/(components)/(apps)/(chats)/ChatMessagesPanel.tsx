@@ -17,7 +17,7 @@ import {
   PromptInputTextarea,
 } from "@/components/ai-elements/prompt-input";
 
-import { Message, MessageContent, MessageResponse } from "@/components/ai-elements/message";
+import { Message, MessageContent } from "@/components/ai-elements/message";
 import { MessageSquareIcon } from "lucide-react";
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport } from "ai";
@@ -27,7 +27,6 @@ import ChatInputFooter from "@/components/chat/ChatInputFooter";
 import SendChatMessage, { ChatAttachmentType } from "@/lib/actions/chat/sendChatMessage";
 import { toast } from "sonner";
 import { ChatSelect } from "@/lib/schemas/schema";
-import SaveToNotebook from "../../../(actions)/saveToNotebook";
 import saveToChat from "@/lib/actions/chat/saveToChat";
 import ChatInputHeader from "@/components/chat/ChatInputHeader";
 import ChatMessageContent from "@/components/chat/ChatMessageContent";

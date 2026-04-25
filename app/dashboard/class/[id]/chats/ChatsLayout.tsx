@@ -1,5 +1,4 @@
 'use client';
-import { Input } from "@/components/ui/input";
 import PageHeader from "../(components)/PageHeader";
 import { Button } from "@/components/ui/button";
 import { ChevronsLeft, MessageSquare, MessageSquarePlus } from "lucide-react";
@@ -13,7 +12,6 @@ import { SidebarTrigger, useSidebar } from "@/components/ui/sidebar";
 import { ChatAttachmentType } from "@/lib/actions/chat/sendChatMessage";
 import { ChatProvider } from "@/components/providers/chat-provider";
 import { groupedTime } from "@/lib/utils/groupedTime";
-import { AnimatePresence } from "motion/react";
 import { motion } from "motion/react";
 export default function ChatsLayout({children, chats}: {chats: ChatSelect[], children: React.ReactNode}){
     const {id, chatId} = useParams();

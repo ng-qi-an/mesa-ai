@@ -1,6 +1,6 @@
 'use server';
 import { headers } from "next/headers";
-import { and, eq, inArray, not } from "drizzle-orm";
+import { and, eq, inArray } from "drizzle-orm";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { chats, files } from "@/lib/schemas/schema";

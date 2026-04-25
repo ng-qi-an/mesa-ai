@@ -2,8 +2,8 @@
 
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { quizResponses, quizzes } from "@/lib/schemas/schema";
-import { and, eq } from "drizzle-orm";
+import { quizResponses } from "@/lib/schemas/schema";
+import { eq } from "drizzle-orm";
 import { headers } from "next/headers";
 
 export default async function getQuizResponsesList(quizId: string){

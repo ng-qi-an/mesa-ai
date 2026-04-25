@@ -14,14 +14,15 @@ import { Circle } from "lucide-react";
 import { useState } from "react";
 import { Tooltip, TooltipContent, TooltipTrigger } from "../../../components/ui/tooltip";
 import { cn } from "@/lib/utils";
-import IconPicker from "../../../components/ui/icon-picker";
 import { DynamicIcon } from "lucide-react/dynamic";
 import createClassServer from "@/lib/actions/classes/createClass";
 import { useRouter } from "nextjs-toploader/app";
 import { toast } from "sonner";
 import { Spinner } from "@/components/ui/spinner";
 import { availableSubjects, subjectsList } from "@/lib/subjects/subjectsList";
+import dynamic from "next/dynamic";
 
+const IconPicker = dynamic(() => import("../../../components/ui/icon-picker"), { ssr: false })
 
 export default function CreateClassDialog({showCreate, setShowCreate}: {showCreate: boolean, setShowCreate: (show: boolean) => void}) {
     const [name, setName] = useState('');

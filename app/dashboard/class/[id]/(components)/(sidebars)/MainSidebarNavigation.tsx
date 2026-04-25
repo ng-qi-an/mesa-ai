@@ -1,5 +1,5 @@
 import { SidebarGroupLabel, SidebarGroup, SidebarGroupContent, SidebarMenuItem, SidebarMenuButton, SidebarMenu } from "@/components/ui/sidebar";
-import { BookOpen, Home, MessageSquare, Settings2 } from "lucide-react";
+import { Home, MessageSquare, Settings2 } from "lucide-react";
 import { useParams, usePathname } from "next/navigation";
 import { useRouter } from "nextjs-toploader/app";
 

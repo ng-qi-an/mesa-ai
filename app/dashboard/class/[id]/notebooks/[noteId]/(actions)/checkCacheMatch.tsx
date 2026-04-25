@@ -1,4 +1,3 @@
-import { FileSelect } from "@/lib/schemas/schema";
 
 export default function checkCacheMatch(cacheFileIds: string[] | undefined, fileIds: string[] | undefined){
     if (!cacheFileIds || !fileIds) return false;

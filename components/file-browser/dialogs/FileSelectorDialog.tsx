@@ -5,7 +5,6 @@ import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, Di
 import { Spinner } from "@/components/ui/spinner";
 import { FileSelect } from "@/lib/schemas/schema";
 import { ChevronDown } from "lucide-react";
-import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import FileBrowser from "../FileBrowser";
 import { FileBrowserItem } from "../FileBrowserColumns";

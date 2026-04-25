@@ -2,8 +2,8 @@
 
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { quizResponses, QuizResponseSelect, quizzes } from "@/lib/schemas/schema";
-import { and, eq } from "drizzle-orm";
+import { quizResponses, QuizResponseSelect } from "@/lib/schemas/schema";
+import { eq } from "drizzle-orm";
 import { headers } from "next/headers";
 
 export default async function saveResponseAttempt(responseId:string, payload: Partial<QuizResponseSelect>, responses: QuizResponseSelect[]) {

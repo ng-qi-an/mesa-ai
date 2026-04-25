@@ -1,7 +1,7 @@
 'use server';
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { classes, topics } from "@/lib/schemas/schema";
+import { topics } from "@/lib/schemas/schema";
 import { and, eq } from "drizzle-orm";
 import { headers } from "next/headers";
 

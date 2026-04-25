@@ -1,5 +1,4 @@
 'use client';
-import { useFileBrowser } from "@/components/providers/file-browser-provider";
 import {
   AlertDialog,
   AlertDialogCancel,
@@ -12,10 +11,8 @@ import {
 } from "@/components/ui/alert-dialog"
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
-import deleteUserFile from "@/lib/r2actions/files/deleteUserFile";
-import deleteUserFolder from "@/lib/r2actions/folders/deleteUserFolder";
 import revalidateData from "@/lib/actions/revalidateData";
-import { FileX, FolderX, Notebook } from "lucide-react"
+import { Notebook } from "lucide-react"
 import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";

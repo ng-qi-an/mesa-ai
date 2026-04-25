@@ -4,7 +4,6 @@ import { and, eq, inArray, isNull } from "drizzle-orm";
 import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { headers } from "next/headers";
-import { FileBrowserProvider } from "@/components/providers/file-browser-provider";
 import { revalidatePath } from "next/cache";
 import NestPage from "./NestPage";
 

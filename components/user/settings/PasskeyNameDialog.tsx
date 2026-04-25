@@ -1,14 +1,11 @@
 'use client';
 import { Input } from "@/components/ui/input";
-import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "../../ui/dialog";
-import { Field, FieldDescription, FieldGroup, FieldLabel, FieldSet } from "../../ui/field";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "../../ui/dialog";
+import { Field, FieldGroup, FieldLabel, FieldSet } from "../../ui/field";
 import { Button } from "@/components/ui/button";
-import { authClient } from "@/lib/auth-client";
 import { toast } from "sonner";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Spinner } from "@/components/ui/spinner";
-import checkIfCredsExists from "./(actions)/checkIfCredsExists";
-import setPassword from "./(actions)/setPassword";
 
 export default function PasskeyNameDialog({open, setOpen, onSave, initialName}: {open: boolean, setOpen: (open: boolean) => void, onSave: (name: string) => Promise<void>, initialName?: string}){
     const [loading, setLoading] = useState(false);

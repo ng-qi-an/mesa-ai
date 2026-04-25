@@ -1,8 +1,6 @@
 import NotebookProvider from "@/components/providers/notebook-provider";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
-import getStoreFiles from "@/lib/file-search-actions/getStoreFiles";
-import { notebook } from "@/lib/schemas/schema";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import {ReactNode} from "react";
