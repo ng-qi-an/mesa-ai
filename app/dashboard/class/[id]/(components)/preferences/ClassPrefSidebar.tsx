@@ -1,5 +1,4 @@
 'use client';
-import Banner from "@/components/banner";
 import { Button } from "@/components/ui/button";
 export default function SettingsSidebar({pagesList, activePage, setActivePage}: {pagesList: any[], activePage: string, setActivePage: (page: any) => void}){
     return <div className="p-3 pr-0">
@@ -11,7 +10,6 @@ export default function SettingsSidebar({pagesList, activePage, setActivePage}: 
                 </Button>
             ))}
             <div className="flex-1"/>
-            <Banner className="w-[50%] mb-1"/>
         </div>
     </div>
 }

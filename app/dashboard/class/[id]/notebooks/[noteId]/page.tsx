@@ -14,11 +14,19 @@ import SaveToNotebook from "./(actions)/saveToNotebook";
 import { toast } from "sonner";
 import MobileTabbar from "./(components)/(sidebars)/MobileTabbar";
 import SourcesPanel from "./(components)/SourcesPanel";
+import { useNextStep } from "nextstepjs";
 
 export default function Page(){
     const {isMobile, setOpen} = useSidebar();
     const [selectedTab, setSelectedTab] = useState("notebook");
     const notebook = useNotebook();
+    const {currentTour, setCurrentStep} = useNextStep();
+    useEffect(()=>{
+        if (currentTour == "onboarding"){
+            setCurrentStep(6);
+        }
+    }, [])
+
     useEffect(()=>{
         if (!isMobile){
             setOpen(false);

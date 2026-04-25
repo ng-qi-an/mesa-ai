@@ -121,6 +121,10 @@
   --sidebar-ring: oklch(0.556 0 0);
 }
 
+[data-name="nextstep-arrow"]{
+  color: var(--card);
+}
+
 .red {
   --primary: oklch(63.7% 0.237 25.331);
   --primary-raised: oklch(44.4% 0.177 26.899);

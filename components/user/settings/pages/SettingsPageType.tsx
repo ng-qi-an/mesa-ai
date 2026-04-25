@@ -4,6 +4,8 @@ import { User } from "better-auth";
 import { authClient } from "@/lib/auth-client";
 import UserSecurity from "./UserSecurity";
 import UserAbout from "./UserAbout";
+import UserTutorial from "./UserTutorial";
+import UserChats from "./UserChats";
 
 export type settingsPageType = {
     name: string,
@@ -40,12 +42,14 @@ export const settingsPages: Record<string, settingsPageType> = {
         title: "Chat preferences",
         description: "Customize your chat experience and model selections.",
         icon: MessageSquare,
+        page: UserChats
     },
     tutorials: {
         name: "Tutorials",
         title: "Tutorials & Guides",
         description: "Learn how to use Mesa AI with guides and support resources.",
         icon: GraduationCap,
+        page: UserTutorial
     },
     about: {
         name: "About",

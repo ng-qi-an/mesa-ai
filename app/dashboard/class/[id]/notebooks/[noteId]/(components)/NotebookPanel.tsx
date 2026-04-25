@@ -24,6 +24,7 @@ import NoteSettingsDialog from "./(modals)/NoteSettingsDialog";
 import { Streamdown } from "streamdown";
 import { useTheme } from "next-themes";
 import checkFileStoreMatch from "../(actions)/checkFileStoreMatch";
+import { useNextStep } from "nextstepjs";
 
 const math = createMathPlugin({
   singleDollarTextMath: true,
@@ -37,7 +38,7 @@ export default function NotebookPanel(){
     const [showNoteSettings, setShowNoteSettings] =  useState(false);
     const [followup, setFollowup] = useState("");
     const [forceLightNotebook, setForceLightNotebook] = useState(false);
-
+    const {currentTour, setCurrentStep} = useNextStep();
     useEffect(() => {
         try {
             const savedPreference = localStorage.getItem("notebook-force-light");
@@ -90,6 +91,7 @@ export default function NotebookPanel(){
         <NoteSettingsDialog open={showNoteSettings} onOpenChange={setShowNoteSettings}/>
         <Card
             size="sm"
+            id="notebookPanel"
             className={`rounded-md ring-neutral-200 dark:ring-neutral-900 h-full ${
                 useLightNotebookTheme
                     ? "dark:[--background:oklch(1_0_0)] dark:[--foreground:oklch(0.145_0_0)] dark:[--card:oklch(1_0_0)] dark:[--card-foreground:oklch(0.145_0_0)] dark:[--popover:oklch(1_0_0)] dark:[--popover-foreground:oklch(0.145_0_0)] dark:[--secondary:oklch(0.97_0_0)] dark:[--secondary-foreground:oklch(0.205_0_0)] dark:[--muted:oklch(0.97_0_0)] dark:[--muted-foreground:oklch(0.556_0_0)] dark:[--accent:oklch(0.97_0_0)] dark:[--accent-foreground:oklch(0.205_0_0)] dark:[--border:oklch(0.922_0_0)] dark:[--input:oklch(0.922_0_0)] dark:[--ring:oklch(0.708_0_0)]"
@@ -237,6 +239,9 @@ export default function NotebookPanel(){
                             </form>
                         : (!noteCtx?.metaObject || !noteCtx.metaObject.header || !noteCtx.isGenerating && noteCtx.notesHistory.length === 0) && <Button variant={'raised'} disabled={noteCtx!.files.length < 1} size={'lg'} className="px-4" onClick={() => {
                             noteCtx?.setShowGenerateNotesDialog(true);
+                            if (currentTour == "onboarding"){
+                                setCurrentStep(10, 100);
+                            }
                         }}>
                             <Sparkles/>
                             Generate notes

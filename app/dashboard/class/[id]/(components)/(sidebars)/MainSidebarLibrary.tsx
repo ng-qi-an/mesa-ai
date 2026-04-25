@@ -32,7 +32,7 @@ export default function MainSidebarLibrary(){
         <SidebarGroupContent>
             <SidebarMenu>
                 {links.map((link)=>{
-                    return <SidebarMenuItem key={link.name}>
+                    return <SidebarMenuItem id={link.name + "Tab"} key={link.name}>
                         <SidebarMenuButton onClick={()=> router.push(`/dashboard/class/${id}${link.href}`)} tooltip={link.name} isActive={`/dashboard/class/${id}${link.href}` === pathname}>
                             <link.icon/>
                             {link.name}

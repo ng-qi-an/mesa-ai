@@ -5,9 +5,8 @@ import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/ca
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { authClient } from "@/lib/auth-client";
 import { Ellipsis, ExternalLink, Plus, Settings2, Trash, Trash2Icon } from "lucide-react";
-import { useTheme } from "next-themes";
 import { useRouter } from "nextjs-toploader/app";
-import React, { useState } from "react";
+import { useEffect, useState } from "react";
 import { ClassSelect } from "@/lib/schemas/schema";
 import { DynamicIcon } from "lucide-react/dynamic";
 import deleteClassServer from "@/lib/actions/classes/deleteClass";
@@ -25,16 +24,26 @@ import {
 } from "@/components/ui/alert-dialog"
 import revalidateData from "@/lib/actions/revalidateData";
 import UserDropdown from "@/components/user/UserDropdown";
+import Banner from "@/components/banner";
+import { useNextStep } from "nextstepjs";
+import { useParams, usePathname, useSearchParams } from "next/navigation";
 
 export default function DashboardPage({classes}: {classes: ClassSelect[]}) {
     const router = useRouter()
     const { data:session } = authClient.useSession();
-    const { theme, setTheme } = useTheme();
     const [showCreate, setShowCreate] = useState(false);
+    const {currentTour, startNextStep, setCurrentStep} = useNextStep();
+    const params = useSearchParams()
+    const pathname = usePathname();
+    useEffect(()=>{
+        if (params.get("onboard") === "true"){
+            startNextStep("onboarding");
+        }
+    }, [pathname])
     return session && <div className="w-full h-screen flex flex-col items-center py-12 px-6 md:px-8">
         <div className="w-full max-w-5xl">
             <div className="flex items-center w-full justify-between">
-                <h1 className="text-2xl font-medium">Mesa AI</h1>
+                <Banner className="w-[120px]"/>
                 <UserDropdown user={session.user}>
                     <Button variant={'ghost'} size={"icon-lg"} className={"text-base"}>
                         <img style={{height: 30, width: 30}} className="rounded-sm" src={session!.user.image || `https://api.dicebear.com/9.x/notionists-neutral/svg?seed=${session!.user.name}`}/>
@@ -94,7 +103,12 @@ export default function DashboardPage({classes}: {classes: ClassSelect[]}) {
                         </AlertDialogContent>
                     </AlertDialog>
                 })}
-                <Card onClick={()=> setShowCreate(true)} className="relative hover:bg-secondary/40 dark:hover:bg-secondary/30 dark:hover:shadow-none hover:shadow-sm hover:-translate-y-1 active:translate-y-0 active:scale-[0.99] transition-all cursor-pointer rounded-md justify-center">
+                <Card id="createClassCard" onClick={()=> {
+                    if (currentTour == "onboarding"){
+                        setCurrentStep(2, 100);
+                    }
+                    setShowCreate(true)
+                }} className="relative hover:bg-secondary/40 dark:hover:bg-secondary/30 dark:hover:shadow-none hover:shadow-sm hover:-translate-y-1 active:translate-y-0 active:scale-[0.99] transition-all cursor-pointer rounded-md justify-center">
                     <CardHeader>
                         <div className="p-4 bg-secondary w-max rounded-lg">
                             <Plus/>

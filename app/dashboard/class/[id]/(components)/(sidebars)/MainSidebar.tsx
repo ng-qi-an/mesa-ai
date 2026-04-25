@@ -8,10 +8,12 @@ import MainSidebarFooter from "./MainSidebarFooter";
 import MainSidebarNavigation from "./MainSidebarNavigation";
 import MainSidebarLibrary from "./MainSidebarLibrary";
 import MainSidebarTopics from "./MainSidebarTopics";
+import { useClass } from "@/components/providers/class-provider";
 
-export default function MainSidebar({_class, classes}: {_class: ClassSelect, classes: ClassSelect[]}) {
+export default function MainSidebar({classes}: {classes: ClassSelect[]}) {
     const {data:session} = authClient.useSession();
-    return session && <Sidebar collapsible="icon" className={_class.theme}>
+    const {_class} = useClass();
+    return session && <Sidebar collapsible="icon" className={_class.theme} id="classSidebar">
         <MainSidebarHeader _class={_class} classes={classes}/>
         <SidebarContent>
             <MainSidebarNavigation/>

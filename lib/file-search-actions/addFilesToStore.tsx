@@ -62,7 +62,13 @@ export default async function addFilesToStore(fileIds: string[], fileStoreId: st
             fileName: storeFile.name!
         });
     }))
+    const importStartTime = Date.now();
+    const importTimeoutMs = 20_000;
+
     while (ops.some(op => !op.done)) {
+        if (Date.now() - importStartTime > importTimeoutMs) {
+            throw new Error(`Timed out waiting for file imports after ${importTimeoutMs / 1000} seconds`);
+        }
         await Promise.all(ops.map(async (op, index) => {
             if (!op.done) {
                 ops[index] = await ai.operations.get({operation: op});

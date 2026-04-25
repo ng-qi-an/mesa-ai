@@ -6,15 +6,22 @@ import { useState } from "react";
 import { useGenerateMeta } from "../../(actions)/useGenerateMeta";
 import { Field, FieldContent, FieldDescription, FieldLabel, FieldSet, FieldTitle } from "@/components/ui/field";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { useNextStep } from "nextstepjs";
 
 export default function GenerateNotesDialog(){
     const noteCtx = useNotebook();
     const {generateMeta} = useGenerateMeta();
     const [instructions, setInstructions] = useState(noteCtx?.instructions || "");
     const [length, setLength] = useState(noteCtx?.length || "balanced");
+    const {currentTour, setCurrentStep} = useNextStep();
 
-    return noteCtx && <Dialog open={noteCtx?.showGenerateNotesDialog} onOpenChange={(open) => noteCtx?.setShowGenerateNotesDialog(open)}>
-        <DialogContent showCloseButton={false}>
+    return noteCtx && <Dialog open={noteCtx?.showGenerateNotesDialog} onOpenChange={(open) => {
+            if (!open && currentTour == "onboarding"){
+                return
+            }    
+            noteCtx?.setShowGenerateNotesDialog(open)
+        }}>
+        <DialogContent id="generateNotesDialog" showCloseButton={false}>
             <DialogHeader>
                 <DialogTitle>Generate notes</DialogTitle>
                 <DialogDescription>Customise the length for your use case.</DialogDescription>
@@ -60,7 +67,7 @@ export default function GenerateNotesDialog(){
                 </Field>
             </div>
             <DialogFooter>
-                <Button onClick={()=> noteCtx?.setShowGenerateNotesDialog(false)} variant={'ghost'}>
+                <Button onClick={()=> currentTour != "onboarding" && noteCtx?.setShowGenerateNotesDialog(false)} variant={'ghost'}>
                     Cancel
                 </Button>
                 <Button disabled={noteCtx.files.length < 1} variant={"raised"} onClick={async()=>{
@@ -68,6 +75,9 @@ export default function GenerateNotesDialog(){
                         noteCtx.setLength(length);
                         noteCtx.setShowGenerateNotesDialog(false);
                         generateMeta({instructions, files: noteCtx.files, length});
+                        if (currentTour == "onboarding"){
+                            setCurrentStep(11);
+                        }
                 }}>
                     Generate now
                 </Button>

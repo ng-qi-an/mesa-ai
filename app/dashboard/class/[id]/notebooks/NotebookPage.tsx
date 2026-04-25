@@ -3,7 +3,7 @@ import { Input } from "@/components/ui/input";
 import PageHeader from "../(components)/PageHeader";
 import { Button } from "@/components/ui/button";
 import { NotebookPen } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { createNotebook } from "./(actions)/createNotebook";
 import { useParams } from "next/navigation";
 import { useRouter } from "nextjs-toploader/app";
@@ -12,17 +12,24 @@ import { Spinner } from "@/components/ui/spinner";
 import { NotebookSelect } from "@/lib/schemas/schema";
 import NotebookListItem from "./(components)/NotebookListItem";
 import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty";
+import { useNextStep } from "nextstepjs";
 
 export default function NotebookPage({notebooks}: {notebooks: NotebookSelect[]}){
     const [creating, setCreating] = useState(false);
     const {id} = useParams();
     if (!id || Array.isArray(id)) return <div>Class ID not found</div>
     const router = useRouter();
+    const {currentTour, setCurrentStep} = useNextStep();
+    useEffect(()=>{
+        if (currentTour == "onboarding"){
+            setCurrentStep(5);
+        }
+    }, [])
     return <>
         <PageHeader pages={[{name: "Notebooks"}]} actionsClassName="ml-0 w-full">
             <div className="flex-1"/>
             <Input className="w-full max-w-[300px] mr-1 border-0 px-3" placeholder="Search for notebooks"/>
-            <Button disabled={creating} variant={"secondary"} className="mr-2" onClick={async()=>{
+            <Button id="createNotebookButton" disabled={creating} variant={"secondary"} className="mr-2" onClick={async()=>{
                 setCreating(true);
                 try {
                     const response = await createNotebook(id)

@@ -5,7 +5,7 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
 
-export const allowedMimeTypes = ["text/html", "text/css", "text/plain", "text/xml", "text/csv", "text/rtf", "text/javascript", "application/json", "application/pdf", "image/bmp", "image/jpeg", "image/png", "image/webp"]
+export const allowedMimeTypes = ["text/html", "text/css", "text/plain", "text/xml", "text/csv", "text/rtf", "text/javascript", "application/json", "application/pdf", "application/vnd.openxmlformats-officedocument.presentationml.presentation", "application/msword",  "application/vnd.openxmlformats-officedocument.wordprocessingml.document"] //"image/bmp", "image/jpeg", "image/png", "image/webp"
 
 export function mimeToReadable(mime: string) {
   if (mime === "application/x-directory") return "Folder";

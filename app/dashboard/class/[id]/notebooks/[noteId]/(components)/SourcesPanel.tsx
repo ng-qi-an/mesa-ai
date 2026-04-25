@@ -15,14 +15,16 @@ import { addNotebookFiles } from "../(actions)/addNotebookFiles";
 import { deleteNotebookFile } from "../(actions)/deleteNotebookFile";
 import { toast } from "sonner";
 import { useSidebar } from "@/components/ui/sidebar";
+import { useNextStep } from "nextstepjs";
 
 export default function SourcesPanel(){
     const [showFileSelector, setShowFileSelector] = useState(false);
     const {isMobile} = useSidebar();
     const noteCtx = useNotebook();
     const isCollapsed = noteCtx?.collapsedSources;
+    const {currentTour, setCurrentStep} = useNextStep();
 
-    return <Card size="sm" className={`${isMobile ? "h-full w-full" : (isCollapsed ? "h-max" : noteCtx?.collapsedApps ? "h-full max-h-full" : "shrink-0  h-full max-h-[230px]")} rounded-md ring-neutral-200 dark:ring-neutral-900 overflow-hidden ${!isMobile && isCollapsed && "gap-0!"}`}>
+    return <Card size="sm" id="sourcesPanel" className={`${isMobile ? "h-full w-full" : (isCollapsed ? "h-max" : noteCtx?.collapsedApps ? "h-full max-h-full" : "shrink-0  h-full max-h-[230px]")} rounded-md ring-neutral-200 dark:ring-neutral-900 overflow-hidden ${!isMobile && isCollapsed && "gap-0!"}`}>
             <FileSelectorDialog open={showFileSelector} setOpen={setShowFileSelector} onConfirm={async(files) => {
                 const finalFiles = files.filter((file)=> noteCtx.files.every((f) => f.id !== file.id))
                 if (finalFiles.length === 0){
@@ -57,7 +59,12 @@ export default function SourcesPanel(){
                 <Tooltip open={noteCtx?.isGenerating ? undefined : false}>
                     <TooltipTrigger asChild>
                         <span className="inline-block w-fit absolute right-4">
-                            <Button disabled={noteCtx?.isGenerating} size={'icon-sm'} className="text-muted-foreground" onClick={(e) => setShowFileSelector(true)} variant={'ghost'}>
+                            <Button disabled={noteCtx?.isGenerating} size={'icon-sm'} className="text-muted-foreground" onClick={(e) => { 
+                                setShowFileSelector(true)
+                                if (currentTour == "onboarding"){
+                                    setCurrentStep(8, 100);
+                                }
+                            }} variant={'ghost'}>
                                 <Plus/>
                             </Button>
                         </span>
@@ -116,7 +123,7 @@ export default function SourcesPanel(){
                                         <File className="text-muted-foreground" />
                                     </EmptyMedia>
                                     <EmptyTitle className="text-foreground/90">No sources</EmptyTitle>
-                                    <EmptyDescription>Add PDFs, documents or even YouTube videos using the plus icon.</EmptyDescription>
+                                    <EmptyDescription>Add PDFs and documents using the plus icon.</EmptyDescription>
                                 </EmptyHeader>
                             </Empty>
                         }

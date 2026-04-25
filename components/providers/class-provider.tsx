@@ -1,12 +1,12 @@
 'use client';
 
-import BetaNoticeDialog from "@/app/dashboard/class/[id]/(components)/BetaNoticeDialog";
-import getUserUpdateVersion from "@/lib/actions/getUserUpdateVersion";
 import { ClassSelect, TopicSelect } from "@/lib/schemas/schema";
+import { useNextStep } from "nextstepjs";
 import { createContext, useContext, useEffect, useState } from "react";
 
 export type ClassContextType = {
-    _class: ClassSelect & {topics: TopicSelect[]}
+    _class: ClassSelect & {topics: TopicSelect[]},
+    setClass: (newClass: ClassSelect & {topics: TopicSelect[]}) => void,
 }
 
 const ClassContext = createContext<ClassContextType | undefined>(undefined);
@@ -18,26 +18,15 @@ export function useClass() {
     }
     return context;
 }
-export function ClassProvider({children, _class}: {children: React.ReactNode, _class: ClassSelect & {topics: TopicSelect[]}}) {
-    const [showbeta, setShowBeta] = useState(false);
+export function ClassProvider({children, _class:initialClass}: {children: React.ReactNode, _class: ClassSelect & {topics: TopicSelect[]}}) {
+    const [_class, setClass] = useState(initialClass);
+    const {currentTour, setCurrentStep} = useNextStep();
     useEffect(()=>{
-        (async()=>{
-            const newestVersion = "beta";
-            let currentVersion = window.localStorage.getItem("updateVersion");
-            if (!currentVersion || currentVersion !== newestVersion) {
-                console.log("Outdated update version...")
-                currentVersion = await getUserUpdateVersion(newestVersion)
-                if (currentVersion == newestVersion) {
-                    window.localStorage.setItem("updateVersion", newestVersion);
-                } else {
-                    console.log("User has not seen update notice, showing notice...")
-                    setShowBeta(true);
-                }
-            }
-        })();
+        if (currentTour == "onboarding"){
+            setCurrentStep(3);
+        }
     }, [])
-    return <ClassContext.Provider value={{_class}}>
-        <BetaNoticeDialog showBeta={showbeta} setShowBeta={()=> setShowBeta(false)} />
+    return <ClassContext.Provider value={{_class, setClass}}>
         {children}
      </ClassContext.Provider>
 }

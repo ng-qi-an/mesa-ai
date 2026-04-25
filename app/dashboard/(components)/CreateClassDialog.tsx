@@ -21,18 +21,23 @@ import { toast } from "sonner";
 import { Spinner } from "@/components/ui/spinner";
 import { availableSubjects, subjectsList } from "@/lib/subjects/subjectsList";
 import dynamic from "next/dynamic";
+import { useNextStep } from "nextstepjs";
 
 const IconPicker = dynamic(() => import("../../../components/ui/icon-picker"), { ssr: false })
 
 export default function CreateClassDialog({showCreate, setShowCreate}: {showCreate: boolean, setShowCreate: (show: boolean) => void}) {
     const [name, setName] = useState('');
-    const [theme, setTheme] = useState('');
+    const [theme, setTheme] = useState('default');
     const [subject, setSubject] = useState('generic' as keyof typeof availableSubjects);
     const [icon, setIcon] = useState('presentation');
     const [iconPickerOpen, setIconPickerOpen] = useState(false);
     const [creating, setCreating] = useState(false);
+    const {currentTour} = useNextStep();
     const router = useRouter();
     return <Dialog open={showCreate} onOpenChange={(x)=>{
+        if (!x && currentTour == "onboarding"){
+            return
+        }
         if (!x){
             setName('')
             setTheme('')
@@ -55,12 +60,16 @@ export default function CreateClassDialog({showCreate, setShowCreate}: {showCrea
                     console.log(response)
                     router.push(`/dashboard/class/${response[0].id}`)
                 } catch (error) {
-                    toast.error("Failed to create class. Please try again.")
+                    if (error instanceof Error && error.message == "already_exists") {
+                        toast.error("A class with the same name already exists. Please choose a different name.")
+                    } else {
+                        toast.error("Failed to create class. Please try again.")
+                    }
                     console.error("Class creation error:", error)
                 } finally {
                     setCreating(false);
                 }
-            }} className="dark:bg-primary/5 p-6 gap-4 grid transition-colors">
+            }} id="createClassDialog" className="dark:bg-primary/5 p-6 gap-4 grid transition-colors">
                 <DialogHeader className="h-max mb-4">
                     <DialogTitle>Add class</DialogTitle>
                     <DialogDescription>Add a new class to your dashboard.</DialogDescription>
@@ -142,7 +151,7 @@ export default function CreateClassDialog({showCreate, setShowCreate}: {showCrea
                     </FieldGroup>
                 </FieldSet>
                 <DialogFooter>
-                    <Button disabled={creating} variant="secondary" type="button" className="bg-white/10 hover:bg-white/20" onClick={() => {
+                    <Button disabled={creating || currentTour == "onboarding"} variant="secondary" type="button" className="bg-white/10 hover:bg-white/20" onClick={() => {
                         setShowCreate(false)
                         setName('')
                         setTheme('')
