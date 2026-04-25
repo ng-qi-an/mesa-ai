@@ -5,12 +5,13 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "
 import changeUserUpdateVersion from "@/lib/actions/changeUserUpdateVersion";
 import { cn } from "@/lib/utils";
 import { ArrowRight } from "lucide-react";
+import Image from "next/image";
 
 export default function BetaNoticeDialog({showBeta, setShowBeta}: {showBeta: boolean, setShowBeta: (show: boolean) => void}){
     const {_class} = useClass();
     return <Dialog open={showBeta} onOpenChange={setShowBeta}>
         <DialogContent className={cn("h-max max-h-[90vh] sm:max-w-[500px] overflow-auto gap-4 p-0")}>
-            <img src="/MesaBetaBanner.png" className="w-full h-auto dark:invert"/>
+            <Image src="/MesaBetaBanner.png" alt="Mesa AI beta banner" className="w-full h-auto dark:invert" width={1200} height={520} priority />
             <div className="p-4 pt-0">
                 <DialogTitle className="text-2xl font-semibold px-2 mt-2">A new beginning... 🚩</DialogTitle>
                 <p className="pb-6 mt-4 px-2 text-muted-foreground text-sm/6 [&_b]:text-foreground/90 [&_b]:font-medium">

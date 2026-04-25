@@ -4,6 +4,7 @@ import { Card, CardDescription, CardFooter, CardHeader, CardTitle } from "@/comp
 import { useState } from "react";
 import { Spinner } from "@/components/ui/spinner";
 import { authClient } from "@/lib/auth-client";
+import Image from "next/image";
 
 export default function VerifyEmailRequired(){
     const [loading, setLoading] = useState(false);
@@ -12,7 +13,7 @@ export default function VerifyEmailRequired(){
     return session && <div className="h-screen w-full flex flex-col items-center justify-center">
         <Card className="w-full max-w-md">
             <CardHeader className="items-center flex flex-col">
-                <img src="/email.png" style={{width: "200px", marginBottom: 20}}/>
+                <Image src="/email.png" alt="Email verification" style={{marginBottom: 20}} width={200} height={200} priority />
                 <CardTitle className="mt-4 text-lg">Verify Your Email</CardTitle>
                 <CardDescription className="text-center">
                     Please check your email and follow the instructions to verify your account.
