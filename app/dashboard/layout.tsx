@@ -12,10 +12,12 @@ import { useTheme } from "next-themes";
 import updateUserMeta from "@/lib/actions/user/updateUserMeta";
 import getUserMeta from "@/lib/actions/user/getUserMeta";
 import BetaNoticeDialog from "./(components)/BetaNoticeDialog";
+import { useIsMobile } from "@/hooks/use-mobile";
 export default function DashboardLayout({children}: {children: React.ReactNode}) {
     const {data, isPending} = authClient.useSession();
     const [showbeta, setShowBeta] = useState(false);
     const { resolvedTheme } = useTheme();
+    const isMobile = useIsMobile();
     const router = useRouter();
     useEffect(()=>{
         if (!isPending && !data?.user) {
@@ -23,25 +25,27 @@ export default function DashboardLayout({children}: {children: React.ReactNode})
         }
     }, [data, isPending]);
     useEffect(()=>{
-        (async()=>{
-            const meta = await getUserMeta();
-            const newestVersion = "beta";
-            let currentVersion = window.localStorage.getItem("updateVersion");
-            if (!currentVersion || currentVersion !== newestVersion) {
-                console.log("Outdated update version...")
-                currentVersion = meta.updateVersion;
-                if (currentVersion == newestVersion) {
-                    window.localStorage.setItem("updateVersion", newestVersion);
-                } else {
-                    console.log("User has not seen update notice, showing notice...")
-                    return setShowBeta(true);
+        if (data){
+            (async()=>{
+                const meta = await getUserMeta();
+                const newestVersion = "beta";
+                let currentVersion = window.localStorage.getItem("updateVersion");
+                if (!currentVersion || currentVersion !== newestVersion) {
+                    console.log("Outdated update version...")
+                    currentVersion = meta.updateVersion;
+                    if (currentVersion == newestVersion) {
+                        window.localStorage.setItem("updateVersion", newestVersion);
+                    } else {
+                        console.log("User has not seen update notice, showing notice...")
+                        return setShowBeta(true);
+                    }
                 }
-            }
-            if (meta && !meta.onboarded && !window.location.search.includes("onboard=true")) {
-                router.push("/dashboard?onboard=true");
-            }
-        })();
-    }, [])
+                if (meta && !meta.onboarded && !window.location.search.includes("onboard=true") && !isMobile) {
+                    router.push("/dashboard?onboard=true");
+                }
+            })();
+        }
+    }, [data])
     async function finishOnboarding(){
         await updateUserMeta({onboarded: true});
     }

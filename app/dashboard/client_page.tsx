@@ -27,19 +27,24 @@ import UserDropdown from "@/components/user/UserDropdown";
 import Banner from "@/components/banner";
 import { useNextStep } from "nextstepjs";
 import { useParams, usePathname, useSearchParams } from "next/navigation";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 export default function DashboardPage({classes}: {classes: ClassSelect[]}) {
     const router = useRouter()
     const { data:session } = authClient.useSession();
     const [showCreate, setShowCreate] = useState(false);
-    const {currentTour, startNextStep, setCurrentStep} = useNextStep();
+    const {currentTour, startNextStep, closeNextStep, setCurrentStep} = useNextStep();
     const params = useSearchParams()
     const pathname = usePathname();
+    const isMobile = useIsMobile();
+
     useEffect(()=>{
-        if (params.get("onboard") === "true"){
+        if (params.get("onboard") === "true" && !isMobile){
             startNextStep("onboarding");
+        } else {
+            closeNextStep();
         }
-    }, [pathname])
+    }, [pathname, isMobile])
     return session && <div className="w-full h-screen flex flex-col items-center py-12 px-6 md:px-8">
         <div className="w-full max-w-5xl">
             <div className="flex items-center w-full justify-between">
