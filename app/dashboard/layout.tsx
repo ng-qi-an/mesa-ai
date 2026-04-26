@@ -13,17 +13,25 @@ import updateUserMeta from "@/lib/actions/user/updateUserMeta";
 import getUserMeta from "@/lib/actions/user/getUserMeta";
 import BetaNoticeDialog from "./(components)/BetaNoticeDialog";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { usePathname } from "next/navigation";
 export default function DashboardLayout({children}: {children: React.ReactNode}) {
     const {data, isPending} = authClient.useSession();
+    const [loaded, setLoaded] = useState(false);
     const [showbeta, setShowBeta] = useState(false);
     const { resolvedTheme } = useTheme();
     const isMobile = useIsMobile();
     const router = useRouter();
+    const pathname = usePathname();
     useEffect(()=>{
         if (!isPending && !data?.user) {
             router.push("/auth/log-in");
         }
     }, [data, isPending]);
+    useEffect(()=>{
+        if (!window.location.search.includes("view=mobile")){
+            window.localStorage.setItem("lastPath", pathname);
+        }
+    }, [pathname])
     useEffect(()=>{
         if (isPending == false){
             (async()=>{
@@ -43,7 +51,20 @@ export default function DashboardLayout({children}: {children: React.ReactNode})
                 }
                 if (meta && !meta.onboarded && !window.location.search.includes("onboard=true") && !isMobile) {
                     router.push("/dashboard?onboard=true");
+                } else {
+                    if (window.location.search.includes("view=mobile")){
+                        console.log("Redirecting to mobile view...")
+                        if (localStorage.getItem("lastPath")){
+                            router.push(localStorage.getItem("lastPath") as string);
+                            return setInterval(()=>{
+                                if (window.location.pathname === window.localStorage.getItem("lastPath")){
+                                    setLoaded(true);
+                                }
+                            }, 0)
+                        }
+                    }
                 }
+                setLoaded(true)
             })();
         }
     }, [isPending])
@@ -52,7 +73,7 @@ export default function DashboardLayout({children}: {children: React.ReactNode})
     }
     return <AnimatePresence mode="wait">
         <NextStepProvider>
-            {data ? 
+            {loaded ? 
             <NextStep 
                 steps={tours} 
                 cardComponent={TourCard}

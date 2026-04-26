@@ -11,6 +11,7 @@ import { AlertCircleIcon } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "nextjs-toploader/app";
 import socialSignIn from "../socialSignIn";
+import Banner from "@/components/banner";
 
 export default function SignUp(){
     // const [state, formAction, pending] = useActionState(createUser, {errors: null} as { errors: any[] | null });
@@ -19,6 +20,9 @@ export default function SignUp(){
     const router = useRouter()
 
     return <div className="h-screen w-full flex flex-col items-center justify-center">
+        <Link href="/">
+            <Banner className="w-42"/>
+        </Link>
         <form className="w-full max-w-md" onSubmit={async(e)=>{
             setLoading(true)
             e.preventDefault()
@@ -94,12 +98,12 @@ export default function SignUp(){
                     </FieldSet>
                 </CardContent>
                 <CardFooter className="flex-col gap-2">
-                    <div className="flex flex-row w-full gap-2 mt-1">
-                        <Button className="min-w-0 flex-1" type="button" variant={"secondary"} onClick={async()=> await socialSignIn("google")}>Sign up with Google</Button>
+                    <div className="flex w-full gap-2">
+                        <Button className="w-full" size={'lg'} type="button" variant={"secondaryRaised"} onClick={async()=> await socialSignIn("google")}> Google</Button>
+                        <Button disabled={loading} type="submit" size={'lg'} variant={"raised"} className="w-full">
+                            {loading ? <Spinner /> : "Sign Up"}
+                        </Button>
                     </div>
-                    <Button disabled={loading} type="submit" size={'lg'} variant={"raised"} className="w-full">
-                        {loading ? <Spinner /> : "Sign Up"}
-                    </Button>
                     <Link href="/auth/log-in">
                         <Button variant={'link'} type="button">
                             Already have an account? Log in

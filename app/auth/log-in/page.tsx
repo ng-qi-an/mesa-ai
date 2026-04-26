@@ -12,14 +12,20 @@ import Link from "next/link";
 import { useRouter } from "nextjs-toploader/app";
 import socialSignIn from "../socialSignIn";
 import passkeyLogin from "../passkeyLogin";
+import Banner from "@/components/banner";
 
 export default function LogIn(){
     const [errors, setErrors] = useState<any[]>([]);
     const [loading, setLoading] = useState(false);
     const router = useRouter()
     useEffect(() => {
-        if (!PublicKeyCredential.isConditionalMediationAvailable ||
-            !PublicKeyCredential.isConditionalMediationAvailable()) {
+        try {
+            if (!PublicKeyCredential || !PublicKeyCredential.isConditionalMediationAvailable ||
+                !PublicKeyCredential.isConditionalMediationAvailable()) {
+                return;
+            }
+        } catch (error) {
+            console.log("Error checking for conditional passkey support:", error);
             return;
         }
         try {
@@ -30,6 +36,9 @@ export default function LogIn(){
     }, [])
 
     return <div className="h-screen w-full flex flex-col items-center justify-center">
+        <Link href="/">
+            <Banner className="w-42"/>
+        </Link>
         <form className="w-full max-w-md" onSubmit={async(e)=>{
             setLoading(true)
             e.preventDefault()
