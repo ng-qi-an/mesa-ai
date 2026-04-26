@@ -14,21 +14,23 @@ export default function AppsPanel({setSidebarTool}: {setSidebarTool: (tool: stri
     
     const Apps = [
         {
-            name: "Flashcards",
-            icon: WalletCards
-        }, 
-        {
-            name: "Podcast",
-            icon: Mic
+            name: "Chat",
+            icon: MessageSquare
         },
         {
             name: "Quiz",
             icon: ListTodo
         },
         {
-            name: "Chat",
-            icon: MessageSquare
-        }
+            name: "Flashcards",
+            icon: WalletCards,
+            disabled: true
+        }, 
+        {
+            name: "Podcast",
+            icon: Mic,
+            disabled: true
+        },
     ]
     return <Card size="sm" className={`rounded-md ring-neutral-200 dark:ring-neutral-900 ${isCollapsed ? "h-max shrink-0 gap-0!" : "h-full"}`}>
             <CardHeader className="items-center group flex cursor-pointer relative">
@@ -64,7 +66,7 @@ export default function AppsPanel({setSidebarTool}: {setSidebarTool: (tool: stri
                     <div className="h-full px-2 pb-2 overflow-auto">
                         <div className="grid grid-cols-2 gap-2 h-max w-full mb-2">
                             {Apps.map((tool) => (
-                                <div key={tool.name} className="w-full px-4 py-3 flex flex-col group cursor-pointer bg-secondary/50 hover:bg-secondary rounded-md gap-2" onClick={() => {noteCtx?.setCollapsedSources(true); setSidebarTool(tool.name)}}>
+                                <div key={tool.name} className={`w-full px-4 py-3 flex flex-col group cursor-pointer rounded-md gap-2 bg-secondary/50 ${tool.disabled ? 'opacity-50 cursor-default pointer-events-none' : 'hover:bg-secondary'}`} onClick={() =>{ if (!tool.disabled) { noteCtx?.setCollapsedSources(true); setSidebarTool(tool.name) } }}>
                                     <tool.icon className="size-5 text-muted-foreground group-hover:text-foreground"/>
                                     <p className="text-sm font-medium text-foreground/80 group-hover:text-foreground">{tool.name}</p>
                                 </div>

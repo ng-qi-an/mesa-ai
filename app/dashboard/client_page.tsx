@@ -39,12 +39,13 @@ export default function DashboardPage({classes}: {classes: ClassSelect[]}) {
     const isMobile = useIsMobile();
 
     useEffect(()=>{
+        console.log("Checking onboarding status...")
         if (params.get("onboard") === "true" && !isMobile){
             startNextStep("onboarding");
         } else {
             closeNextStep();
         }
-    }, [pathname, isMobile])
+    }, [pathname, isMobile, params])
     return session && <div className="w-full h-screen flex flex-col items-center py-12 px-6 md:px-8">
         <div className="w-full max-w-5xl">
             <div className="flex items-center w-full justify-between">

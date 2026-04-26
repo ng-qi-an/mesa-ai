@@ -25,9 +25,10 @@ export default function DashboardLayout({children}: {children: React.ReactNode})
         }
     }, [data, isPending]);
     useEffect(()=>{
-        if (data){
+        if (isPending == false){
             (async()=>{
                 const meta = await getUserMeta();
+                console.log("Fetched user meta");
                 const newestVersion = "beta";
                 let currentVersion = window.localStorage.getItem("updateVersion");
                 if (!currentVersion || currentVersion !== newestVersion) {
@@ -45,7 +46,7 @@ export default function DashboardLayout({children}: {children: React.ReactNode})
                 }
             })();
         }
-    }, [data])
+    }, [isPending])
     async function finishOnboarding(){
         await updateUserMeta({onboarded: true});
     }
