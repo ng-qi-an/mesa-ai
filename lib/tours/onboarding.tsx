@@ -85,7 +85,7 @@ export const onboardingTour:Tour = {
             icon: "📕",
             side: "right",
             selector: "#fileSelectorDialog",
-            content: "The file selector allows you to **choose files** from **Mesa Drive** to add as sources. You can also upload new files here. \n\nTry adding a file using the **'Create new'** button. \n\nDon't have any? [Here's a file you can use](https://mesa-ai.s3.amazonaws.com/sample.pdf).",
+            content: "The file selector allows you to **choose files** from **Mesa Drive** to add as sources. You can also upload new files here. \n\nTry adding a file using the **'Create new'** button. \n\nDon't have any? [Here's a file you can use](https://raw.githubusercontent.com/ng-qi-an/mesa-ai/refs/heads/master/sample-notes/01.%20intro%20%26%20kinematics.pdf).",
             pointerPadding: 0,
             pointerRadius: 8,
             blockKeyboardControl: true,
