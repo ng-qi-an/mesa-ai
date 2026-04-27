@@ -1,12 +1,17 @@
 import { streamText, UIMessage, convertToModelMessages } from 'ai';
-import { google } from "@ai-sdk/google";
+import { createOpenRouter } from '@openrouter/ai-sdk-provider';
 import { auth } from '@/lib/auth';
 import { headers } from 'next/headers';
-import { fileSearchMetaQuery } from '@/lib/utils/models';
 import { availableSubjects } from '@/lib/subjects/subjectsList';
+import { extractLatestUserText, formatRetrievedContext } from '@/lib/rag/formatContext';
+import { retrieveChunks } from '@/lib/rag/retrieveChunks';
 
 // Allow streaming responses up to 5 minutes
 export const maxDuration = 300;
+
+const openrouter = createOpenRouter({
+    apiKey: process.env.OPENROUTER_API_KEY!,
+});
 
 type NotebookRequestType = {
     fileStoreId: string;
@@ -25,39 +30,39 @@ export async function POST(req: Request) {
     if (!session || !session.user) {
         throw new Error("Not authenticated");
     }
-    if (!context.fileStoreId){
-        throw new Error("Missing file store ID");
-    }
     if (!context.fileIds || context.fileIds.length === 0) {
         throw new Error("At least one file ID is required");
     }
     if (!context.subject) {
         throw new Error("Subject is required");
     }
-    console.log("Messages received in API route:", JSON.stringify(context.messages, null, 2));
-    console.log("Meta query", context.fileIds.map(id => `file_id="${id}"`).join(" OR "));
+    const userQuery = extractLatestUserText(context.messages as Array<{ role?: string; parts?: Array<{ type?: string; text?: string }> }>);
+    const retrievedChunks = await retrieveChunks({
+        userId: session.user.id,
+        fileIds: context.fileIds,
+        query: userQuery,
+        limit: 14,
+    });
+    const sourceContext = formatRetrievedContext(retrievedChunks);
+
     const result = streamText({
-        model: google("gemini-3-flash-preview"),
+        model: openrouter.chat("google/gemini-3-flash-preview", {
+            reasoning: {
+                effort: context.thinkingLevel,
+            },
+        }),
         messages: await convertToModelMessages(context.messages),
-        tools: {
-            file_search: google.tools.fileSearch({fileSearchStoreNames: [context.fileStoreId], metadataFilter: fileSearchMetaQuery(context.fileIds)}),
-        },
         system: `
         ${availableSubjects[context.subject].instructions.chat}
-        This chat has been provided with student's slide decks:
-        - Use the file_search tool to access the content of these notes and provide answers to the user's questions based on that content. 
-        - If the user asks a question that cannot be answered with the provided notes, say you don't know rather than making something up. 
-        - Always use the file_search tool to access the notes when formulating your answer.
+        This chat has been provided with student's source notes as retrieved excerpts.
+        - Answer using only the sources below.
+        - If the answer is not present in the sources, say you do not know based on the provided notes.
+        - Prefer concise, accurate answers and cite source file names when useful.
+
+        Retrieved Sources:
+        ${sourceContext}
 
         **Math formula**: If you need to use a math formula, use LaTeX format and STRICTLY wrap it in double dollar signs. For example, if you want to express the formula for the area of a circle, you would write: $$A = \pi r^2$$.`,
-        providerOptions: {
-            google: {
-                thinkingConfig: {
-                    thinkingLevel: context.thinkingLevel,
-                    includeThoughts: true,
-                },
-            }
-        }
     });
 
     return result.toUIMessageStreamResponse({

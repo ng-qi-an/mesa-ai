@@ -1,4 +1,4 @@
-import { text, pgTable, serial, timestamp, AnyPgColumn, jsonb, boolean } from "drizzle-orm/pg-core";
+import { text, pgTable, serial, timestamp, AnyPgColumn, jsonb, boolean, integer, index, uniqueIndex, vector } from "drizzle-orm/pg-core";
 import { user } from "./auth-schema";
 import { ChatUIMessage } from "../utils/models";
 import { QuizQuestionItemType, QuizTextAnswerExplanationType } from "../actions/quiz/quizSchema";
@@ -52,6 +52,50 @@ export const files = pgTable("files", {
 
 export type FileInsert = typeof files.$inferInsert
 export type FileSelect = typeof files.$inferSelect
+
+export const ragChunks = pgTable("rag_chunks", {
+    id: text("id").primaryKey(),
+    userId: text("user_id").notNull().references(() => user.id, { onDelete: "cascade" }),
+    classId: text("class_id").notNull().references(() => classes.id, { onDelete: "cascade" }),
+    fileId: text("file_id").notNull().references(() => files.id, { onDelete: "cascade" }),
+    chunkIndex: integer("chunk_index").notNull(),
+    content: text("content").notNull(),
+    tokenCount: integer("token_count").notNull().default(0),
+    embedding: vector("embedding", { dimensions: 1536 }).notNull(),
+    metadata: jsonb("metadata").$type<Record<string, unknown>>().notNull().default({}),
+    dateCreated: timestamp("date_created").notNull().defaultNow(),
+    dateModified: timestamp("date_modified").notNull().defaultNow(),
+}, (table) => [
+    index("rag_chunks_user_idx").on(table.userId),
+    index("rag_chunks_class_idx").on(table.classId),
+    index("rag_chunks_file_idx").on(table.fileId),
+    uniqueIndex("rag_chunks_file_chunk_unique").on(table.fileId, table.chunkIndex),
+]);
+
+export type RagChunkInsert = typeof ragChunks.$inferInsert
+export type RagChunkSelect = typeof ragChunks.$inferSelect
+
+export const ragIndexJobs = pgTable("rag_index_jobs", {
+    id: text("id").primaryKey(),
+    userId: text("user_id").notNull().references(() => user.id, { onDelete: "cascade" }),
+    classId: text("class_id").notNull().references(() => classes.id, { onDelete: "cascade" }),
+    fileId: text("file_id").notNull().references(() => files.id, { onDelete: "cascade" }),
+    status: text("status").notNull().$type<"pending" | "running" | "succeeded" | "failed">().default("pending"),
+    attempts: integer("attempts").notNull().default(0),
+    error: text("error"),
+    contentHash: text("content_hash"),
+    startedAt: timestamp("started_at"),
+    finishedAt: timestamp("finished_at"),
+    dateCreated: timestamp("date_created").notNull().defaultNow(),
+    dateModified: timestamp("date_modified").notNull().defaultNow(),
+}, (table) => [
+    uniqueIndex("rag_index_jobs_file_unique").on(table.fileId),
+    index("rag_index_jobs_status_idx").on(table.status),
+    index("rag_index_jobs_user_idx").on(table.userId),
+]);
+
+export type RagIndexJobInsert = typeof ragIndexJobs.$inferInsert
+export type RagIndexJobSelect = typeof ragIndexJobs.$inferSelect
 
 export const notebook = pgTable("notebook", {
     id: text("id").primaryKey(),

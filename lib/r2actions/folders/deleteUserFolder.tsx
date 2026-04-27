@@ -7,6 +7,19 @@ import { db } from "../../db";
 import { files } from "../../schemas/schema";
 import { eq, sql } from "drizzle-orm";
 import deleteStoreFiles from "@/lib/file-search-actions/deleteStoreFiles";
+import { deleteIndexedFilesByIds } from "@/lib/rag/deleteIndexedFiles";
+
+function extractRowIds(rows: unknown[]): string[] {
+    return rows
+        .map((row) => {
+            if (row && typeof row === "object" && "id" in row) {
+                const id = (row as { id: unknown }).id;
+                return typeof id === "string" ? id : null;
+            }
+            return null;
+        })
+        .filter((id): id is string => Boolean(id));
+}
 
 
 
@@ -42,18 +55,20 @@ export default async function deleteUserFolder(folderId: string, confirmation: b
     if (!folderRecord) {
         throw new Error("Folder not found");
     }
+    const itemIds = extractRowIds(allItems.rows);
     console.log("Deleting folder and all nested items for user:", session.user.id, "with folder id:", folderId, "Items to delete:", allItems.rows.length);
     const command = new DeleteObjectsCommand({
         Bucket: process.env.R2_BUCKET_NAME!,
         Delete: {
-            Objects: allItems.rows.map((row: any) => ({
-                Key: `user-files/${session!.user.id!}/${row.id}`
+            Objects: itemIds.map((id) => ({
+                Key: `user-files/${session.user.id}/${id}`
             }))
         }
     })
     if (folderRecord.class.fileStoreId){
-        await deleteStoreFiles(folderRecord.class.fileStoreId, allItems.rows.map((row: any) => row.id));
+        await deleteStoreFiles(folderRecord.class.fileStoreId, itemIds);
     }
+    await deleteIndexedFilesByIds(session.user.id, itemIds);
     try {
         const res = await r2.send(command)
         if (!res.Deleted || res.Deleted.length !== allItems.rows.length) {

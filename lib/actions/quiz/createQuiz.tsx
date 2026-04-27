@@ -3,15 +3,20 @@
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { quizResponses, quizzes } from "@/lib/schemas/schema";
-import { fileSearchMetaQuery } from "@/lib/utils/models";
-import { google } from "@ai-sdk/google";
+import { createOpenRouter } from "@openrouter/ai-sdk-provider";
 import { generateText, Output } from "ai";
 import { generateId } from "better-auth";
 import { headers } from "next/headers";
 import { quizQuestionsSchema } from "./quizSchema";
 import { availableSubjects } from "@/lib/subjects/subjectsList";
+import { formatRetrievedContext } from "@/lib/rag/formatContext";
+import { retrieveChunks } from "@/lib/rag/retrieveChunks";
 
-export default async function createQuiz(classId: string, {noteId, fileStoreId, fileIds, name, subject, topics, difficulty, questionTypes, length, instructions}: {noteId?: string, fileStoreId: string, fileIds: string[], name: string, subject: keyof typeof availableSubjects, topics: string[], difficulty: string, questionTypes: string[], length: string, instructions: string}) {
+const openrouter = createOpenRouter({
+    apiKey: process.env.OPENROUTER_API_KEY!,
+});
+
+export default async function createQuiz(classId: string, {noteId, fileIds, name, subject, topics, difficulty, questionTypes, length, instructions}: {noteId?: string, fileStoreId?: string, fileIds: string[], name: string, subject: keyof typeof availableSubjects, topics: string[], difficulty: string, questionTypes: string[], length: string, instructions: string}) {
     const session = await auth.api.getSession({
         headers: await headers()
     })
@@ -21,19 +26,34 @@ export default async function createQuiz(classId: string, {noteId, fileStoreId, 
     if (!fileIds || fileIds.length === 0) {
         throw new Error("At least one file ID is required");
     }
+
+    const retrievalQuery = [
+        `Generate ${difficulty} quiz questions for topics: ${topics.join(", ")}`,
+        `Question types: ${questionTypes.join(", ")}`,
+        instructions,
+    ].join("\n");
+
+    const retrievedChunks = await retrieveChunks({
+        userId: session.user.id,
+        classId,
+        fileIds,
+        query: retrievalQuery,
+        limit: 24,
+    });
+    const sourceContext = formatRetrievedContext(retrievedChunks);
+
     const { rawFinishReason, finishReason, output } = await generateText({
-        model: google("gemini-3.1-flash-lite-preview"),
+        model: openrouter.chat("openai/gpt-5.1-chat"),
         output: Output.object({ schema: quizQuestionsSchema }),
-        tools: fileStoreId ? {
-            file_search: google.tools.fileSearch({fileSearchStoreNames: [fileStoreId], metadataFilter: fileSearchMetaQuery(fileIds)}),
-        } : undefined,
-        toolChoice: "required",
         system: `
         # Subject-specific guidelines
         ${availableSubjects[subject].instructions.quiz}
+
+        # Source excerpts
+        ${sourceContext}
         
         # Content guidelines
-        ${fileStoreId ? "- Use the file_search tool to access the content of the notes and generate quiz questions based on that content." : "Use the files provided by the user to generate quiz questions."}
+        - Use only the provided source excerpts to generate quiz questions.
         - Only make notes based on these topics: ${topics.join(", ")}.
         - Generate questions only of the following types: ${questionTypes.join(", ")}. This setting takes highest prority, all other types will be disallowed.
         - Generate only ${length == "short" ? "7 questions for quick reviews" : length == "medium" ? "12 questions for a standard quiz" : "20 questions for comprehensive quizzes that test understanding of topics"}.
@@ -109,7 +129,7 @@ export default async function createQuiz(classId: string, {noteId, fileStoreId, 
             difficulty,
             questionTypes,
             length,
-            questions: output.questions.map((q: any) => ({...q, id: generateId(12)})),
+            questions: output.questions.map((q) => ({...q, id: generateId(12)})),
             instructions,
         }).returning()
         await db.insert(quizResponses).values({

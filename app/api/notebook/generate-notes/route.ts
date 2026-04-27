@@ -1,11 +1,16 @@
 import { streamText, UIMessage, convertToModelMessages } from 'ai';
-import { google } from "@ai-sdk/google";
+import { createOpenRouter } from '@openrouter/ai-sdk-provider';
 import { auth } from '@/lib/auth';
 import { headers } from 'next/headers';
-import { fileSearchMetaQuery } from '@/lib/utils/models';
+import { extractLatestUserText, formatRetrievedContext } from '@/lib/rag/formatContext';
+import { retrieveChunks } from '@/lib/rag/retrieveChunks';
 
 // Allow streaming responses up to 5 minutes
 export const maxDuration = 300;
+
+const openrouter = createOpenRouter({
+    apiKey: process.env.OPENROUTER_API_KEY!,
+});
 
 type NotebookRequestType = {
     topicWeights?: Record<string, number>;
@@ -26,32 +31,32 @@ export async function POST(req: Request) {
     if (!context.topicWeights){
         throw new Error("Missing topic weights");
     }
-    if (!context.fileStoreId) {
-        throw new Error("File store ID is required");
-    }
     if (!context.fileIds || context.fileIds.length === 0) {
         throw new Error("At least one file ID is required");
     }
     const topicWeights = context.topicWeights!
 
-    console.log("Using topic weights:", topicWeights);
-    console.log("Using file store:", context.fileStoreId);
-    console.log("Generating notes for user:", session.user.id);
-    console.log("Meta query", context.fileIds.map(id => `file_id="${id}"`).join(" OR "));
+    const queryText = [
+        extractLatestUserText(context.messages as Array<{ role?: string; parts?: Array<{ type?: string; text?: string }> }>),
+        `Topic weights: ${JSON.stringify(topicWeights)}`,
+    ].join("\n");
+
+    const retrievedChunks = await retrieveChunks({
+        userId: session.user.id,
+        fileIds: context.fileIds,
+        query: queryText,
+        limit: 28,
+    });
+    const sourceContext = formatRetrievedContext(retrievedChunks);
+
     const result = streamText({
-        model: google("gemini-3-flash-preview"),
+        model: openrouter.chat("google/gemini-3-flash-preview"),
         messages: await convertToModelMessages(context.messages),
-        tools: {
-            file_search: google.tools.fileSearch({fileSearchStoreNames: [context.fileStoreId], metadataFilter: fileSearchMetaQuery(context.fileIds)}),
-        },
-        providerOptions: {
-            google: {
-                thinkingConfig: {
-                    thinkingLevel: "minimal",
-                    // thinkingBudget: 0
-                },
-            }
-        }
+        system: `Use only the provided source excerpts to write or update the notes.
+If a requested detail is not present in the sources, state that clearly and do not fabricate details.
+
+Retrieved Sources:
+${sourceContext}`,
     });
 
     return result.toUIMessageStreamResponse({

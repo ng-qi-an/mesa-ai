@@ -12,6 +12,7 @@ const nextConfig: NextConfig = {
       allowedOrigins: ['localhost:3000', "*.app.github.dev"]
     }
   },
+  serverExternalPackages: ['pdf-parse', '@napi-rs/canvas'],
   reactStrictMode: false,
 };
 

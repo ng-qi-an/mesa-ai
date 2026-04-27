@@ -1,6 +1,6 @@
 import { relations } from "drizzle-orm";
 import { account, passkey, session, user } from "./auth-schema";
-import { chatFiles, chats, classes, files, notebook, notebookFiles, topics, userMeta } from "./schema";
+import { chatFiles, chats, classes, files, notebook, notebookFiles, ragChunks, ragIndexJobs, topics, userMeta } from "./schema";
 
 export const userRelations = relations(user, ({ many, one }) => ({
     sessions: many(session),
@@ -10,6 +10,8 @@ export const userRelations = relations(user, ({ many, one }) => ({
     files: many(files),
     notebooks: many(notebook),
     chats: many(chats),
+    ragChunks: many(ragChunks),
+    ragIndexJobs: many(ragIndexJobs),
     meta: one(userMeta)
 }));
 
@@ -50,7 +52,9 @@ export const classesRelations = relations(classes, ({ one, many }) => ({
     }),
     topics: many(topics),
     files: many(files),
-    notebooks: many(notebook)
+    notebooks: many(notebook),
+    ragChunks: many(ragChunks),
+    ragIndexJobs: many(ragIndexJobs),
 }))
 
 export const topicsRelations = relations(topics, ({ one, many }) => ({
@@ -79,7 +83,39 @@ export const filesRelations = relations(files, ({ one, many }) => ({
         references: [classes.id],
     }),
     children: many(files),
-    notebooks: many(notebookFiles)
+    notebooks: many(notebookFiles),
+    ragChunks: many(ragChunks),
+    ragIndexJobs: many(ragIndexJobs),
+}))
+
+export const ragChunksRelations = relations(ragChunks, ({ one }) => ({
+    user: one(user, {
+        fields: [ragChunks.userId],
+        references: [user.id],
+    }),
+    class: one(classes, {
+        fields: [ragChunks.classId],
+        references: [classes.id],
+    }),
+    file: one(files, {
+        fields: [ragChunks.fileId],
+        references: [files.id],
+    }),
+}))
+
+export const ragIndexJobsRelations = relations(ragIndexJobs, ({ one }) => ({
+    user: one(user, {
+        fields: [ragIndexJobs.userId],
+        references: [user.id],
+    }),
+    class: one(classes, {
+        fields: [ragIndexJobs.classId],
+        references: [classes.id],
+    }),
+    file: one(files, {
+        fields: [ragIndexJobs.fileId],
+        references: [files.id],
+    }),
 }))
 
 export const notebookRelations = relations(notebook, ({ one, many }) => ({

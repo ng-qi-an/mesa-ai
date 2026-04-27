@@ -9,6 +9,7 @@ import deleteFileStore from "@/lib/file-search-actions/deleteFileStore";
 import { DeleteObjectsCommand } from "@aws-sdk/client-s3";
 import { r2 } from "@/lib/r2";
 import { ApiError } from "@google/genai";
+import { deleteIndexedFilesByClass } from "@/lib/rag/deleteIndexedFiles";
 
 export default async function deleteClassServer(classId: string) {
     const session = await auth.api.getSession({
@@ -50,6 +51,7 @@ export default async function deleteClassServer(classId: string) {
             throw error;
         }
     }
+    await deleteIndexedFilesByClass(session.user.id, classId);
     await db.delete(classes).where(eq(classes.id, classId));
     return await getAllClassesServer();
 }
