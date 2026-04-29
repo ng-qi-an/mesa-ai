@@ -19,7 +19,7 @@ const bentoRows = [
       icon: Upload,
       title: "Upload Anything",
       description:
-        "Drop PDFs, lecture slides, handwritten notes, or paste URLs. Mesa handles it all seamlessly.",
+        "Drop PDFs, lecture slides or handwritten notes. Mesa handles it all seamlessly.",
       className: "md:col-span-2",
       preview: (
         <div className="mt-5 flex flex-wrap gap-2">
@@ -101,7 +101,7 @@ const bentoRows = [
       icon: Zap,
       title: "Lightning Fast",
       description:
-        "Process hundreds of pages in seconds. No more hours of manual note-taking.",
+        "Process dozens of pages in seconds. No more hours of manual note-taking.",
       className: "md:col-span-1",
       preview: (
         <div className="mt-5 space-y-3">

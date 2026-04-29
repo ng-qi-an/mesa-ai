@@ -28,7 +28,6 @@ export function Features() {
 
         <BentoGrid />
         <HowItWorks />
-        <Testimonials />
         <TrustBadges />
       </div>
     </section>

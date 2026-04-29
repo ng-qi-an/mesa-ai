@@ -25,6 +25,7 @@ import { Streamdown } from "streamdown";
 import { useTheme } from "next-themes";
 import checkFileStoreMatch from "../(actions)/checkFileStoreMatch";
 import { useNextStep } from "nextstepjs";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 const math = createMathPlugin({
   singleDollarTextMath: true,
@@ -39,6 +40,7 @@ export default function NotebookPanel(){
     const [followup, setFollowup] = useState("");
     const [forceLightNotebook, setForceLightNotebook] = useState(false);
     const {currentTour, setCurrentStep} = useNextStep();
+    const isMobile = useIsMobile();
     useEffect(() => {
         try {
             const savedPreference = localStorage.getItem("notebook-force-light");
@@ -154,9 +156,9 @@ export default function NotebookPanel(){
                         <p>{resolvedTheme === "dark" ? "Force light colors in notebook." : "Available only while dark mode is active."}</p>
                     </TooltipContent>
                 </Tooltip>
-                <Button onClick={()=> noteCtx?.setCollapsedRightSidebar(!noteCtx.collapsedRightSidebar)} size={'icon-sm'} className="absolute right-4 text-muted-foreground" variant={'ghost'}>
+                {!isMobile && <Button onClick={()=> noteCtx?.setCollapsedRightSidebar(!noteCtx.collapsedRightSidebar)} size={'icon-sm'} className="absolute right-4 text-muted-foreground" variant={'ghost'}>
                     <Sidebar/>
-                </Button>
+                </Button>}
             </CardHeader>
             <div className="h-full gap-2 flex flex-col px-2 w-full overflow-y-auto relative">
                 <Separator className="mb-2 w-full"/>

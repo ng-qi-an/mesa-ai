@@ -1,5 +1,5 @@
 import { streamText, UIMessage, convertToModelMessages } from 'ai';
-import { google } from "@ai-sdk/google";
+import { google, GoogleGenerativeAIProviderOptions } from "@ai-sdk/google";
 import { auth } from '@/lib/auth';
 import { headers } from 'next/headers';
 import { fileSearchMetaQuery } from '@/lib/utils/models';
@@ -37,7 +37,7 @@ export async function POST(req: Request) {
     console.log("Messages received in API route:", JSON.stringify(context.messages, null, 2));
     console.log("Meta query", context.fileIds.map(id => `file_id="${id}"`).join(" OR "));
     const result = streamText({
-        model: google("gemini-3-flash-preview"),
+        model: google("gemini-3-flash-preview"), // "google/gemini-3-flash-preview",
         messages: await convertToModelMessages(context.messages),
         tools: {
             file_search: google.tools.fileSearch({fileSearchStoreNames: [context.fileStoreId], metadataFilter: fileSearchMetaQuery(context.fileIds)}),
@@ -56,7 +56,7 @@ export async function POST(req: Request) {
                     thinkingLevel: context.thinkingLevel,
                     includeThoughts: true,
                 },
-            }
+            } satisfies GoogleGenerativeAIProviderOptions
         }
     });
 

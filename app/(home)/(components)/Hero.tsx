@@ -59,7 +59,7 @@ export function Hero() {
             </motion.p>
 
             <motion.div
-              className="flex flex-col gap-4 sm:flex-row"
+              className="flex flex-row gap-4 sm:flex-row"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.4 }}
@@ -99,7 +99,7 @@ export function Hero() {
               <motion.div
                 className="
                   relative w-full overflow-hidden rounded-2xl border border-border/60 bg-muted
-                  aspect-[4/3]
+                  aspect-[5/3]
                   md:[transform:rotateY(-8deg)_rotateX(4deg)]
                   md:shadow-2xl
                 "
@@ -112,9 +112,7 @@ export function Hero() {
                 style={{ transformStyle: "preserve-3d" }}
               >
                 {/* Placeholder content — swap with a real screenshot later */}
-                <div className="absolute inset-0 flex items-center justify-center text-muted-foreground/40">
-                  <span className="text-sm font-medium tracking-wide">Product screenshot</span>
-                </div>
+                <img src="/landingBanner.jpeg" alt="Product screenshot" className="absolute inset-0 flex items-center justify-center text-muted-foreground/40 h-full" />
 
                 {/* Subtle inner highlight to sell the 3D glass look */}
                 <div className="pointer-events-none absolute inset-0 rounded-2xl bg-gradient-to-br from-white/10 via-transparent to-transparent" />

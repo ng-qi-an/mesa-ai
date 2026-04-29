@@ -3,6 +3,7 @@ import { Hero } from "./(components)/Hero"
 import { Features } from "./(components)/Features"
 import { CTA } from "./(components)/CTA"
 import { Footer } from "./(components)/Footer"
+import { Multiplatform } from "./(components)/Multiplatform"
 
 export default function Home() {
   return (
@@ -11,6 +12,7 @@ export default function Home() {
       <main>
         <Hero />
         <Features />
+        <Multiplatform/>
         <CTA />
       </main>
       <Footer />

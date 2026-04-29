@@ -16,7 +16,7 @@ export function Footer() {
       <div className="mx-auto max-w-6xl">
         <div className="flex flex-col items-center justify-between gap-6 md:flex-row">
           <Banner className="w-24" />
-
+          
           <p className="text-sm text-muted-foreground">
             2026 Mesa AI. All rights reserved.
           </p>

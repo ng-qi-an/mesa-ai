@@ -15,6 +15,7 @@ import { toast } from "sonner";
 import MobileTabbar from "./(components)/(sidebars)/MobileTabbar";
 import SourcesPanel from "./(components)/SourcesPanel";
 import { useNextStep } from "nextstepjs";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
 export default function Page(){
     const {isMobile, setOpen} = useSidebar();
@@ -48,13 +49,22 @@ export default function Page(){
                 notebook.setName(oldName);
             }
         }} pages={[{name: "Notebooks", href: `/notebooks`}, {name: notebook.name || "Notebook"}]}>
-            <Button variant={"ghost"} size={'icon'}>
+            {/* <Button variant={"ghost"} size={'icon'}>
                 <Settings/>
-            </Button>
-            <Button className="ml-2 mr-0">
-                Share
-                <Share/>
-            </Button>
+            </Button> */}
+            <Tooltip>
+                <TooltipTrigger asChild>
+                    <span>
+                        <Button className="ml-2 mr-0" disabled>
+                            Share
+                            <Share/>
+                        </Button>
+                    </span>
+                </TooltipTrigger>
+                <TooltipContent>
+                    <p>Sharing is not available yet.</p>
+                </TooltipContent>
+            </Tooltip>
         </PageHeader>
         <LayoutGroup>
             <GenerateNotesDialog/>

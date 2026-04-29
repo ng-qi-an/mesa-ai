@@ -1,5 +1,5 @@
 import { streamText, Output } from 'ai';
-import { google } from "@ai-sdk/google";
+import { google, GoogleGenerativeAIProviderOptions } from "@ai-sdk/google";
 import { noteMetaSchema } from '../schema';
 import { auth } from '@/lib/auth';
 import { headers } from 'next/headers';
@@ -32,7 +32,7 @@ export async function POST(req: Request) {
     }
 
     const result = streamText({
-        model: google("gemini-3-flash-preview"),
+        model: google("gemini-3-flash-preview"), // "google/gemini-3-flash-preview",
         output: Output.object({ schema: noteMetaSchema }),
         tools: {
             file_search: google.tools.fileSearch({fileSearchStoreNames: [context.fileStoreId], metadataFilter: fileSearchMetaQuery(context.fileIds)}),
@@ -84,7 +84,7 @@ export async function POST(req: Request) {
                     thinkingLevel: "minimal",
                     // thinkingBudget: 0
                 },
-            }
+            } satisfies GoogleGenerativeAIProviderOptions
         }
     });
     return result.toTextStreamResponse();

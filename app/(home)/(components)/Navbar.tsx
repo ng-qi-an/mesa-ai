@@ -10,7 +10,7 @@ import Banner from "@/components/banner"
 export function Navbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
 
-  return (
+  return <>
     <motion.header 
       className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/80 backdrop-blur-xl"
       initial={{ y: -100 }}
@@ -46,9 +46,9 @@ export function Navbar() {
         <div className="hidden items-center gap-3 md:flex">
           {/* <ThemeToggle /> */}
           <Link href="/auth/log-in">
-          <Button variant="ghost" size="sm">
-              Sign in
-            </Button>
+            <Button variant="ghost" size="sm">
+                Sign in
+              </Button>
           </Link>
           <Link href="/auth/sign-up">
             <Button size="sm">Sign up</Button>
@@ -67,13 +67,15 @@ export function Navbar() {
         </div>
       </nav>
 
+    </motion.header>
+    
       <AnimatePresence>
         {mobileMenuOpen && (
           <motion.div 
-            className="border-t border-border/40 bg-background px-6 py-4 md:hidden"
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: "auto" }}
-            exit={{ opacity: 0, height: 0 }}
+            className="border-t border-border/40 bg-background/80 backdrop-blur-xl px-6 py-4 md:hidden fixed w-full z-10 top-16"
+            initial={{ opacity: 0, y: -200 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -200 }}
             transition={{ duration: 0.2 }}
           >
             <div className="flex flex-col gap-4">
@@ -99,17 +101,20 @@ export function Navbar() {
                 About
               </Link>
               <div className="flex gap-2 pt-2">
-                <Button variant="outline" size="sm" className="flex-1">
-                  Sign in
-                </Button>
-                <Button size="sm" className="flex-1">
-                  Sign up
-                </Button>
+                <Link href="/auth/log-in">
+                  <Button variant="outline" size="sm" className="flex-1">
+                    Sign in
+                  </Button>
+                </Link>
+                <Link href="/auth/sign-up">
+                  <Button size="sm" className="flex-1">
+                    Sign up
+                  </Button>
+                </Link>
               </div>
             </div>
           </motion.div>
         )}
       </AnimatePresence>
-    </motion.header>
-  )
+  </>
 }
