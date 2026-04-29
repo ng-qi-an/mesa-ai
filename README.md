@@ -7,13 +7,18 @@ A complex **AI powered** study tool meant to promote reinforced learning and spe
 - 📂 **Drive**: Store all lesson notes and files, automatically embedded and indexed.
 
 ## Getting started
+
+**Tutorial Video**
+
+https://github.com/user-attachments/assets/b599a15f-33b4-4916-a0d5-e653a5ff6bd7
+
 1. Navigate to the homepage: [https://mesa-ai.vercel.app](https://mesa-ai.vercel.app)
 2. Create an account
 3. Verify your email address
 4. Engage in the tutorial! 🏫
 5. You're all set up for using Mesa AI.
 
-## Developing
+## Self-hosting
 Mesa AI is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
 
