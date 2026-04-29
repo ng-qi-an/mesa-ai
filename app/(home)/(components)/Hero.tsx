@@ -21,19 +21,10 @@ export function Hero() {
       </div>
 
       <div className="mx-auto max-w-6xl">
-        <div className="flex flex-col-reverse items-center gap-10 md:flex-row md:gap-16">
+        <div className="flex flex-col-reverse items-center gap-10 md:gap-16 lg:flex-row lg:gap-4">
 
           {/* Left: text content */}
           <div className="flex-1 text-left">
-            <motion.div
-              className="mb-6 inline-flex items-center gap-2 rounded-full border border-border/60 bg-muted/50 px-4 py-1.5 text-sm text-muted-foreground"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.1 }}
-            >
-              <Sparkles className="size-3.5" />
-              <span>AI-powered study companion</span>
-            </motion.div>
 
             <motion.h1
               className="mb-6 text-balance text-4xl font-bold tracking-tight md:text-5xl lg:text-[3.5rem] lg:leading-[1.1]"
@@ -59,7 +50,7 @@ export function Hero() {
             </motion.p>
 
             <motion.div
-              className="flex flex-row gap-4 sm:flex-row"
+              className="flex flex-row gap-4 "
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.4 }}
@@ -89,16 +80,16 @@ export function Hero() {
 
           {/* Right: tilted image placeholder */}
           <motion.div
-            className="w-full md:flex-1"
+            className="w-full md:flex-1  md:w-[70%] lg:w-full"
             initial={{ opacity: 0, x: 40 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.7, delay: 0.25, ease: "easeOut" }}
           >
             {/* On mobile: no tilt. On md+: rotate slightly */}
-            <div className="relative md:[perspective:1200px]">
+            <div className="relative lg:[perspective:1200px] w-full">
               <motion.div
                 className="
-                  relative w-full overflow-hidden rounded-2xl border border-border/60 bg-muted
+                  relative  w-full overflow-hidden rounded-lg border border-border/60 bg-muted
                   aspect-[5/3]
                   md:[transform:rotateY(-8deg)_rotateX(4deg)]
                   md:shadow-2xl
@@ -112,7 +103,7 @@ export function Hero() {
                 style={{ transformStyle: "preserve-3d" }}
               >
                 {/* Placeholder content — swap with a real screenshot later */}
-                <img src="/landingBanner.jpeg" alt="Product screenshot" className="absolute inset-0 flex items-center justify-center text-muted-foreground/40 h-full" />
+                <img src="/landingBanner.jpeg" alt="Product screenshot" className="absolute inset-0 flex items-center justify-center text-muted-foreground/40 h-full " />
 
                 {/* Subtle inner highlight to sell the 3D glass look */}
                 <div className="pointer-events-none absolute inset-0 rounded-2xl bg-gradient-to-br from-white/10 via-transparent to-transparent" />
