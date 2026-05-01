@@ -6,6 +6,13 @@ A complex **AI powered** study tool meant to promote reinforced learning and spe
 - 📋 **Quiz**: Curiculum-based quiz questions, tailored to every subject. AI marking ensures your text answers fufil exam criterias.
 - 📂 **Drive**: Store all lesson notes and files, automatically embedded and indexed.
 
+## Demo credentials:
+I don't recommend using this, since you'll be skipping out on the actual tutorials and onboarding flow, but if you want a basic test:
+- Email: `test@mesa-ai.com`
+- Password: `test1234`
+
+*Please don't change the demo account password!*
+
 ## How it works
 1. Files uploaded to the drive are embedded, then chunked and stored by google.
 2. All actions when generating notes, quizzes or chats use those chunked files to speed up generation time. Compared to just adding the files on every request, this RAG method saved about half the time neeeded
