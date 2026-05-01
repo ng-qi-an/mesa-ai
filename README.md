@@ -13,7 +13,9 @@ A complex **AI powered** study tool meant to promote reinforced learning and spe
 4. Afterwards, the actual note content is generated based on those topics. Makes notes more structured and predictable across generations.
 5. Images are embedded as web queries first, and are automatically searched up once they've been added.
 
-All files are stored with Cloudflare R2, the database runs on Neon, and the website, along with the serverless functions, run on Vercel. Authentication is provided by Better-Auth, which is self-hosted. For AI, the ai-sdk and Gemini were used. This tech stack is honestly one of the most complex ones I ever used. The amount of CRUD actions in this one project is honestly pretty crazy for me!
+All files are stored with Cloudflare R2, the database runs on Neon, and the website, along with the serverless functions, run on Vercel. Authentication is provided by Better-Auth, which is self-hosted. For AI, the ai-sdk and Gemini were used. This tech stack is honestly one of the most complex ones I ever used. 
+
+Most data fetching runs server side with ssr, which is something I haven't explored much until now. Developing is alot faster with ssr, and pages feel like they load more naturally now. CRUD actions also run on server actions, directly called by components like api calls without needing to handle errors manually. The amount of actions in this one project is honestly pretty crazy for me!
 
 ## Getting started
 
