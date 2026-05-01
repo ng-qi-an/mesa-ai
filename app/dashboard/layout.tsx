@@ -46,6 +46,7 @@ export default function DashboardLayout({children}: {children: React.ReactNode})
                         window.localStorage.setItem("updateVersion", newestVersion);
                     } else {
                         console.log("User has not seen update notice, showing notice...")
+                        setLoaded(true);
                         return setShowBeta(true);
                     }
                 }

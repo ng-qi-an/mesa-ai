@@ -8,7 +8,7 @@ import { eq } from "drizzle-orm";
 
 export default async function getFileStore({fileStoreId, classId}: {fileStoreId?: string, classId?: string}){
     if (!fileStoreId && !classId) {
-        throw new Error("fileStoreId and classId are required");
+        throw new Error("fileStoreId or classId are required");
     } else {
         const ai = new GoogleGenAI({
             apiKey: process.env.GOOGLE_GENERATIVE_AI_API_KEY,
