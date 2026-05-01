@@ -24,7 +24,7 @@ export const onboardingTour:Tour = {
             title: "Create your first class",
             icon: "🏫",
             side: 'right',
-            content: "Customise your class details here. You can always edit these later. Then, **submit it**.",
+            content: "Customise your class details here. You can always edit these later. Then, **submit it**. \n\n If you don't have any notes on hand, choose **physics** here for a sample file later.",
             selector: "#createClassDialog",
             showControls: false,
             pointerPadding: 0,
