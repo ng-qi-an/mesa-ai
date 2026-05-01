@@ -6,6 +6,15 @@ A complex **AI powered** study tool meant to promote reinforced learning and spe
 - 📋 **Quiz**: Curiculum-based quiz questions, tailored to every subject. AI marking ensures your text answers fufil exam criterias.
 - 📂 **Drive**: Store all lesson notes and files, automatically embedded and indexed.
 
+## How it works
+1. Files uploaded to the drive are embedded, then chunked and stored by google.
+2. All actions when generating notes, quizzes or chats use those chunked files to speed up generation time. Compared to just adding the files on every request, this RAG method saved about half the time neeeded
+3. When generating notes, topics are first created. The number of topics depends on the depth chosen before generating (Concise, Balanced, Detailed)
+4. Afterwards, the actual note content is generated based on those topics. Makes notes more structured and predictable across generations.
+5. Images are embedded as web queries first, and are automatically searched up once they've been added.
+
+All files are stored with Cloudflare R2, the database runs on Neon, and the website, along with the serverless functions, run on Vercel. Authentication is provided by Better-Auth, which is self-hosted. For AI, the ai-sdk and Gemini were used. This tech stack is honestly one of the most complex ones I ever used. The amount of CRUD actions in this one project is honestly pretty crazy for me!
+
 ## Getting started
 
 **Tutorial Video**
