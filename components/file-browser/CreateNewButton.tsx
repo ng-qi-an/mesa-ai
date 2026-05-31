@@ -4,7 +4,7 @@ import { CloudUpload, FolderPlus, Upload } from "lucide-react";
 import { useRef, useState } from "react";
 import CreateFolderDialog from "./dialogs/CreateFolderDialog";
 import { FileSelect } from "@/lib/schemas/schema";
-import { allowedMimeTypes } from "@/lib/utils";
+import { allowedFileTypesList, allowedMimeTypes } from "@/lib/utils";
 import { toast } from "sonner";
 import addUserFileClient from "@/lib/r2actions/files/addUserFileClient";
 import { usePathname } from "next/navigation";
@@ -59,7 +59,7 @@ export default function CreateNewButton({nests, children}: {nests: FileSelect[],
                     })
                 }
             }}
-            accept={allowedMimeTypes.join(",")}
+            accept={allowedFileTypesList.join(",")}
             className='absolute right-4 opacity-0 pointer-events-none w-20'
         />
         <DropdownMenu>

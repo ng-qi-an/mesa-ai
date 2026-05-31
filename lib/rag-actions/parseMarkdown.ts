@@ -1,12 +1,12 @@
 'use server';
-import LlamaCloud from '@llamaindex/llama-cloud';
+import LlamaCloud, {Uploadable} from '@llamaindex/llama-cloud';
 
 const client = new LlamaCloud({
   apiKey: process.env.LLAMA_PARSE_API_KEY,
 });
 
-export async function parseMarkdown(file_raw: File) {
-    console.log("Uploading file...");
+export async function parseMarkdown(file_raw: Uploadable) {
+    console.log("⛅ Uploading file to LlamaCloud for parsing...");
     const file = await client.files.create({
         file: file_raw,
         purpose: "parse",
@@ -16,7 +16,7 @@ export async function parseMarkdown(file_raw: File) {
         file_id: file.id,
         tier: "agentic",
         version: "latest",
-        expand: ["markdown_full", "text_full"],
+        expand: ["markdown_full"],
     });
-    return { markdown: result.markdown_full, text: result.text_full };
+    return result.markdown_full;
 }

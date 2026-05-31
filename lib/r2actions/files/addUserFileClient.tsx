@@ -1,17 +1,13 @@
 'use client';
 
-import addFilesToStore from "@/lib/file-search-actions/addFilesToStore";
 import addUserFile2Db from "./addUserFile2Db";
 import deleteUserFile from "./deleteUserFile";
-import getFileStore from "@/lib/file-search-actions/getFileStore";
+import { ragFile } from "@/lib/rag-actions/ragFile";
 
 export default async function addUserFileClient(files: File[], urls: {url: string, id: string}[], parent: string, classId: string) {
-    const store = await getFileStore({classId});
-    if (!store || !store.name) {
-        throw new Error("File store not found for class");
-    }
     const uploadPromises = urls.map(async(url, index) => {
         try {
+            // Begin client side upload to R2 first.
             console.log("== Start! Begin r2 upload for:", files[index].name, "==");
             const r = await fetch(url.url, {
                 method: "PUT",
@@ -19,15 +15,17 @@ export default async function addUserFileClient(files: File[], urls: {url: strin
             });
             if (r.ok){
                 try {
-                    console.log("== Success! Begin DB upload: ==");
+                    // Add file to database
+                    console.log("== Success! Begin DB insert: ==");
                     const res2 = await addUserFile2Db(url.id,files[index].name, files[index].type, parent, classId);
                     if (res2){
-                        console.log("== Success! Begin filestore upload: ==");
-                        await addFilesToStore([res2[0].id], store.name!);
-                        console.log("== Success! Finished file upload process for:", files[index].name, "==");
+                        // Begin RAG parsing process
+                        console.log("== Success! Begin rag parsing: ==");
+                        await ragFile(res2[0].id, res2[0].contentType);
+                        console.log("== Success! Finished rag parsing process for:", files[index].name, "==");
                         return { name: files[index].name, status: "uploaded" };
                     } else {
-                        throw new Error("Failed to add file to database after successful R2 upload");
+                        throw new Error("Failed to rag file to DB!");
                     }
                 } catch (error) {
                     await deleteUserFile(url.id, parent);        

@@ -12,7 +12,7 @@ export type ChatUIMessage = UIMessage<ChatMessageMetadata>;
 
 export type Model = {
     name: string;
-    provider: "google" | "openrouter";
+    provider: "google" | "openrouter" | "gateway";
     timeoutMs?: number;
 }
 
@@ -29,6 +29,26 @@ export const chatModels: Model[] = [
     },
     {
         name: "openai/gpt-5.1-chat",
+        provider: "openrouter",
+    },
+];
+
+export const embeddingModel: Model = {
+    name: "openai/text-embedding-3-small",
+    provider: "gateway",
+}
+
+export const summaryModels: Model[] = [
+    {
+        name: "google/gemma-4-31b-it:free",
+        provider: "openrouter",
+    },
+    {
+        name: "google/gemma-4-31b-it",
+        provider: "openrouter",
+    },
+    {
+        name: "deepseek/deepseek-v4-flash",
         provider: "openrouter",
     },
 ];

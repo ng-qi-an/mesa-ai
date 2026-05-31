@@ -41,6 +41,7 @@ export default async function deleteUserFile(fileId: string, parent: string){
             console.log("File deleted from R2:", fileId);
         }
         if (fileRecord.class.fileStoreId){
+            console.log("Deleting file from store with id:", fileRecord.class.fileStoreId);
             await deleteStoreFiles(fileRecord.class.fileStoreId, [fileRecord.id]);
         }
     } catch (error) {
