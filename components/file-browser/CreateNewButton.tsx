@@ -4,7 +4,7 @@ import { CloudUpload, FolderPlus, Upload } from "lucide-react";
 import { useRef, useState } from "react";
 import CreateFolderDialog from "./dialogs/CreateFolderDialog";
 import { FileSelect } from "@/lib/schemas/schema";
-import { allowedFileTypesList, allowedMimeTypes } from "@/lib/utils";
+import { allowedFileTypesList } from "@/lib/utils";
 import { toast } from "sonner";
 import addUserFileClient from "@/lib/r2actions/files/addUserFileClient";
 import { usePathname } from "next/navigation";

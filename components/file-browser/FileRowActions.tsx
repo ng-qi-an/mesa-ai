@@ -38,7 +38,7 @@ export default function FileRowActions({file}: {file: FileSelect}) {
         : 
         <Tooltip>
             <TooltipContent>
-                <p>This file can't be used yet. Click the dots to begin indexing. May take a few minutes.</p>
+                <p>This file can&apos;t be used yet. Click the dots to begin indexing. May take a few minutes.</p>
             </TooltipContent>
             <TooltipTrigger asChild>
                 <span className="ml-auto">
@@ -63,9 +63,10 @@ export default function FileRowActions({file}: {file: FileSelect}) {
                         setIndexing(true);
                         const indexPromise = new Promise<void>(async (resolve, reject) => {
                             try {
-                                await ragFile(file.id, file.name);
+                                await ragFile(file.id, file.contentType);
                                 resolve();
                             } catch (error) {
+                                setIndexing(false);
                                 reject("Error indexing file:" + error);
                             }
                         });
@@ -77,7 +78,6 @@ export default function FileRowActions({file}: {file: FileSelect}) {
                             },
                             error: async (e) => {
                                 setIndexing(false);
-                                await revalidateData(pathname)
                                 return `Error indexing file: ${e}`;
                             },
                         })

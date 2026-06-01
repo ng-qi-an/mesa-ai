@@ -20,6 +20,7 @@ export async function ragFile(fileId: string, contentType: string) {
   console.log("Reading file with ID:", fileId);
   let markdownContent: string | null = null;
   if (allowedFileTypes.text.includes(contentType) && contentType !== "text/html"){
+    console.log("Detected as Text file.")
     try {
       const file = await getUserFileContent(fileId);
       markdownContent = new TextDecoder("utf-8").decode(file.data);
@@ -28,18 +29,24 @@ export async function ragFile(fileId: string, contentType: string) {
       throw new Error("Failed to read text file content");
     }
   } else if (allowedFileTypes.documents.includes(contentType)){
+    console.log("Detected as Document file.");
     try {
       const fileUrl = await getDownloadFileUrl(fileId);
       const r = await fetch(`https://r.jina.ai/${fileUrl}`);
       const rawText = await r.text();
-      const marker = "Markdown Content:";
-      const markerIndex = rawText.indexOf(marker);
-      markdownContent = markerIndex >= 0 ? rawText.slice(markerIndex + marker.length).trim(): rawText;
+      const actualStart = "Markdown Content:";
+      const actualStartIndex = rawText.indexOf(actualStart);
+      markdownContent = actualStartIndex >= 0 ? rawText.slice(actualStartIndex + actualStart.length).trim(): rawText;
+      if (!markdownContent) {
+        console.log("Document does not contain text. Using Mistral OCR to extract text from the document...");
+        markdownContent = await parseMarkdown(fileUrl);
+      }
     } catch (error) {
       console.error("Failed to convert PDF content:", error);
       throw new Error("Failed to convert PDF content");
     }
   } else if (allowedFileTypes.images.includes(contentType)){
+    console.log("Detected as Image file.");
     try {
       const file = await getUserFileContent(fileId);
       const data = file.data;
@@ -66,6 +73,8 @@ export async function ragFile(fileId: string, contentType: string) {
       console.error("Failed to generate image description:", error);
       throw new Error("Failed to generate image description");
     }
+  } else {
+    throw new Error(`Unsupported file type: ${contentType}`);
   }
   // ===Old Llamaparse method below===
   // console.log("🗃️ Fetching file content from R2");
@@ -120,7 +129,7 @@ export async function ragFile(fileId: string, contentType: string) {
   });
   console.log("📝 Generated file summary:", summary.text, `(${summary.text.split(" ").length})`);
   console.log("Cost:", summary.totalUsage);
-  console.log("Provider metadata:", (summary.providerMetadata!.openrouter as {usage: any}).usage);
+  console.log("Provider metadata:", (summary.providerMetadata!.openrouter as {usage: unknown}).usage);
   await db.update(files).set({ status: "processed", summary: summary.text }).where(eq(files.id, fileId));
   console.log("⭐ Created summary and updated file status to 'processed'");
   return { fileId: fileId, chunkCount: values.length };
