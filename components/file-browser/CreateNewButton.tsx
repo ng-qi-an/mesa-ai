@@ -18,7 +18,6 @@ export default function CreateNewButton({nests, children}: {nests: FileSelect[],
     const pathname = usePathname();
     const { revalidateData } = useFileBrowser();
     const {_class} = useClass();
-
     return <>
         <input
             ref={fileInputRef}

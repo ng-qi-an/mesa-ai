@@ -13,6 +13,7 @@ import { ChatAttachmentType } from "@/lib/actions/chat/sendChatMessage";
 import { ChatProvider } from "@/components/providers/chat-provider";
 import { groupedTime } from "@/lib/utils/groupedTime";
 import { motion } from "motion/react";
+import { chatModels } from "@/lib/utils/models";
 export default function ChatsLayout({children, chats}: {chats: ChatSelect[], children: React.ReactNode}){
     const {id, chatId} = useParams();
     const router = useRouter();
@@ -21,6 +22,7 @@ export default function ChatsLayout({children, chats}: {chats: ChatSelect[], chi
     const [newText, setNewText] = useState("");
     const [newFiles, setNewFiles] = useState<ChatAttachmentType[]>([]);
     const [newThinkingLevel, setNewThinkingLevel] = useState("minimal");
+    const [newSelectedModel, setNewSelectedModel] = useState(chatModels[0].name);
     const [showChatList, setShowChatList] = useState(!isMobile);
 
     const groupedChats = groupedTime(chats, chats.map((chat) => chat.dateModified));
@@ -100,7 +102,7 @@ export default function ChatsLayout({children, chats}: {chats: ChatSelect[], chi
                     router.push(`/dashboard/class/${id}/chats`);
                 }}>{!isMobile && "Create new"}<MessageSquarePlus/></Button>
             </PageHeader>
-            <ChatProvider value={{newText, setNewText, newFiles, setNewFiles, newThinkingLevel, setNewThinkingLevel}}>
+            <ChatProvider value={{newText, setNewText, newFiles, setNewFiles, newThinkingLevel, setNewThinkingLevel, newSelectedModel, setNewSelectedModel}}>
                 <div className="w-full flex-1 min-h-0 flex flex-col">
                     {children}
                 </div>

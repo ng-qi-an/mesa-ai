@@ -28,39 +28,20 @@ export default function ChatPage({chat}:{chat: ChatSelect}){
     const chatCtx = useChatContext();
     const router = useRouter();
     const { _class } = useClass();
-
     const [text, setText] = useState("");
     const [previousText, setPreviousText] = useState("");
     const [files, setFiles] = useState<ChatAttachmentType[]>([]);
     const [previousFiles, setPreviousFiles] = useState<ChatAttachmentType[]>([]);
     const [thinkingLevel, setThinkingLevel] = useState("minimal");
-    const [chatModelIndex, setChatModelIndex] = useState(0);
+    const [selectedModel, setSelectedModel] = useState(chatModels[0].name);
+
     const promptInputRef = useRef<HTMLTextAreaElement>(null);
 
-    const { messages, sendMessage, setMessages, status, error, stop, clearError, regenerate } = useChat<ChatUIMessage>({
+    const { messages, sendMessage, setMessages, status, error, stop, clearError } = useChat<ChatUIMessage>({
         transport: new DefaultChatTransport({
             api: '/api/chat',
         }),
-        onFinish: async ({messages, finishReason, isAbort, isDisconnect, isError})=>{
-            console.log("Chat finished with reason:", finishReason);
-            if (finishReason === undefined && !isAbort && !isDisconnect && !isError){
-                if (chatModelIndex < chatModels.length - 1){
-                    console.log("Attempting to regenerate with fallback model:", chatModels[chatModelIndex + 1].name);
-                    // await SendChatMessage({message: {text: chatCtx.newText, files: chatCtx.newFiles}, files: chatCtx.newFiles, sendMessage, thinkingLevel: chatCtx.newThinkingLevel, chatId: chat.id, bodyOptions: {chatModelIndex: chatModelIndex + 1}});
-                    setTimeout(()=>{
-                        console.log("Regenerating with fallback model:", chatModels[chatModelIndex + 1].name);
-                        regenerate({body: {chatModelIndex: chatModelIndex + 1, subject: _class.subject}});
-                    }, 0)
-                    setChatModelIndex(chatModelIndex + 1)
-                } else {
-                    setChatModelIndex(0);
-                    console.log("No more fallback models available.");
-                    toast.error("Chat failed to generate a response. Please try again.");
-                }
-            } else {
-                console.log("Chat finished successfully:", finishReason);
-                setChatModelIndex(0);
-            }
+        onFinish: async ({messages, isAbort, isDisconnect, isError})=>{
             setMessages(messages);
             await saveToChat(chat.id, { messages });
             console.log("isAbort:", isAbort, "isDisconnect:", isDisconnect, "isError:", isError);
@@ -69,6 +50,7 @@ export default function ChatPage({chat}:{chat: ChatSelect}){
     });
     
     useEffect(()=>{
+        console.log("selectedModel:", selectedModel);
         (async()=>{
             console.log("ChatPage rerendered, isFromNewChat:", search.get("fromNewChat"));
             const isFromNewChat = search.has("fromNewChat")
@@ -81,8 +63,9 @@ export default function ChatPage({chat}:{chat: ChatSelect}){
                     setPreviousFiles(files);
                     chatCtx.setNewFiles([]);
                     setThinkingLevel(chatCtx.newThinkingLevel);
+                    setSelectedModel(chatCtx.newSelectedModel);
                     chatCtx.setNewThinkingLevel("minimal");
-                    const r = await SendChatMessage({message: {text: chatCtx.newText, files: chatCtx.newFiles}, files: chatCtx.newFiles, sendMessage, thinkingLevel: chatCtx.newThinkingLevel, chatId: chat.id, bodyOptions: {chatModelIndex, subject: _class.subject}});
+                    const r = await SendChatMessage({message: {text: chatCtx.newText, files: chatCtx.newFiles}, files: chatCtx.newFiles, sendMessage, thinkingLevel: chatCtx.newThinkingLevel, chatId: chat.id, bodyOptions: {selectedModel: selectedModel, subject: _class.subject}});
                     console.log("SendChatMessage result:", r);
                     if (r === "failed_uploads") {
                         toast.warning("Some files failed to upload.");
@@ -122,7 +105,7 @@ export default function ChatPage({chat}:{chat: ChatSelect}){
                     <MessageContent className="flex flex-row items-center gap-3">
                         <Logo type="favicon" className="size-4 invert" />
                         <Shimmer>
-                            {`Analysing.. ${chatModelIndex == 1 ? "(Attempt 2)" : chatModelIndex == 2 ? "(Attempt 3)" : ""}`}
+                            {`Analysing..`}
                         </Shimmer>
                     </MessageContent>
                 </Message>}
@@ -158,7 +141,7 @@ export default function ChatPage({chat}:{chat: ChatSelect}){
                 setPreviousFiles(files);
                 setText("");
                 setFiles([]);
-                const r = await SendChatMessage({message: message, files: files, sendMessage, thinkingLevel: thinkingLevel, chatId: chat.id, bodyOptions: {subject: _class.subject}});
+                const r = await SendChatMessage({message: message, files: files, sendMessage, thinkingLevel: thinkingLevel, chatId: chat.id, bodyOptions: {selectedModel: selectedModel,subject: _class.subject}});
                 console.log("SendChatMessage result:", r);
                 if (r === "failed_uploads") {
                     toast.warning("Some files failed to upload.");
@@ -173,7 +156,7 @@ export default function ChatPage({chat}:{chat: ChatSelect}){
             <PromptInputBody>
                 <PromptInputTextarea ref={promptInputRef} onChange={(e) => setText(e.target.value)} value={text}/>
             </PromptInputBody>
-            <ChatInputFooter files={files} setFiles={setFiles} text={text} thinkingLevel={thinkingLevel} setThinkingLevel={setThinkingLevel} 
+            <ChatInputFooter files={files} setFiles={setFiles} text={text} thinkingLevel={thinkingLevel} setThinkingLevel={setThinkingLevel} selectedModel={selectedModel} setSelectedModel={setSelectedModel}
                 onStop={()=>{
                     stop();
                     setText(previousText);

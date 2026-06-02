@@ -3,8 +3,9 @@ import { Reasoning, ReasoningContent, ReasoningTrigger } from "@/components/ai-e
 import { generateId } from "ai";
 import ChatAttachments from "./ChatAttachments";
 import { Source, Sources, SourcesContent, SourcesTrigger } from "../ai-elements/sources";
-import { CopyIcon, RefreshCcwIcon, Sparkle } from "lucide-react";
-import { ChatUIMessage } from "@/lib/utils/models";
+import { CopyIcon, RefreshCcwIcon } from "lucide-react";
+import { chatModels, ChatUIMessage } from "@/lib/utils/models";
+import { ModelSelectorLogo } from "../ai-elements/model-selector";
 
 export default function ChatMessageContent({message, isLastMessage, isStreaming}: {message: ChatUIMessage, isLastMessage: boolean, isStreaming: boolean}){
   const reasoningParts = message.parts.filter((part) => part.type === "reasoning");
@@ -14,6 +15,7 @@ export default function ChatMessageContent({message, isLastMessage, isStreaming}
     (part) => part.type === "source-url" || part.type === "source-document"
   );
   const isGrounded = message.role === "assistant" && sourceParts.length > 0;
+  const modelObject = (message.metadata && message.metadata.model) ? chatModels.find((model) => model.name === message.metadata!.model) : null;
   return <>
     {fileParts.length > 0 && <ChatAttachments files={fileParts.map((f)=> ({...f, id: generateId()}))}/>}
     {(reasoningParts.length > 0 || textParts.length > 0) && <MessageContent className="group">
@@ -44,7 +46,7 @@ export default function ChatMessageContent({message, isLastMessage, isStreaming}
             );
         })}
         {message.role == "assistant" && <MessageToolbar className={`${isLastMessage ? "opacity-100" : "opacity-0"} ${!isStreaming && "group-hover:opacity-100"} transition-opacity`}>
-          {message.metadata && <p className="text-xs text-muted-foreground flex items-center gap-2 cursor-default"><Sparkle className="size-3"/> {message.metadata.model}</p>}
+          {modelObject && <p className="text-xs text-muted-foreground flex items-center gap-2 cursor-default"><ModelSelectorLogo provider={modelObject.name.split("/")[0]} /> {modelObject.label}</p>}
         <MessageActions>
           <MessageAction
             tooltip="Retry message"

@@ -7,8 +7,9 @@ import { Spinner } from "@/components/ui/spinner";
 import { Square } from "lucide-react";
 import { Dispatch, SetStateAction, useEffect, useState } from "react";
 import { ChatAttachmentType } from "../../lib/actions/chat/sendChatMessage";
+import ModelSwitcher from "./ModelSwitcher";
 
-export default function ChatInputFooter({thinkingLevel, setThinkingLevel, text, files, setFiles, onStop, disableStop, disableSend}:{thinkingLevel: string, setThinkingLevel: (level: string) => void, text: string, files: ChatAttachmentType[], setFiles: Dispatch<SetStateAction<ChatAttachmentType[]>>, onStop: () => void, disableStop: boolean, disableSend: boolean}){
+export default function ChatInputFooter({thinkingLevel, setThinkingLevel, selectedModel, setSelectedModel, text, files, setFiles, onStop, disableStop, disableSend}:{thinkingLevel: string, setThinkingLevel: (level: string) => void, selectedModel: string, setSelectedModel: (model: string) => void, text: string, files: ChatAttachmentType[], setFiles: Dispatch<SetStateAction<ChatAttachmentType[]>>, onStop: () => void, disableStop: boolean, disableSend: boolean}){
     const [showMesaDrive, setShowMesaDrive] = useState(false);
     const { files:promptFiles } = usePromptInputAttachments();
     useEffect(()=>{
@@ -40,6 +41,7 @@ export default function ChatInputFooter({thinkingLevel, setThinkingLevel, text, 
                     <DropdownMenuItem onClick={()=> setShowMesaDrive(true)}><Logo className="size-4 mr-1.5"/> Mesa Drive</DropdownMenuItem>
                 </PromptInputActionMenuContent>
             </PromptInputActionMenu>
+            <ModelSwitcher selectedModel={selectedModel} setSelectedModel={setSelectedModel}/>
             <PromptInputSelect
                 onValueChange={setThinkingLevel}
                 value={thinkingLevel}

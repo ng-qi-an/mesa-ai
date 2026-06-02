@@ -10,6 +10,8 @@ export type ChatContextType = {
     setNewFiles: Dispatch<SetStateAction<ChatAttachmentType[]>>;
     newThinkingLevel: string;
     setNewThinkingLevel: (level: string) => void;
+    newSelectedModel: string;
+    setNewSelectedModel: (model: string) => void;
 }
 
 const ChatContext = createContext<ChatContextType | undefined>(undefined);
