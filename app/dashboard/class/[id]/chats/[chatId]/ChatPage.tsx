@@ -41,16 +41,16 @@ export default function ChatPage({chat}:{chat: ChatSelect}){
         transport: new DefaultChatTransport({
             api: '/api/chat',
         }),
-        onFinish: async ({messages, isAbort, isDisconnect, isError})=>{
-            setMessages(messages);
-            await saveToChat(chat.id, { messages });
-            console.log("isAbort:", isAbort, "isDisconnect:", isDisconnect, "isError:", isError);
-        },
+        // Moved to server-side.
+        // onFinish: async ({messages, isAbort, isDisconnect, isError})=>{
+        //     setMessages(messages);
+        //     await saveToChat(chat.id, { messages });
+        //     console.log("isAbort:", isAbort, "isDisconnect:", isDisconnect, "isError:", isError);
+        // },
         messages: chat.messages,
     });
     
     useEffect(()=>{
-        console.log("selectedModel:", selectedModel);
         (async()=>{
             console.log("ChatPage rerendered, isFromNewChat:", search.get("fromNewChat"));
             const isFromNewChat = search.has("fromNewChat")
@@ -65,7 +65,7 @@ export default function ChatPage({chat}:{chat: ChatSelect}){
                     setThinkingLevel(chatCtx.newThinkingLevel);
                     setSelectedModel(chatCtx.newSelectedModel);
                     chatCtx.setNewThinkingLevel("minimal");
-                    const r = await SendChatMessage({message: {text: chatCtx.newText, files: chatCtx.newFiles}, files: chatCtx.newFiles, sendMessage, thinkingLevel: chatCtx.newThinkingLevel, chatId: chat.id, bodyOptions: {selectedModel: selectedModel, subject: _class.subject}});
+                    const r = await SendChatMessage({message: {text: chatCtx.newText, files: chatCtx.newFiles}, files: chatCtx.newFiles, sendMessage, thinkingLevel: chatCtx.newThinkingLevel, selectedModel: selectedModel, chatId: chat.id, bodyOptions: {subject: _class.subject}});
                     console.log("SendChatMessage result:", r);
                     if (r === "failed_uploads") {
                         toast.warning("Some files failed to upload.");
@@ -141,7 +141,7 @@ export default function ChatPage({chat}:{chat: ChatSelect}){
                 setPreviousFiles(files);
                 setText("");
                 setFiles([]);
-                const r = await SendChatMessage({message: message, files: files, sendMessage, thinkingLevel: thinkingLevel, chatId: chat.id, bodyOptions: {selectedModel: selectedModel,subject: _class.subject}});
+                const r = await SendChatMessage({message: message, files: files, sendMessage, thinkingLevel: thinkingLevel, selectedModel: selectedModel, chatId: chat.id, bodyOptions: {subject: _class.subject}});
                 console.log("SendChatMessage result:", r);
                 if (r === "failed_uploads") {
                     toast.warning("Some files failed to upload.");

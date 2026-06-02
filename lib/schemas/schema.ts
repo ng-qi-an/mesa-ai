@@ -103,6 +103,8 @@ export const chats = pgTable("chats", {
     notebookId: text("notebook_id").references(() => notebook.id, { onDelete: "cascade" }),
     name: text("name").notNull().default("New chat"),
     messages: jsonb("messages").notNull().$type<ChatUIMessage[]>(),
+    selectedModel: text("selected_model"),
+    thinkingLevel: text("thinking_level"),
     dateCreated: timestamp("date_created").notNull().defaultNow(),
     dateModified: timestamp("date_modified").notNull().defaultNow(),
 })

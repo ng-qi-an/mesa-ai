@@ -1,8 +1,10 @@
 import { streamText, convertToModelMessages } from 'ai';
 import { chatModels, ChatUIMessage } from '@/lib/utils/models';
 import { availableSubjects } from '@/lib/subjects/subjectsList';
+import saveToChat from '@/lib/actions/quiz/saveToChat';
 
 type ChatRequestType = {
+    chatId: string;
     thinkingLevel: "minimal" | "low" | "medium";
     forceSearch: boolean;
     messages: ChatUIMessage[];
@@ -15,6 +17,9 @@ export async function POST(req: Request) {
     if (!context.subject) {
         throw new Error("Subject is required");
     }
+    if (!context.chatId) {
+        throw new Error("Chat ID is required");
+    }
     const result = streamText({
         system: `
         ${availableSubjects[context.subject].instructions.chat}
@@ -26,7 +31,10 @@ export async function POST(req: Request) {
                 sort: 'cost',
                 models: chatModels.filter((model)=> model.name != context.selectedModel).map((model) => model.name),
             },
-
+        },
+        onFinish: async({totalUsage})=>{
+            console.log("[CHAT STREAM] Stream finished with total tokens:", totalUsage.totalTokens);
+            // The user usage limit thing should go here
         }
         // tools: model.provider === "google" ? {
         //     google_search: google.tools.googleSearch({}),
@@ -42,10 +50,15 @@ export async function POST(req: Request) {
         // } : undefined,
         // timeout: {stepMs: model.timeoutMs, totalMs: maxDuration * 1000},
     });
+    result.consumeStream(); 
     return result.toUIMessageStreamResponse({
         sendReasoning: true,
         sendSources: true,
         originalMessages: context.messages,
+        onFinish: async({messages})=>{
+            console.log("[CHAT STREAM] Stream finished! Saving chat to DB!")
+            await saveToChat(context.chatId, { messages });
+        },
         messageMetadata: ({part})=>{
             if (part.type == "finish-step"){
                 try {
