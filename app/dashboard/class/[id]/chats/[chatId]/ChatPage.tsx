@@ -14,7 +14,7 @@ import saveToChat from "@/lib/actions/chat/saveToChat";
 import SendChatMessage, { ChatAttachmentType } from "@/lib/actions/chat/sendChatMessage";
 import { ChatSelect } from "@/lib/schemas/schema";
 import { allowedMimeTypes } from "@/lib/utils";
-import { chatModels, ChatUIMessage } from "@/lib/utils/models";
+import { chatModels, ChatUIMessage, ThinkingLevels } from "@/lib/utils/models";
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport } from "ai";
 import { ArrowRight, MessageSquareIcon } from "lucide-react";
@@ -32,7 +32,7 @@ export default function ChatPage({chat}:{chat: ChatSelect}){
     const [previousText, setPreviousText] = useState("");
     const [files, setFiles] = useState<ChatAttachmentType[]>([]);
     const [previousFiles, setPreviousFiles] = useState<ChatAttachmentType[]>([]);
-    const [thinkingLevel, setThinkingLevel] = useState("minimal");
+    const [thinkingLevel, setThinkingLevel] = useState<ThinkingLevels>("low");
     const [selectedModel, setSelectedModel] = useState(chatModels[0].name);
 
     const promptInputRef = useRef<HTMLTextAreaElement>(null);
@@ -65,7 +65,7 @@ export default function ChatPage({chat}:{chat: ChatSelect}){
                     setThinkingLevel(chatCtx.newThinkingLevel);
                     setSelectedModel(chatCtx.newSelectedModel);
                     chatCtx.setNewThinkingLevel("minimal");
-                    const r = await SendChatMessage({message: {text: chatCtx.newText, files: chatCtx.newFiles}, files: chatCtx.newFiles, sendMessage, thinkingLevel: chatCtx.newThinkingLevel, selectedModel: selectedModel, chatId: chat.id, bodyOptions: {subject: _class.subject}});
+                    const r = await SendChatMessage({message: {text: chatCtx.newText, files: chatCtx.newFiles}, files: chatCtx.newFiles, sendMessage, thinkingLevel: chatCtx.newThinkingLevel, selectedModel: chatCtx.newSelectedModel, chatId: chat.id, bodyOptions: {subject: _class.subject}});
                     console.log("SendChatMessage result:", r);
                     if (r === "failed_uploads") {
                         toast.warning("Some files failed to upload.");
@@ -76,6 +76,9 @@ export default function ChatPage({chat}:{chat: ChatSelect}){
                     }
                     router.replace(window.location.pathname);
                 }
+            } else {
+                setSelectedModel(chat.selectedModel || chatModels[0].name);
+                setThinkingLevel(chat.thinkingLevel as ThinkingLevels || "minimal");
             }
         })();
         return ()=>{

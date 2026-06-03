@@ -1,6 +1,7 @@
 'use client';
 
 import { ChatAttachmentType } from "@/lib/actions/chat/sendChatMessage";
+import { ThinkingLevels } from "@/lib/utils/models";
 import { createContext, useContext, Dispatch, ReactNode, SetStateAction } from "react";
 
 export type ChatContextType = {
@@ -8,8 +9,8 @@ export type ChatContextType = {
     setNewText: (text: string) => void;
     newFiles: ChatAttachmentType[];
     setNewFiles: Dispatch<SetStateAction<ChatAttachmentType[]>>;
-    newThinkingLevel: string;
-    setNewThinkingLevel: (level: string) => void;
+    newThinkingLevel: ThinkingLevels;
+    setNewThinkingLevel: (level: ThinkingLevels) => void;
     newSelectedModel: string;
     setNewSelectedModel: (model: string) => void;
 }

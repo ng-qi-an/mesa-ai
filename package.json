@@ -11,7 +11,8 @@
   "dependencies": {
     "@ai-sdk/google": "^3.0.53",
     "@ai-sdk/openai": "^3.0.67",
-    "@ai-sdk/react": "^3.0.142",
+    "@ai-sdk/otel": "^1.0.0-beta.6",
+    "@ai-sdk/react": "^3.0.197",
     "@aws-sdk/client-s3": "^3.982.0",
     "@aws-sdk/s3-request-presigner": "^3.984.0",
     "@base-ui/react": "^1.1.0",
@@ -32,7 +33,7 @@
     "@tanstack/react-table": "^8.21.3",
     "@vercel/speed-insights": "^2.0.0",
     "@xyflow/react": "^12.10.0",
-    "ai": "^6.0.140",
+    "ai": "^6.0.195",
     "ansi-to-react": "^6.2.6",
     "better-auth": "^1.4.17",
     "class-variance-authority": "^0.7.1",

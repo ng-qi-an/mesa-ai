@@ -43,7 +43,7 @@ export default function ModelSwitcher({selectedModel, setSelectedModel}:{selecte
             {Object.values(modelsByProvider).map((models: Model[])=>{
               return <ModelSelectorGroup heading={models[0].name.split("/")[0].charAt(0).toUpperCase() + models[0].name.split("/")[0].slice(1)} key={"modelselector-"+models[0].name.split("/")[0]}>
                     {models.map((model) => (
-                        <ModelSelectorItem key={model.name+model.provider} onSelect={() => setSelectedModel(model.name)} value={model.name}>
+                        <ModelSelectorItem key={model.name+model.provider} onSelect={() => {setSelectedModel(model.name); setOpen(false)}} value={model.name}>
                             <ModelSelectorLogo provider={model.name.split("/")[0]} />
                             <ModelSelectorName>{model.label}</ModelSelectorName>
                             {selectedModel === model.name ? (
@@ -51,6 +51,10 @@ export default function ModelSwitcher({selectedModel, setSelectedModel}:{selecte
                             ) : (
                                 <div className="ml-auto size-4" />
                             )}
+                            
+                            <p className="text-xs text-muted-foreground">
+                                {model.priceMultiplier !== undefined && model.priceMultiplier ? `${model.priceMultiplier}x` : "Free"}
+                            </p>
                         </ModelSelectorItem>
                     ))}
                   </ModelSelectorGroup>

@@ -4,7 +4,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useState } from "react";
 import { Streamdown } from "streamdown";
-import { useRouter, useSearchParams } from "next/navigation";
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport } from "ai";
 import { FileSelect } from "@/lib/schemas/schema";
@@ -18,7 +17,7 @@ export default function Page(){
     const [query, setQuery] = useState("");
     const { messages, sendMessage, status, error } = useChat({
         transport: new DefaultChatTransport({
-        api: '/api/rag',
+            api: '/api/rag',
         }),
     });
   
@@ -52,7 +51,6 @@ export default function Page(){
                     <p>{message.role}</p>
                     {message.parts.map(part => {
                         switch (part.type) {
-                            
                         case 'tool-searchDocuments':
                             switch (part.state) {
                             case 'input-streaming':

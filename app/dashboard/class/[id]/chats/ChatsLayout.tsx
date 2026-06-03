@@ -13,7 +13,7 @@ import { ChatAttachmentType } from "@/lib/actions/chat/sendChatMessage";
 import { ChatProvider } from "@/components/providers/chat-provider";
 import { groupedTime } from "@/lib/utils/groupedTime";
 import { motion } from "motion/react";
-import { chatModels } from "@/lib/utils/models";
+import { chatModels, ThinkingLevels } from "@/lib/utils/models";
 export default function ChatsLayout({children, chats}: {chats: ChatSelect[], children: React.ReactNode}){
     const {id, chatId} = useParams();
     const router = useRouter();
@@ -21,7 +21,7 @@ export default function ChatsLayout({children, chats}: {chats: ChatSelect[], chi
     
     const [newText, setNewText] = useState("");
     const [newFiles, setNewFiles] = useState<ChatAttachmentType[]>([]);
-    const [newThinkingLevel, setNewThinkingLevel] = useState("minimal");
+    const [newThinkingLevel, setNewThinkingLevel] = useState<ThinkingLevels>("low");
     const [newSelectedModel, setNewSelectedModel] = useState(chatModels[0].name);
     const [showChatList, setShowChatList] = useState(!isMobile);
 

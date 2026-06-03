@@ -1,11 +1,11 @@
-import { streamText, convertToModelMessages } from 'ai';
-import { chatModels, ChatUIMessage } from '@/lib/utils/models';
+import { streamText, convertToModelMessages, createIdGenerator } from 'ai';
+import { chatModels, ChatUIMessage, convertEffortLevel, ThinkingLevels } from '@/lib/utils/models';
 import { availableSubjects } from '@/lib/subjects/subjectsList';
 import saveToChat from '@/lib/actions/quiz/saveToChat';
 
 type ChatRequestType = {
     chatId: string;
-    thinkingLevel: "minimal" | "low" | "medium";
+    thinkingLevel: ThinkingLevels;
     forceSearch: boolean;
     messages: ChatUIMessage[];
     subject: keyof typeof availableSubjects;
@@ -31,6 +31,34 @@ export async function POST(req: Request) {
                 sort: 'cost',
                 models: chatModels.filter((model)=> model.name != context.selectedModel).map((model) => model.name),
             },
+            openrouter: {
+                reasoning: {
+                    effort: convertEffortLevel("openrouter", context.selectedModel, context.thinkingLevel)
+                }
+            },
+            anthropic: {
+                thinking: {
+                    type: "adaptive"
+                },
+                effort: {
+                    level: convertEffortLevel("anthropic", context.selectedModel, context.thinkingLevel)
+                }
+            },
+            google: {
+                thinkingConfig: {
+                    thinkingLevel: convertEffortLevel("google", context.selectedModel, context.thinkingLevel),
+                    includeThoughts: true,
+                },
+            },
+            openai: {
+                reasoningEffort: convertEffortLevel("openai", context.selectedModel, context.thinkingLevel)
+            },
+            deepseek: {
+                thinking: {
+                    type: "enabled"
+                },
+                reasoningEffort: convertEffortLevel("deepseek", context.selectedModel, context.thinkingLevel)
+            }
         },
         onFinish: async({totalUsage})=>{
             console.log("[CHAT STREAM] Stream finished with total tokens:", totalUsage.totalTokens);
@@ -55,8 +83,14 @@ export async function POST(req: Request) {
         sendReasoning: true,
         sendSources: true,
         originalMessages: context.messages,
-        onFinish: async({messages})=>{
+        generateMessageId: createIdGenerator({
+            prefix: 'msg-assistant',
+            size: 16,
+        }),
+        onFinish: async({messages, responseMessage})=>{
             console.log("[CHAT STREAM] Stream finished! Saving chat to DB!")
+            console.log("assistant message:", responseMessage);
+            messages
             await saveToChat(context.chatId, { messages });
         },
         messageMetadata: ({part})=>{
