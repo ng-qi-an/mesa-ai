@@ -47,6 +47,7 @@ export const files = pgTable("files", {
     name: text("name").notNull(),
     contentType: text("content_type").notNull(),
     summary: text("summary"),
+    markdown: text("markdown"),
     status: text("status").notNull().default("uploaded"),
     dateCreated: timestamp("date_created").notNull().defaultNow(),
     dateModified: timestamp("date_modified").notNull().defaultNow(),

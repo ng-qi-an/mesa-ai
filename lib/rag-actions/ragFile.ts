@@ -92,7 +92,8 @@ export async function ragFile(fileId: string, contentType: string) {
       throw new Error("Failed to parse markdown from file");
   }
   markdownContent = markdownContent.replace(/\u0000/g, "");
-
+  console.log("Deleting previous chunks for file (if any)");
+  await db.delete(fileChunks).where(eq(fileChunks.fileId, fileId));
   console.log("🔪 Chunking markdown content");
   const chunkList = await chunkMarkdown(markdownContent);
   console.log(`🔪 Split into ${chunkList.length} chunks`);
@@ -130,7 +131,7 @@ export async function ragFile(fileId: string, contentType: string) {
   console.log("📝 Generated file summary:", summary.text, `(${summary.text.split(" ").length})`);
   console.log("Cost:", summary.totalUsage);
   console.log("Provider metadata:", (summary.providerMetadata!.openrouter as {usage: unknown}).usage);
-  await db.update(files).set({ status: "processed", summary: summary.text }).where(eq(files.id, fileId));
+  await db.update(files).set({ status: "processed", summary: summary.text, markdown: markdownContent }).where(eq(files.id, fileId));
   console.log("⭐ Created summary and updated file status to 'processed'");
   return { fileId: fileId, chunkCount: values.length };
 }

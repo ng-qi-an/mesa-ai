@@ -1,19 +1,25 @@
-import { streamText, UIMessage, convertToModelMessages } from 'ai';
+import { streamText, UIMessage, convertToModelMessages, stepCountIs, createIdGenerator } from 'ai';
 import { google, GoogleGenerativeAIProviderOptions } from "@ai-sdk/google";
 import { auth } from '@/lib/auth';
 import { headers } from 'next/headers';
-import { fileSearchMetaQuery } from '@/lib/utils/models';
+import { chatModels, ChatUIMessage, convertEffortLevel, fileSearchMetaQuery, ThinkingLevels } from '@/lib/utils/models';
 import { availableSubjects } from '@/lib/subjects/subjectsList';
+import constructProvider from '@/lib/utils/constructProvider';
+import { searchDocumentsTool } from '@/lib/rag-actions/searchDocumentsTool';
+import { db } from '@/lib/db';
+import { listDocumentsTool } from '@/lib/rag-actions/listDocumentsTool';
+import saveToChat from '@/lib/actions/chat/saveToChat';
 
 // Allow streaming responses up to 5 minutes
 export const maxDuration = 300;
 
 type NotebookRequestType = {
-    fileStoreId: string;
-    fileIds: string[];
-    thinkingLevel: "minimal" | "low" | "medium";
-    messages: UIMessage[];
+    thinkingLevel: ThinkingLevels;
+    messages: ChatUIMessage[];
     subject: keyof typeof availableSubjects;
+    selectedModel: string;
+    chatId: string;
+    noteId: string;
 }
 
 export async function POST(req: Request) {
@@ -25,49 +31,107 @@ export async function POST(req: Request) {
     if (!session || !session.user) {
         throw new Error("Not authenticated");
     }
-    if (!context.fileStoreId){
-        throw new Error("Missing file store ID");
-    }
-    if (!context.fileIds || context.fileIds.length === 0) {
-        throw new Error("At least one file ID is required");
+    if (!context.noteId) {
+        throw new Error("Notebook ID is required");
     }
     if (!context.subject) {
         throw new Error("Subject is required");
     }
-    console.log("Messages received in API route:", JSON.stringify(context.messages, null, 2));
-    console.log("Meta query", context.fileIds.map(id => `file_id="${id}"`).join(" OR "));
+    const raw = await db.query.notebook.findFirst({
+        columns: {},
+        where: (notebook, {eq, and})=> and(eq(notebook.id, context.noteId), eq(notebook.userId, session.user.id)),
+        with: {
+            files: {
+                with: {
+                    file: {
+                        columns: {id: true}
+                    }
+                }
+            }
+        }
+    })
+    const files = raw ? raw.files.map(f => f.file) : [];
+    console.log("model selected:", context.selectedModel);
     const result = streamText({
-        model: google("gemini-3-flash-preview"), // "google/gemini-3-flash-preview",
+        model: context.selectedModel,
         messages: await convertToModelMessages(context.messages),
         tools: {
-            file_search: google.tools.fileSearch({fileSearchStoreNames: [context.fileStoreId], metadataFilter: fileSearchMetaQuery(context.fileIds)}),
+            listDocuments: listDocumentsTool(files.map(f => f.id)),
+            searchDocuments: searchDocumentsTool(files.map(f => f.id)),
         },
         system: `
         ${availableSubjects[context.subject].instructions.chat}
-        This chat has been provided with student's slide decks:
-        - Use the file_search tool to access the content of these notes and provide answers to the user's questions based on that content. 
-        - If the user asks a question that cannot be answered with the provided notes, say you don't know rather than making something up. 
-        - Always use the file_search tool to access the notes when formulating your answer.
-
-        **Math formula**: If you need to use a math formula, use LaTeX format and STRICTLY wrap it in double dollar signs. For example, if you want to express the formula for the area of a circle, you would write: $$A = \pi r^2$$.`,
+        ## File sources
+        This chat has been provided with student's notes and slide decks. You should use them to ground your responses when necessary.
+        - When the user asks a question related to their documents, use the listDocuments tool first to see what documents are available. As documents can change mid-conversation, use the tool frequently to check for new documents or changes.
+        - Then, use the searchDocuments tool to find relevant information. Rephrase search queries to be more specific and relevant. You can break a large search query into multiple smaller queries. Avoid vague words like "summary" or "details" unless paired with topics.
+        - If information is found in the documents, use it to answer the user's question. Be sure to cite the source document (by name) of any information you use. Wrap them in inline code block notation: \`[Document Name]\`.
+        - Should no relevant information be found, try a broader search query. 
+        - If all tool calls are exhausted, answer to the best of your ability with the general information you have. You must mention that your answer may be incomplete.
+        `,
+        stopWhen: stepCountIs(5), // lets the model use tools and continue
         providerOptions: {
+           gateway: {
+                sort: 'cost',
+                models: chatModels.filter((model)=> model.name != context.selectedModel).map((model) => model.name),
+            },
+            openrouter: {
+                reasoning: {
+                    effort: convertEffortLevel("openrouter", context.selectedModel, context.thinkingLevel)
+                }
+            },
+            anthropic: {
+                thinking: {
+                    type: "adaptive"
+                },
+                effort: {
+                    level: convertEffortLevel("anthropic", context.selectedModel, context.thinkingLevel)
+                }
+            },
             google: {
                 thinkingConfig: {
-                    thinkingLevel: context.thinkingLevel,
+                    thinkingLevel: convertEffortLevel("google", context.selectedModel, context.thinkingLevel),
                     includeThoughts: true,
                 },
-            } satisfies GoogleGenerativeAIProviderOptions
+            },
+            openai: {
+                reasoningEffort: convertEffortLevel("openai", context.selectedModel, context.thinkingLevel)
+            },
+            deepseek: {
+                thinking: {
+                    type: "enabled"
+                },
+                reasoningEffort: convertEffortLevel("deepseek", context.selectedModel, context.thinkingLevel)
+            }
         }
     });
-
     return result.toUIMessageStreamResponse({
         sendReasoning: true,
         sendSources: true,
         originalMessages: context.messages,
+        generateMessageId: createIdGenerator({
+            prefix: 'msg-assistant',
+            size: 16,
+        }),
+        onFinish: async({messages, responseMessage}:{messages: ChatUIMessage[], responseMessage: ChatUIMessage})=>{
+            console.log("[CHAT STREAM] Stream finished! Saving chat to DB!")
+            console.log("assistant message:", responseMessage);
+            await saveToChat(context.chatId, { messages });
+        },
         messageMetadata: ({part})=>{
-            if (part.type == "start-step"){
-                return {
-                    model: "gemini-3-flash-preview",
+            if (part.type == "finish-step"){
+                try {
+                    console.log("Extracting model from provider metadata");
+                    const finalModel = (part.providerMetadata as {gateway: {routing: {modelAttempts: Array<{canonicalSlug: string}>}}}).gateway.routing.modelAttempts.at(-1)!.canonicalSlug
+                    console.log("Final model used:", finalModel);
+                    return {
+                        model: finalModel
+                    }
+                } catch {
+                    console.log("Failed to extract model from provider metadata. Default to selected.");
+                    return {
+                        model: context.selectedModel || chatModels[0].name
+                    };
                 }
             }
         }

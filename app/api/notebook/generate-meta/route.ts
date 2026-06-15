@@ -3,14 +3,15 @@ import { google, GoogleGenerativeAIProviderOptions } from "@ai-sdk/google";
 import { noteMetaSchema } from '../schema';
 import { auth } from '@/lib/auth';
 import { headers } from 'next/headers';
-import { fileSearchMetaQuery } from '@/lib/utils/models';
+import { chatModels, fileSearchMetaQuery } from '@/lib/utils/models';
+import { db } from '@/lib/db';
+import constructProvider from '@/lib/utils/constructProvider';
 
 // Allow streaming responses up to 5 minutes
 export const maxDuration = 300;
 
 type NotebookRequestType = {
-    fileStoreId: string;
-    fileIds: string[];
+    id: string;
     instructions: string;
     length: string;
 }
@@ -24,19 +25,28 @@ export async function POST(req: Request) {
     if (!session || !session.user) {
         throw new Error("Not authenticated");
     }
-    if (!context.fileStoreId) {
-        throw new Error("File store ID is required");
+    if (!context.id) {
+        throw new Error("Notebook ID is required");
     }
-    if (!context.fileIds || context.fileIds.length === 0) {
-        throw new Error("At least one file ID is required");
-    }
+    const raw = await db.query.notebook.findFirst({
+        columns: {},
+        where: (notebook, {eq, and})=> and(eq(notebook.id, context.id), eq(notebook.userId, session.user.id)),
+        with: {
+            files: {
+                with: {
+                    file: {
+                        columns: {name: true, contentType: true, markdown: true}
+                    }
+                }
+            }
+        }
+    })
+    const files = raw ? raw.files.map(f => f.file) : [];
+
 
     const result = streamText({
-        model: google("gemini-3-flash-preview"), // "google/gemini-3-flash-preview",
+        model: constructProvider(chatModels[0]).chat(chatModels[0].name),
         output: Output.object({ schema: noteMetaSchema }),
-        tools: {
-            file_search: google.tools.fileSearch({fileSearchStoreNames: [context.fileStoreId], metadataFilter: fileSearchMetaQuery(context.fileIds)}),
-        },
         system: `
         ## Output Guidelines
             ### Topic Naming Rules
@@ -55,7 +65,6 @@ export async function POST(req: Request) {
                 Source about history:
                 - Title: "Causes of World War I"
                 - Topics: ["Alliance Systems in Europe", "Imperial Rivalries", "Nationalism and Militarism", "The Assassination Trigger"]
-        
         ## Edge Cases
             ### If the document has clear section headers:
             - Use them as a starting point, but consolidate if there are too many
@@ -77,7 +86,12 @@ export async function POST(req: Request) {
             : context.length == "detailed" ? "8-12 specific topics that cover every aspects of the source, enabling a comprehensive set of notes for readers with no prior knowledge."
             : "5-8 balanced topics that cover the main themes and some specific details of the source, allowing for moderately detailed notes for readers with some prior knowledge."
         }    
-        In addition, the user provided the following instructions to guide your topic generation: ${context.instructions}`,
+        In addition, the user provided the following instructions to guide your topic generation: ${context.instructions}\
+        
+        ## File Sources
+        Provided below are the files the user uploaded as soruces. Use them to ground your topic generation and ensure all topics are supported by the content in these files.
+        ${files.map(f => `### ${f.name} (${f.contentType})\n\n${f.markdown}`).join("\n\n")}
+        `,
         providerOptions: {
             google: {
                 thinkingConfig: {

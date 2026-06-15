@@ -17,7 +17,9 @@ export default async function DemoLayout({children, params}: {children: ReactNod
         with: {
             files: {
                 with: {
-                    file: true
+                    file: {
+                        columns: {id: true, name: true, contentType: true}
+                    }
                 }
             }
         }

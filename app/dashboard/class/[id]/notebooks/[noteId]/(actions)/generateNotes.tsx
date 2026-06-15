@@ -140,8 +140,7 @@ export async function generateNotes({noteId, instructions, fileIds, topicWeights
         }, {
             body: {
                 topicWeights: topicWeights,
-                fileIds,
-                fileStoreId: fileStoreId,
+                id: noteId,
             }
         })
     } else {

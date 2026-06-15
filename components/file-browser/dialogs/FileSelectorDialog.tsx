@@ -51,7 +51,7 @@ export default function FileSelectorDialog({ open, setOpen, onConfirm }: { open:
             }
             setOpen(x)
         }}>
-            <DialogContent id="fileSelectorDialog" className="sm:max-w-[400px] h-full max-h-[95vh] sm:h-max flex flex-col">
+            <DialogContent id="fileSelectorDialog" className="sm:max-w-2xl h-full max-h-[95vh] sm:h-max flex flex-col">
                 <DialogHeader className="h-max">
                     <DialogTitle>Mesa Drive</DialogTitle>
                     <DialogDescription>Select files from Mesa Drive to add.</DialogDescription>

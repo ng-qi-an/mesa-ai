@@ -6,6 +6,7 @@ import { Source, Sources, SourcesContent, SourcesTrigger } from "../ai-elements/
 import { CopyIcon, RefreshCcwIcon } from "lucide-react";
 import { chatModels, ChatUIMessage } from "@/lib/utils/models";
 import { ModelSelectorLogo } from "../ai-elements/model-selector";
+import { Shimmer } from "../ai-elements/shimmer";
 
 export default function ChatMessageContent({message, isLastMessage, isStreaming}: {message: ChatUIMessage, isLastMessage: boolean, isStreaming: boolean}){
   const reasoningParts = message.parts.filter((part) => part.type === "reasoning");
@@ -38,6 +39,30 @@ export default function ChatMessageContent({message, isLastMessage, isStreaming}
             <ReasoningContent>{reasoningParts.map((part) => part.text).join("\n\n")}</ReasoningContent>
           </Reasoning>
         )}
+        {message.parts.map(part => {
+            switch (part.type) {
+            case 'tool-searchDocuments':
+                switch (part.state) {
+                case 'input-streaming':
+                    return <Shimmer key={part.toolCallId+part.state}>Searching...</Shimmer>;
+                case 'input-available':
+                    return <Shimmer key={part.toolCallId+part.state}>{`Searching for &quot;${(part.input as { query: string }).query}&quot;`}</Shimmer>;
+                case 'output-available':
+                    return <pre key={part.toolCallId+part.state}>Searched for &quot;{(part.input as { query: string }).query}&quot;</pre>;
+                case 'output-error':
+                    return <div key={part.toolCallId+part.state}>Error: {part.errorText}</div>;
+                }
+            case 'tool-listDocuments':
+                switch (part.state) {
+                case 'input-available':
+                    return <pre key={part.toolCallId+part.state}>Retrieving document list...</pre>;
+                case 'output-available':
+                    return <pre key={part.toolCallId+part.state}>Retrieved document list</pre>;
+                case 'output-error':
+                    return <div key={part.toolCallId+part.state}>Error: {part.errorText}</div>;
+                }
+            }
+        })}
         {textParts.map((part, i) => {
             return (
               <MessageResponse key={`${message.id}-${i}`}>

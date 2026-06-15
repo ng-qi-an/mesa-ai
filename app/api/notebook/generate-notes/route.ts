@@ -2,15 +2,16 @@ import { streamText, UIMessage, convertToModelMessages } from 'ai';
 import { google, GoogleGenerativeAIProviderOptions } from "@ai-sdk/google";
 import { auth } from '@/lib/auth';
 import { headers } from 'next/headers';
-import { fileSearchMetaQuery } from '@/lib/utils/models';
+import { chatModels, fileSearchMetaQuery } from '@/lib/utils/models';
+import { db } from '@/lib/db';
+import constructProvider from '@/lib/utils/constructProvider';
 
 // Allow streaming responses up to 5 minutes
 export const maxDuration = 300;
 
 type NotebookRequestType = {
     topicWeights?: Record<string, number>;
-    fileStoreId: string;
-    fileIds: string[];
+    id: string;
     messages: UIMessage[];
 }
 
@@ -26,29 +27,40 @@ export async function POST(req: Request) {
     if (!context.topicWeights){
         throw new Error("Missing topic weights");
     }
-    if (!context.fileStoreId) {
-        throw new Error("File store ID is required");
-    }
-    if (!context.fileIds || context.fileIds.length === 0) {
-        throw new Error("At least one file ID is required");
+    if (!context.id) {
+        throw new Error("Notebook ID is required");
     }
     const topicWeights = context.topicWeights!
+    const raw = await db.query.notebook.findFirst({
+        columns: {},
+        where: (notebook, {eq, and})=> and(eq(notebook.id, context.id), eq(notebook.userId, session.user.id)),
+        with: {
+            files: {
+                with: {
+                    file: {
+                        columns: {name: true, contentType: true, markdown: true}
+                    }
+                }
+            }
+        }
+    })
+    const files = raw ? raw.files.map(f => f.file) : [];
 
     console.log("Using topic weights:", topicWeights);
-    console.log("Using file store:", context.fileStoreId);
+    console.log("Using notebook:", context.id);
     console.log("Generating notes for user:", session.user.id);
-    console.log("Meta query", context.fileIds.map(id => `file_id="${id}"`).join(" OR "));
     const result = streamText({
-        model: google("gemini-3-flash-preview"), // "google/gemini-3-flash-preview",
+        model: constructProvider(chatModels[0]).chat(chatModels[0].name), // "google/gemini-3-flash-preview",
+        system: `You are an intelligent note-taking assistant that will generate structured notes. To guide your notes, you will be provided with files. You will use those files, in conjunction with the user's instructions, to generate a set of content-guided structred notes.
+        ## File sources
+        Below are the files the user uploaded as sources. Use them to ground your note generation and ensure all notes are supported by the content in these files.
+        ${files.map(f => `### ${f.name} (${f.contentType})\n\n${f.markdown}`).join("\n\n")}
+        `,
         messages: await convertToModelMessages(context.messages),
-        tools: {
-            file_search: google.tools.fileSearch({fileSearchStoreNames: [context.fileStoreId], metadataFilter: fileSearchMetaQuery(context.fileIds)}),
-        },
         providerOptions: {
             google: {
                 thinkingConfig: {
                     thinkingLevel: "minimal",
-                    // thinkingBudget: 0
                 },
             } satisfies GoogleGenerativeAIProviderOptions
         }

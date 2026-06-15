@@ -33,6 +33,7 @@ import ChatMessageContent from "@/components/chat/ChatMessageContent";
 import ChatActionsDropdown from "./ChatActionsDropdown";
 import { allowedMimeTypes } from "@/lib/utils";
 import { useClass } from "@/components/providers/class-provider";
+import { chatModels, ThinkingLevels } from "@/lib/utils/models";
 
 export default function ChatMessagesPanel({setSelectedChatId, initialChat}: {setSelectedChatId: (chat: string) => void, initialChat: ChatSelect}){
     const noteCtx = useNotebook();
@@ -42,7 +43,8 @@ export default function ChatMessagesPanel({setSelectedChatId, initialChat}: {set
     const [files, setFiles] = useState<ChatAttachmentType[]>([]);
     const [previousFiles, setPreviousFiles] = useState<ChatAttachmentType[]>([]);
     const [previousText, setPreviousText] = useState<string>("");
-    const [thinkingLevel, setThinkingLevel] = useState("minimal");
+    const [thinkingLevel, setThinkingLevel] = useState<ThinkingLevels>("low");
+    const [selectedModel, setSelectedModel] = useState<string>(chatModels[0].name);
     const { messages, sendMessage, setMessages, status, stop } = useChat({
         transport: new DefaultChatTransport({
             api: '/api/notebook/chat',
@@ -50,7 +52,6 @@ export default function ChatMessagesPanel({setSelectedChatId, initialChat}: {set
         messages: chat.messages,
         onFinish: async ({messages}) => {
             setMessages(messages);
-            await saveToChat(chat.id, { messages });
         }
     }); 
     useEffect(()=>{
@@ -77,6 +78,15 @@ export default function ChatMessagesPanel({setSelectedChatId, initialChat}: {set
                 <Separator className="mb-2" />
                 <Conversation className="relative min-h-0">
                     <ConversationContent>
+                        {(status == "submitted" || (status == "streaming" && messages.at(-1)?.parts.length == 0)) &&
+                        <Message from="assistant">
+                            <MessageContent className="flex flex-row items-center gap-3">
+                                <Logo type="favicon" className="size-4 invert" />
+                                <Shimmer>
+                                    Analysing..
+                                </Shimmer>
+                            </MessageContent>
+                        </Message>}
                         {(status == "ready" && messages.length === 0) ? (
                         <ConversationEmptyState
                             description="Messages will appear here as the conversation progresses."
@@ -92,15 +102,6 @@ export default function ChatMessagesPanel({setSelectedChatId, initialChat}: {set
                             />
                         </Message>
                         ))}
-                        {status == "submitted" &&
-                            <Message from="assistant">
-                                <MessageContent className="flex flex-row items-center gap-3">
-                                    <Logo type="favicon" className="size-4 invert" />
-                                    <Shimmer>
-                                        Analysing..
-                                    </Shimmer>
-                                </MessageContent>
-                            </Message>}
                     </ConversationContent>
                     <ConversationScrollButton />
                 </Conversation>
@@ -140,7 +141,7 @@ export default function ChatMessagesPanel({setSelectedChatId, initialChat}: {set
                         // noteCtx.setCache(newCache.name!, noteCtx.files.map(f=>f.id));
                         // await SaveToNotebook(noteCtx.noteId, {cache: {name: newCache.name!, fileIds: noteCtx.files.map(f=>f.id)}});
 
-                        const r = await SendChatMessage({message, files, sendMessage, thinkingLevel, chatId: chat.id, bodyOptions: {fileStoreId: _class.fileStoreId, fileIds: noteCtx.files.map(f=>f.id), subject: _class.subject}});
+                        const r = await SendChatMessage({message, files, sendMessage, thinkingLevel, selectedModel, chatId: chat.id, bodyOptions: {noteId: noteCtx.noteId, subject: _class.subject}});
                         console.log("SendChatMessage result:", r);
                         if (r === "failed_uploads") {
                             toast.warning("Some files failed to upload.");
@@ -160,7 +161,7 @@ export default function ChatMessagesPanel({setSelectedChatId, initialChat}: {set
                         value={text}
                         />
                     </PromptInputBody>
-                    <ChatInputFooter files={files} setFiles={setFiles} text={text} thinkingLevel={thinkingLevel} setThinkingLevel={setThinkingLevel} 
+                    <ChatInputFooter selectedModel={selectedModel} setSelectedModel={setSelectedModel} files={files} setFiles={setFiles} text={text} thinkingLevel={thinkingLevel} setThinkingLevel={setThinkingLevel} 
                         onStop={()=>{
                             stop();
                             setText(previousText);

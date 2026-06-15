@@ -64,10 +64,9 @@ export function useGenerateMeta(){
         setInstructions(customInstructions);
         setLength(customLength);
         metaSubmit({
-            fileStoreId: fileStoreId!,
             instructions: customInstructions,
             length: customLength,
-            fileIds: customFiles.map(f=>f.id),
+            id: noteId,
         })
     }
     return { generateMeta };
