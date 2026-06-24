@@ -1,0 +1,33 @@
+'use client';
+import { useTabs } from "@/components/providers/tabs-provider";
+import { TabItem } from "./(tabbar)/TabItem";
+import { TabList } from "./(tabbar)/TabList";
+import NotebookPanel from "./NotebookPanel";
+import { Button } from "@/components/ui/button";
+import { Sidebar } from "lucide-react";
+import { useSidebar } from "@/components/ui/sidebar";
+import { useNotebook } from "@/components/providers/notebook-provider";
+import { DraggableTabItem } from "./(tabbar)/DraggableTabItem";
+
+export default function MainPanel() {
+    const { mainTabs } = useTabs();
+    const { isMobile } = useSidebar();
+    const {setCollapsedRightSidebar, collapsedRightSidebar} = useNotebook();
+    return (
+        <div className="flex flex-col h-full w-full rounded-t-lg border border-b-0 border-neutral-200 dark:border-neutral-900 bg-card h-full">
+            <TabList className="w-full h-max shrink-y-0">
+                <TabItem label={"Notebook"} id={"notebook"} group={"main"} />
+                {mainTabs.map((tab, index) => (
+                    <DraggableTabItem key={tab.id} label={tab.label} id={tab.id} index={index} group={"main"} />
+                ))}
+                <div className="flex-1"/>
+                {!isMobile && <div className="flex items-center">
+                    <Button onClick={()=> setCollapsedRightSidebar(!collapsedRightSidebar)} size={'icon-sm'} className="text-muted-foreground mr-2" variant={'ghost'}>
+                        <Sidebar/>
+                    </Button>
+                </div>}
+            </TabList>
+            <NotebookPanel />
+        </div>
+    )
+}

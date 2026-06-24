@@ -3,6 +3,8 @@
 @import "shadcn/tailwind.css";
 @source "../node_modules/@streamdown/math/dist/*.js";
 @plugin "@tailwindcss/typography";
+@source "../node_modules/@blocknote/shadcn";
+
 
 @custom-variant dark (&:is(.dark *));
 
@@ -266,4 +268,8 @@
 
 .streamdown ol, .streamdown ul {
   list-style-position: outside;
+}
+
+.bn-root {
+    --bn-colors-editor-background: var(--card) !important;
 }

@@ -6,30 +6,26 @@ import ChatsPanel from "../(apps)/(chats)/ChatsPanel";
 import { useNotebook } from "@/components/providers/notebook-provider";
 import QuizControllerPanel from "../(apps)/(quiz)/QuizControllerPanel";
 import { useSidebar } from "@/components/ui/sidebar";
+import { TabList } from "../(tabbar)/TabList";
+import { useTabs } from "@/components/providers/tabs-provider";
+import { TabItem } from "../(tabbar)/TabItem";
+import { DraggableTabItem } from "../(tabbar)/DraggableTabItem";
 
 export default function RightNotebookSidebar(){
     const noteCtx = useNotebook();
     const {isMobile} = useSidebar();
     const [sidebarTool, setSidebarTool] = useState("");
-    return <motion.div 
-        layout
-        animate={!isMobile ? {
-            width: noteCtx.collapsedRightSidebar ? 0 : 400,
-            opacity: noteCtx.collapsedRightSidebar ? 0 : 1
-        } : {}}
-        transition={{ type: "spring", bounce: 0.15, duration: 0.4 }}
-        className="h-full flex flex-col gap-3 shrink-0">
-        <div className="w-full sm:w-[400px] h-full flex flex-col gap-3">
-            
-            {sidebarTool == "Chat" ?
-                <ChatsPanel setSidebarTool={setSidebarTool}/>
-            : sidebarTool == "Quiz" ?
-                <QuizControllerPanel setSidebarTool={setSidebarTool}/>
-            : <>
-                {!isMobile && <SourcesPanel/>}
-                <AppsPanel setSidebarTool={setSidebarTool}/>
-            </>
-            }
+    const { sideTabs } = useTabs();
+    return <div className="h-full flex flex-col gap-3">
+        <div className="flex flex-col h-full rounded-tl-lg border border-r-0 border-b-0 border-neutral-200 dark:border-neutral-900 bg-card h-full">
+            <TabList>
+                <TabItem label={"Chat"} id={"chat"} group={"side"} />
+                <TabItem label={"Library"} id={"library"} group={"side"} />
+                {sideTabs.map((tab, index) => (
+                    <DraggableTabItem key={tab.id} label={tab.label} id={tab.id} index={index} group={"side"} />
+                ))}
+            </TabList>
+            <AppsPanel setSidebarTool={setSidebarTool}/>
         </div>
-    </motion.div>
+    </div>
 }
