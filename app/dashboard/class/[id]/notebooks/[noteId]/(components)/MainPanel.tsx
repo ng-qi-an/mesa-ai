@@ -8,6 +8,7 @@ import { Sidebar } from "lucide-react";
 import { useSidebar } from "@/components/ui/sidebar";
 import { useNotebook } from "@/components/providers/notebook-provider";
 import { DraggableTabItem } from "./(tabbar)/DraggableTabItem";
+import TabContent from "./(tabbar)/TabContent";
 
 export default function MainPanel() {
     const { mainTabs } = useTabs();
@@ -15,7 +16,7 @@ export default function MainPanel() {
     const {setCollapsedRightSidebar, collapsedRightSidebar} = useNotebook();
     return (
         <div className="flex flex-col h-full w-full rounded-t-lg border border-b-0 border-neutral-200 dark:border-neutral-900 bg-card h-full">
-            <TabList className="w-full h-max shrink-y-0">
+            <TabList className="w-full h-max shrink-y-0 z-30">
                 <TabItem label={"Notebook"} id={"notebook"} group={"main"} />
                 {mainTabs.map((tab, index) => (
                     <DraggableTabItem key={tab.id} label={tab.label} id={tab.id} index={index} group={"main"} />
@@ -27,7 +28,16 @@ export default function MainPanel() {
                     </Button>
                 </div>}
             </TabList>
-            <NotebookPanel />
+            <div className="flex-1 relative h-full w-full">
+                <TabContent tabId={"notebook"} group={"main"}>
+                    <NotebookPanel />
+                </TabContent>
+                {mainTabs.map((tab) => (
+                    <TabContent key={tab.id} tabId={tab.id} group={"main"}>
+                        {tab.component}
+                    </TabContent>
+                ))}
+            </div>
         </div>
     )
 }

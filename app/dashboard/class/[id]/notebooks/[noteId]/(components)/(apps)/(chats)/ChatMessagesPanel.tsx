@@ -59,7 +59,7 @@ export default function ChatMessagesPanel({setSelectedChatId, initialChat}: {set
     }, [])
 
     return <>
-        <Card size="sm" className={`rounded-md ring-neutral-200 dark:ring-neutral-900 h-full pb-2!`}>
+        <div className={`bg-card h-full pb-2!`}>
             <CardHeader className="items-center group flex cursor-pointer relative">
                 <div className="flex w-full items-center gap-1" onClick={()=> setSelectedChatId("")}>
                     <ChevronLeft onClick={()=> setSelectedChatId("")} className="text-muted-foreground group-hover:text-foreground size-4"/>
@@ -172,6 +172,6 @@ export default function ChatMessagesPanel({setSelectedChatId, initialChat}: {set
                     />
                 </PromptInput>
             </div>
-        </Card>
+        </div>
     </>
 }

@@ -1,15 +1,13 @@
-import { motion } from "motion/react";
-import SourcesPanel from "../SourcesPanel";
 import AppsPanel from "../AppsPanel";
 import { useState } from "react";
 import ChatsPanel from "../(apps)/(chats)/ChatsPanel";
 import { useNotebook } from "@/components/providers/notebook-provider";
-import QuizControllerPanel from "../(apps)/(quiz)/QuizControllerPanel";
 import { useSidebar } from "@/components/ui/sidebar";
 import { TabList } from "../(tabbar)/TabList";
 import { useTabs } from "@/components/providers/tabs-provider";
 import { TabItem } from "../(tabbar)/TabItem";
 import { DraggableTabItem } from "../(tabbar)/DraggableTabItem";
+import TabContent from "../(tabbar)/TabContent";
 
 export default function RightNotebookSidebar(){
     const noteCtx = useNotebook();
@@ -22,10 +20,22 @@ export default function RightNotebookSidebar(){
                 <TabItem label={"Chat"} id={"chat"} group={"side"} />
                 <TabItem label={"Library"} id={"library"} group={"side"} />
                 {sideTabs.map((tab, index) => (
-                    <DraggableTabItem key={tab.id} label={tab.label} id={tab.id} index={index} group={"side"} />
+                    <DraggableTabItem key={tab.id} label={tab.label} id={tab.id} closable={true} index={index} group={"side"} />
                 ))}
             </TabList>
-            <AppsPanel setSidebarTool={setSidebarTool}/>
+            <div className="flex-1 relative h-full w-full">
+                <TabContent tabId={"chat"} group={"side"}>
+                    <ChatsPanel setSidebarTool={setSidebarTool}/>
+                </TabContent>
+                <TabContent tabId={"library"} group={"side"}>
+                    <AppsPanel setSidebarTool={setSidebarTool}/>
+                </TabContent>
+                {sideTabs.map((tab) => (
+                    <TabContent key={tab.id} tabId={tab.id} group={"side"}>
+                        {tab.component}
+                    </TabContent>
+                ))}
+            </div>
         </div>
     </div>
 }

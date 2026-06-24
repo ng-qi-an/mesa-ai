@@ -32,7 +32,7 @@ export default function AppsPanel({setSidebarTool}: {setSidebarTool: (tool: stri
             disabled: true
         },
     ]
-    return <div className="h-full pb-2 p-4 overflow-auto">
+    return <div className="h-full pb-2 p-4 overflow-auto bg-card">
         <div className="grid grid-cols-2 gap-2 h-max w-full mb-2">
             {Apps.map((tool) => (
                 <div key={tool.name} className={`w-full px-4 py-3 flex flex-col group cursor-pointer rounded-md gap-2 bg-secondary/50 ${tool.disabled ? 'opacity-50 cursor-default pointer-events-none' : 'hover:bg-secondary'}`} onClick={() =>{ if (!tool.disabled) { noteCtx?.setCollapsedSources(true); setSidebarTool(tool.name) } }}>

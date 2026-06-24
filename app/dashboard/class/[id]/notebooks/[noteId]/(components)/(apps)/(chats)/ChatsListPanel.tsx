@@ -15,11 +15,14 @@ import createChat from "@/lib/actions/chat/createChat";
 import { relativeTime } from "@/lib/utils/relativeTime";
 import ChatActionsDropdown from "./ChatActionsDropdown";
 import { useParams } from "next/navigation";
+import { useTabs } from "@/components/providers/tabs-provider";
+import ChatMessagesPanel from "./ChatMessagesPanel";
 export default function ChatsPanel({setSidebarTool, chatsList, setChatsList, selectedChatId, setSelectedChatId}: {setSidebarTool: (tool: string) => void, chatsList: ChatSelect[], setChatsList: (chats: ChatSelect[]) => void, selectedChatId: string, setSelectedChatId: (id: string) => void}){
     const noteCtx = useNotebook();
     const { id } = useParams();
     const [loading, setLoading] = useState(true);
     const [creating, setCreating] = useState(false);
+    const {addOrGoToTab} = useTabs();
     
     async function syncChatsList(){
         setLoading(true);
@@ -50,35 +53,13 @@ export default function ChatsPanel({setSidebarTool, chatsList, setChatsList, sel
         }
     }
 
-    return <Card size="sm" className={`rounded-md  ring-neutral-200 dark:ring-neutral-900 h-full`}>
-        <CardHeader className="items-center group flex cursor-pointer relative">
-            <div className="flex w-full items-center gap-1" onClick={()=> setSidebarTool("")}>
-                <ChevronLeft className="text-muted-foreground group-hover:text-foreground size-4"/>
-                <CardTitle 
-                className="ml-2 text-muted-foreground group-hover:text-foreground w-full">
-                    Chat
-                </CardTitle>
-            </div>
-            <Tooltip>
-                <TooltipTrigger asChild>
-                    <span className="inline-block w-fit absolute right-4">
-                        <Button disabled={noteCtx.files.length < 1 || loading || creating} size={'icon-sm'} className="text-muted-foreground" onClick={createHandler} variant={'ghost'}>
-                            <MessageSquarePlus/>
-                        </Button>
-                    </span>
-                </TooltipTrigger>
-                <TooltipContent side="bottom" align="end">
-                    {noteCtx.files.length > 0 ? <p>New chat</p> : <p>Chats can't be created without sources.</p>}
-                </TooltipContent>
-            </Tooltip>
-        </CardHeader>
+    return <div className={`bg-card h-full`}>
         <div className="h-full">
-            <Separator className="mb-2" />
             <div className="h-full px-2 pb-2 flex flex-col pt-2 gap-1 overflow-auto">
                 {loading ? [...Array(5)].map((_, index) => (
                     <Skeleton className="h-12 my-0.5" key={index}/>
                 )) : chatsList.length > 0 ? chatsList.map((chat, index) => 
-                    <div onClick={()=> setSelectedChatId(chat.id)} key={index} className="cursor-pointer flex items-center gap-3 group hover:bg-secondary px-3 py-2 rounded-md w-full relative">
+                    <div onClick={()=> addOrGoToTab({label: chat.name, id: chat.id, component: <ChatMessagesPanel initialChat={chat} setSelectedChatId={setSelectedChatId} />}, "side")} key={index} className="cursor-pointer flex items-center gap-3 group hover:bg-secondary px-3 py-2 rounded-md w-full relative">
                         <MessageSquare className="text-muted-foreground group-hover:text-foreground size-4"/>
                         <div className="flex flex-col pl-1">
                             <p className="truncate text-sm w-full font-medium">
@@ -92,7 +73,6 @@ export default function ChatsPanel({setSidebarTool, chatsList, setChatsList, sel
                     </div>) : 
                     <Empty>
                         <EmptyHeader>
-                            
                         <EmptyMedia variant={"icon"}>
                             <MessageSquare/>
                         </EmptyMedia>
@@ -105,5 +85,5 @@ export default function ChatsPanel({setSidebarTool, chatsList, setChatsList, sel
                     </Empty>}
             </div>
         </div>
-    </Card>
+    </div>
 }

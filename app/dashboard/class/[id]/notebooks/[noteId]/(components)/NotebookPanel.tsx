@@ -129,34 +129,35 @@ export default function NotebookPanel(){
                 <p>"Sync sources" to update the notebook with latest sources.</p>
             </TooltipContent>
         </Tooltip>}
-        
-        <Tooltip open={(noteCtx.notesHistory.length === 0 || noteCtx?.isGenerating) ? undefined : false}>
-            <TooltipTrigger asChild>
-                <span className="inline-block w-fit absolute right-22">
-                    <Button disabled={noteCtx.notesHistory.length === 0 || noteCtx?.isGenerating} onClick={()=> {
-                        setShowNoteSettings(true);
-                    }} size={'icon-sm'} className="text-muted-foreground" variant={'ghost'}>
-                        {noteCtx?.isGenerating ? <Spinner/> : <Settings2/>}
-                    </Button>
-                </span>
-            </TooltipTrigger>
-            <TooltipContent side="bottom" align="end">
-                <p>Note settings can't be changed {noteCtx?.isGenerating ? 'while generating' : 'before generating notes'}.</p>
-            </TooltipContent>
-        </Tooltip>
-        <Tooltip>
-            <TooltipTrigger asChild>
-                <div className="absolute right-13 flex items-center gap-2">
-                    <span className="text-xs text-muted-foreground select-none">
-                        <Button onClick={()=> setForceLightNotebook(!forceLightNotebook)} disabled={resolvedTheme !== "dark"} variant={"ghost"} size={"icon-sm"}>{forceLightNotebook && resolvedTheme === "dark" ? <Moon/> : <Sun/>}</Button>
-                    </span>
-                </div>
-            </TooltipTrigger>
-            <TooltipContent side="bottom" align="end">
-                <p>{resolvedTheme === "dark" ? "Force light colors in notebook." : "Available only while dark mode is active."}</p>
-            </TooltipContent>
-        </Tooltip>
-        <div className="h-full gap-2 mt-2 flex flex-col w-full overflow-y-auto overflow-x-hidden relative">
+        <div className="h-full gap-2 flex flex-col w-full overflow-y-auto overflow-x-hidden relative bg-card">
+            <div className="absolute left-0 bottom-0 bg-card p-1 pb-2 border-t border-r rounded-tr-lg flex flex-col z-20 items-center gap-2">
+                <Tooltip open={(noteCtx.notesHistory.length === 0 || noteCtx?.isGenerating) ? undefined : false}>
+                    <TooltipTrigger asChild>
+                        <span className="inline-block w-fit">
+                            <Button disabled={noteCtx.notesHistory.length === 0 || noteCtx?.isGenerating} onClick={()=> {
+                                setShowNoteSettings(true);
+                            }} size={'icon-sm'} className="text-muted-foreground" variant={'ghost'}>
+                                {noteCtx?.isGenerating ? <Spinner/> : <Settings2/>}
+                            </Button>
+                        </span>
+                    </TooltipTrigger>
+                    <TooltipContent side="right" align="end">
+                        <p>Note settings can't be changed {noteCtx?.isGenerating ? 'while generating' : 'before generating notes'}.</p>
+                    </TooltipContent>
+                </Tooltip>
+                <Tooltip>
+                    <TooltipTrigger asChild>
+                        <div className="flex items-center gap-2">
+                            <span className="text-xs text-muted-foreground select-none">
+                                <Button onClick={()=> setForceLightNotebook(!forceLightNotebook)} disabled={resolvedTheme !== "dark"} variant={"ghost"} size={"icon-sm"}>{forceLightNotebook && resolvedTheme === "dark" ? <Moon/> : <Sun/>}</Button>
+                            </span>
+                        </div>
+                    </TooltipTrigger>
+                    <TooltipContent side="right" align="end">
+                        <p>{resolvedTheme === "dark" ? "Force light colors in notebook." : "Available only while dark mode is active."}</p>
+                    </TooltipContent>
+                </Tooltip>
+            </div>
             {(noteCtx?.notesHistory.length! > 0 && noteCtx?.notesStatus != "submitted" && !noteCtx?.isStoringFiles) ? 
             <AnimatePresence>
                 <div ref={contentRef} className={`h-full overflow-auto pb-4 pt-4  ${useLightNotebookTheme ? "light" : "dark"} min-w-full`}>
