@@ -129,7 +129,7 @@ export default function NotebookPanel(){
                 <p>"Sync sources" to update the notebook with latest sources.</p>
             </TooltipContent>
         </Tooltip>}
-        <div className="h-full gap-2 flex flex-col w-full overflow-y-auto overflow-x-hidden relative bg-card">
+        <div className="h-full gap-2 flex flex-col w-full overflow-y-auto relative bg-card">
             <div className="absolute left-0 bottom-0 bg-card p-1 pb-2 border-t border-r rounded-tr-lg flex flex-col z-20 items-center gap-2">
                 <Tooltip open={(noteCtx.notesHistory.length === 0 || noteCtx?.isGenerating) ? undefined : false}>
                     <TooltipTrigger asChild>
@@ -166,6 +166,7 @@ export default function NotebookPanel(){
                     <Separator className="mb-8"/>
                     <BlockNoteView
                         theme={useLightNotebookTheme ? "light" : "dark"}
+                        className={useLightNotebookTheme ? "light" : "dark"}
                         editor={editor}
                         shadCNComponents={{
                             // Pass modified ShadCN components from your project here.

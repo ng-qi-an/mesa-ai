@@ -1,6 +1,6 @@
 import { relations } from "drizzle-orm";
 import { account, passkey, session, user } from "./auth-schema";
-import { chatFiles, chats, classes, fileChunks, files, notebook, notebookFiles, topics, userMeta } from "./schema";
+import { chatFiles, chats, classes, fileChunks, files, notebook, notebookFiles, quizzes, topics, userMeta } from "./schema";
 
 export const userRelations = relations(user, ({ many, one }) => ({
     sessions: many(session),
@@ -104,6 +104,7 @@ export const notebookRelations = relations(notebook, ({ one, many }) => ({
         references: [topics.id],
     }),
     chats: many(chats),
+    quizzes: many(quizzes),
     files: many(notebookFiles)
 }))
 
@@ -134,5 +135,16 @@ export const notebookFilesRelations = relations(notebookFiles, ({ one }) => ({
     file: one(files, {
         fields: [notebookFiles.fileId],
         references: [files.id],
+    }),
+}))
+
+export const quizzesRelations = relations(quizzes, ({ one }) => ({
+    user: one(user, {
+        fields: [quizzes.userId],
+        references: [user.id],
+    }),
+    notebook: one(notebook, {
+        fields: [quizzes.notebookId],
+        references: [notebook.id],
     }),
 }))

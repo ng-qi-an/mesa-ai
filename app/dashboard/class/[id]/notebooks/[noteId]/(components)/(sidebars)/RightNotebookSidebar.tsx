@@ -8,6 +8,7 @@ import { useTabs } from "@/components/providers/tabs-provider";
 import { TabItem } from "../(tabbar)/TabItem";
 import { DraggableTabItem } from "../(tabbar)/DraggableTabItem";
 import TabContent from "../(tabbar)/TabContent";
+import LibraryPanel from "../(library)/LibraryPanel";
 
 export default function RightNotebookSidebar(){
     const noteCtx = useNotebook();
@@ -28,7 +29,7 @@ export default function RightNotebookSidebar(){
                     <ChatsPanel setSidebarTool={setSidebarTool}/>
                 </TabContent>
                 <TabContent tabId={"library"} group={"side"}>
-                    <AppsPanel setSidebarTool={setSidebarTool}/>
+                    <LibraryPanel/>
                 </TabContent>
                 {sideTabs.map((tab) => (
                     <TabContent key={tab.id} tabId={tab.id} group={"side"}>

@@ -9,7 +9,7 @@ export function TabItem({label, id, group, ref, closable}: {label: string, id: s
   return (
     <button
       ref={ref}
-      className={cn(`px-5 pb-2 pt-3 ${closable && "pr-2 pl-2"} border-b border-transparent group text-sm font-medium flex items-center -mb-px shrink-0`, activeTab == id ? "border-primary text-foreground/90 " : "text-muted-foreground hover:text-foreground/90")}
+      className={cn(`px-5 pb-2 pt-3 ${closable && "pr-2 pl-2"} border-b-2 border-transparent group text-sm font-medium flex items-center -mb-px shrink-0`, activeTab == id ? "border-primary/80 dark:border-foreground/80 text-foreground/90 " : "text-muted-foreground hover:text-foreground/90")}
       onClick={()=> {console.log("tabbed clicked"); setActiveTab(id)}}
     >
       <span className="truncate max-w-30">

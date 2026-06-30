@@ -1,6 +1,7 @@
 import NotebookProvider from "@/components/providers/notebook-provider";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
+import { FileSelect } from "@/lib/schemas/schema";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import {ReactNode} from "react";
@@ -18,13 +19,13 @@ export default async function DemoLayout({children, params}: {children: ReactNod
             files: {
                 with: {
                     file: {
-                        columns: {id: true, name: true, contentType: true}
+                        columns: {id: true, name: true, contentType: true, dateModified: true, dateCreated: true}
                     }
                 }
             }
         }
     })
-    const data = raw ? { ...raw, files: raw.files.map(f => f.file) } : undefined
+    const data = raw ? { ...raw, files: raw.files.map(f => f.file as FileSelect) } : undefined
     if (!data){
         return redirect(`/dashboard/class/${id}/notebooks`)
     }
