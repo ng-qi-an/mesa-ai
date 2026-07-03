@@ -73,7 +73,7 @@ export default function NotebookPanel(){
 
     // Track which heading is visible using IntersectionObserver
     useEffect(() => {
-        if (noteCtx?.notesHistory.length <= 1 || !contentRef.current) return;
+        if (noteCtx?.notesHistory.length <= 1 || !contentRef.current || !editor) return;
         const blocks = editor.tryParseMarkdownToBlocks(noteCtx?.getActualNotes(noteCtx.notesHistory));
         editor.replaceBlocks(editor.document, blocks);
         const headings = contentRef.current.querySelectorAll('h2[id], h1[id]');
@@ -101,23 +101,10 @@ export default function NotebookPanel(){
         headings.forEach(heading => observer.observe(heading));
 
         return () => observer.disconnect();
-    }, [noteCtx?.notesHistory])
+    }, [noteCtx?.notesHistory, editor])
     return  noteCtx && <> 
         <NoteSettingsDialog open={showNoteSettings} onOpenChange={setShowNoteSettings}/>
-        {(noteCtx.isStoringFiles || noteCtx.isMetaLoading || noteCtx.isNotesLoading || noteCtx.isEmbeddingImages) ? 
-        <Shimmer duration={3} className="text-sm ml-auto mr-29">
-            {noteCtx?.isStoringFiles ? 
-                "Extracting content.."
-            : noteCtx?.isMetaLoading ?
-                "Generating topics..."
-            : noteCtx?.isNotesLoading ?
-                "Writing notes..."
-            : noteCtx?.isEmbeddingImages ?
-                "Embedding images..."
-            : ""
-            }
-        </Shimmer>
-        : noteCtx.sourceFiles.length > 0 &&  !checkFileStoreMatch(noteCtx.sourceFiles, noteCtx.files.map(f=> f.id)) && 
+        {noteCtx.sourceFiles.length > 0 &&  !checkFileStoreMatch(noteCtx.sourceFiles, noteCtx.files.map(f=> f.id)) && 
         <Tooltip>
             <TooltipTrigger asChild>
                 <Badge variant="destructive" className="cursor-default ml-auto mr-28">
@@ -131,7 +118,7 @@ export default function NotebookPanel(){
         </Tooltip>}
         <div className="h-full gap-2 flex flex-col w-full overflow-y-auto relative bg-card">
             <div className="absolute left-0 bottom-0 bg-card p-1 pb-2 border-t border-r rounded-tr-lg flex flex-col z-20 items-center gap-2">
-                <Tooltip open={(noteCtx.notesHistory.length === 0 || noteCtx?.isGenerating) ? undefined : false}>
+                <Tooltip open={(noteCtx.notesHistory.length === 0 || noteCtx?.isGenerating || noteCtx?.isStoringFiles || noteCtx?.isEmbeddingImages) ? undefined : false}>
                     <TooltipTrigger asChild>
                         <span className="inline-block w-fit">
                             <Button disabled={noteCtx.notesHistory.length === 0 || noteCtx?.isGenerating} onClick={()=> {
@@ -142,7 +129,17 @@ export default function NotebookPanel(){
                         </span>
                     </TooltipTrigger>
                     <TooltipContent side="right" align="end">
-                        <p>Note settings can't be changed {noteCtx?.isGenerating ? 'while generating' : 'before generating notes'}.</p>
+                        <p>{noteCtx?.isStoringFiles ? 
+                                "Extracting content.."
+                            : noteCtx?.isMetaLoading ?
+                                "Generating topics..."
+                            : noteCtx?.isNotesLoading ?
+                                "Writing notes..."
+                            : noteCtx?.isEmbeddingImages ?
+                                "Embedding images..."
+                            : "Note settings can't be changed before generating notes"
+                            }
+                        </p>
                     </TooltipContent>
                 </Tooltip>
                 <Tooltip>
@@ -168,6 +165,7 @@ export default function NotebookPanel(){
                         theme={useLightNotebookTheme ? "light" : "dark"}
                         className={useLightNotebookTheme ? "light" : "dark"}
                         editor={editor}
+                        editable={!noteCtx.isGenerating || !noteCtx.isEmbeddingImages}
                         shadCNComponents={{
                             // Pass modified ShadCN components from your project here.
                             // Otherwise, the default ShadCN components will be used.
