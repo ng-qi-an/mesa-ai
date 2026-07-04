@@ -1,7 +1,5 @@
 'use client';
-import { Card, CardHeader, CardTitle } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
-import { ChevronLeft, Menu } from "lucide-react";
+import { Maximize, Maximize2, Menu } from "lucide-react";
 import { useEffect, useState } from "react";
 import Logo from "@/components/logo";
 import {
@@ -27,7 +25,6 @@ import ChatInputFooter from "@/components/chat/ChatInputFooter";
 import SendChatMessage, { ChatAttachmentType } from "@/lib/actions/chat/sendChatMessage";
 import { toast } from "sonner";
 import { ChatSelect } from "@/lib/schemas/schema";
-import saveToChat from "@/lib/actions/chat/saveToChat";
 import ChatInputHeader from "@/components/chat/ChatInputHeader";
 import ChatMessageContent from "@/components/chat/ChatMessageContent";
 import ChatActionsDropdown from "./ChatActionsDropdown";
@@ -37,6 +34,9 @@ import { chatModels, ChatUIMessage, ThinkingLevels } from "@/lib/utils/models";
 import { Button } from "@/components/ui/button";
 import { motion } from "motion/react";
 import getChat from "@/lib/actions/chat/getChat";
+import createChat from "@/lib/actions/chat/createChat";
+import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty";
+import { useTabs } from "@/components/providers/tabs-provider";
 
 export default function ChatMessagesPanel({chatId: initialChatId, chatName: initialChatName}: {chatId?: string, chatName: string}){
     const noteCtx = useNotebook();
@@ -50,6 +50,7 @@ export default function ChatMessagesPanel({chatId: initialChatId, chatName: init
     const [previousText, setPreviousText] = useState<string>("");
     const [thinkingLevel, setThinkingLevel] = useState<ThinkingLevels>("low");
     const [selectedModel, setSelectedModel] = useState<string>(chatModels[0].name);
+    const { moveTab } = useTabs();
     const { messages, sendMessage, setMessages, status, stop } = useChat({
         transport: new DefaultChatTransport({
             api: '/api/notebook/chat',
@@ -61,7 +62,10 @@ export default function ChatMessagesPanel({chatId: initialChatId, chatName: init
     }); 
     useEffect(()=>{
         (async()=>{
-            if (!initialChatId) return;
+            if (!initialChatId) {
+                setLoadingChat(false);
+                return;
+            };
             const result = await getChat(initialChatId);
             if (!result) {
                 toast.error("Failed to load chat. Please close andf try again.");
@@ -91,6 +95,12 @@ export default function ChatMessagesPanel({chatId: initialChatId, chatName: init
                     <p className="text-sm w-full">
                         {chatName}
                     </p>
+                    <Button variant="ghost" size="icon-sm" className="text-muted-foreground shrink-0" onClick={()=>{
+                        if (!chat) return;
+                        moveTab(chat.id!, "main")
+                    }}>
+                        <Maximize2 className="size-4"/>
+                    </Button>
                 </div>
                 {chat && <ChatActionsDropdown triggerClassName="" chat={chat} onRename={(newName) => {
                     setChat({...chat, name: newName});
@@ -101,18 +111,21 @@ export default function ChatMessagesPanel({chatId: initialChatId, chatName: init
             <div className="flex-1 min-h-0 flex flex-col px-1">
                 {loadingChat ? <>
                 <div className="flex-1"/></>
-                : !chat ? <></>
                 : <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="h-full flex flex-col overflow-auto">
-                        <Conversation className="relative min-h-0">
+                        {(status == "ready" && messages.length === 0) ? 
+                            <Empty className="h-full px-0">
+                                <EmptyHeader>
+                                    <EmptyMedia variant={"icon"}>
+                                        <MessageSquareIcon/>
+                                    </EmptyMedia>
+                                    <EmptyTitle>Chat</EmptyTitle>
+                                    <EmptyDescription>Use me to write notes or ask questions. Messages appear here.</EmptyDescription>
+                                </EmptyHeader>
+                            </Empty>
+                        : <Conversation className="relative min-h-0 h-full">
                             <ConversationContent>
-                                {(status == "ready" && messages.length === 0) ? (
-                                <ConversationEmptyState
-                                    description="Messages will appear here as the conversation progresses."
-                                    icon={<MessageSquareIcon className="size-6" />}
-                                    title="Start a conversation"
-                                />
-                                ) : messages.map((message, index) => (
-                                <Message from={message.role} key={message.id}>
+                                {messages.map((message, index) => (
+                                (index === messages.length - 1 ? !(status == "streaming" && messages.at(-1)?.parts.length == 0) : true) && <Message from={message.role} key={message.id}>
                                     <ChatMessageContent
                                         message={message as ChatUIMessage}
                                         isLastMessage={index === messages.length - 1}
@@ -132,17 +145,34 @@ export default function ChatMessagesPanel({chatId: initialChatId, chatName: init
                             </ConversationContent>
                             <ConversationScrollButton />
                         </Conversation>
-                    </motion.div>
+                        }
+                   </motion.div>
                 }
                 <PromptInput
                     globalDrop
                     multiple
                     accept={allowedMimeTypes.join(",")}
                     onSubmit={async(message: PromptInputMessage) => {
-                        if (!chat) return;
                         if (!message.text.trim() || status == "submitted" || status == "streaming"){
                             return;
                         }
+                        let chatId = chat?.id;
+                        if (!chat) {
+                            const newChat = await createChat(_class.id, noteCtx.noteId);
+                            if (!newChat) {
+                                toast.error("Failed to create chat. Please try again.");
+                                setMessages([]);
+                                return;
+                            }
+                            setChat(newChat[0]);
+                            chatId = newChat[0].id;
+                        };
+                        if (!chatId) {
+                            toast.error("Failed to send message. Please try again.");
+                            setMessages([]);
+                            return;
+                        }
+
                         setMessages((x)=> x.filter((m, i)=> !(m.role == "user" && i == x.length - 1)))
                         const oldText = text;
                         const oldFiles = files;
@@ -171,7 +201,7 @@ export default function ChatMessagesPanel({chatId: initialChatId, chatName: init
                         // noteCtx.setCache(newCache.name!, noteCtx.files.map(f=>f.id));
                         // await SaveToNotebook(noteCtx.noteId, {cache: {name: newCache.name!, fileIds: noteCtx.files.map(f=>f.id)}});
 
-                        const r = await SendChatMessage({message, files, sendMessage, thinkingLevel, selectedModel, chatId: chat.id, bodyOptions: {noteId: noteCtx.noteId, subject: _class.subject}});
+                        const r = await SendChatMessage({message, files, sendMessage, thinkingLevel, selectedModel, chatId: chatId, bodyOptions: {noteId: noteCtx.noteId, subject: _class.subject}});
                         console.log("SendChatMessage result:", r);
                         if (r === "failed_uploads") {
                             toast.warning("Some files failed to upload.");
@@ -187,6 +217,7 @@ export default function ChatMessagesPanel({chatId: initialChatId, chatName: init
                     {files.length > 0 && <ChatInputHeader files={files} setFiles={setFiles} />}
                     <PromptInputBody>
                         <PromptInputTextarea
+                        placeholder="What would you like to do today?"
                         onChange={(e) => setText(e.target.value)}
                         value={text}
                         />

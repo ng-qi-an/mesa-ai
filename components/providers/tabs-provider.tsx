@@ -1,23 +1,23 @@
 import { DragDropProvider } from "@dnd-kit/react";
 import { isSortable } from "@dnd-kit/react/sortable";
-import { createContext, useContext, useState } from "react";
+import { createContext, useContext, useRef, useState } from "react";
+import {move} from '@dnd-kit/helpers';
 
 type TabsContextType = {
-    mainTabs: TabItemType[];
-    setMainTabs: React.Dispatch<React.SetStateAction<TabItemType[]>>;
-    sideTabs: TabItemType[];
-    setSideTabs: React.Dispatch<React.SetStateAction<TabItemType[]>>;
+    tabs: Record<string, TabItemType[]>;
+    setTabs: React.Dispatch<React.SetStateAction<Record<string, TabItemType[]>>>;
     selectedMainTab: string;
     setSelectedMainTab: React.Dispatch<React.SetStateAction<string>>;
     selectedSideTab: string;
     setSelectedSideTab: React.Dispatch<React.SetStateAction<string>>;
     addOrGoToTab: (tab: TabItemType, group: "main" | "side") => void;
     closeTab: (tabId: string, group: "main" | "side") => void;
+    moveTab: (tabId: string, toGroup: "main" | "side") => void;
 }
 
 export type TabItemType = {
     label: string;
-    icon?: any;
+    icon?: React.ElementType;
     id: string;
     component: React.ReactNode;
 }
@@ -34,83 +34,136 @@ export function useTabs() {
 
 
 export default function TabsProvider({children}: {children: React.ReactNode}) {
-    const [mainTabs, setMainTabs] = useState<TabItemType[]>([]);
-    const [selectedMainTab, setSelectedMainTab] = useState("notebook");
-    const [sideTabs, setSideTabs] = useState<TabItemType[]>([]);
-    const [selectedSideTab, setSelectedSideTab] = useState("library");
+    const [tabs, setTabs] = useState<Record<string, TabItemType[]>>({
+        main: [],
+        side: [],
+    });
+    const tabsSnapshotRef = useRef<Record<string, TabItemType[]>>({
+        main: [],
+        side: [],
+    });
+    const [selectedMainTab, setSelectedMainTab] = useState<string>("notebook");
+    const [selectedSideTab, setSelectedSideTab] = useState<string>("library");
+
+    function getFallbackTab(group: "main" | "side", items: TabItemType[]) {
+        return items.length > 0 ? items[items.length - 1].id : group === "main" ? "notebook" : "library";
+    }
+
+    function syncSelectionAfterMove(nextTabs: Record<"main" | "side", TabItemType[]>, tabId: string | number) {
+        const selectedTabId = String(tabId);
+        const isInMain = nextTabs.main.some(tab => tab.id === selectedTabId);
+        const isInSide = nextTabs.side.some(tab => tab.id === selectedTabId);
+
+        if (isInMain && !isInSide) {
+            setSelectedMainTab(selectedTabId);
+            setSelectedSideTab(getFallbackTab("side", nextTabs.side));
+            return;
+        }
+
+        if (isInSide && !isInMain) {
+            setSelectedSideTab(selectedTabId);
+            setSelectedMainTab(getFallbackTab("main", nextTabs.main));
+            return;
+        }
+
+        if (isInMain) {
+            setSelectedMainTab(selectedTabId);
+        }
+        if (isInSide) {
+            setSelectedSideTab(selectedTabId);
+        }
+    }
+    function findTab(tabId: string) {
+        return Object.values(tabs).flat().find(t => t.id === tabId);
+    }
+    function getTabGroup(tabId: string){
+        return Object.keys(tabs).find(group => {
+            if (tabs[group].find(t => t.id === tabId)) {
+                return true;
+            } else {
+                return false;
+            }
+        });
+    }
     function addOrGoToTab(tab: TabItemType, group: "main" | "side"){
-        const existingTabInOtherGroup = group === "side" ? mainTabs.find(t => t.id === tab.id) : sideTabs.find(t => t.id === tab.id);
-        if (existingTabInOtherGroup) {
-            if (group === "side") {
-                setSelectedMainTab(tab.id);
+        const existingTab = findTab(tab.id);
+        console.log("existingTab", existingTab);
+        if (existingTab){
+            if (getTabGroup(tab.id) === "main") {
+                return setSelectedMainTab(tab.id);
             } else {
-                setSelectedSideTab(tab.id);
+               return setSelectedSideTab(tab.id);
             }
-            return;
         }
-        const existingTab = group === "side" ? sideTabs.find(t => t.id === tab.id) : mainTabs.find(t => t.id === tab.id);
-        if (existingTab) {
-            if (group === "side") {
-                setSelectedSideTab(tab.id);
-            } else {
-                setSelectedMainTab(tab.id);
-            }
-            return;
-        }
+        setTabs({...tabs, [group]: [...tabs[group], tab]});
         if (group === "side") {
-            setSideTabs([...sideTabs, tab]);
             setSelectedSideTab(tab.id);
         } else {
-            setMainTabs([...mainTabs, tab]);
             setSelectedMainTab(tab.id);
         }
     }
     function closeTab(tabId: string, group: "main" | "side") {
-        const newTabs = group === "side" ? sideTabs.filter(t => t.id !== tabId) : mainTabs.filter(t => t.id !== tabId);
-        const setTabs = group === "side" ? setSideTabs : setMainTabs;
+        const newTabs = {...tabs, [group]: tabs[group].filter(t => t.id !== tabId)};
         const setSelectedTab = group === "side" ? setSelectedSideTab : setSelectedMainTab;
         setTabs(newTabs);
-        if (selectedSideTab === tabId) {
-            setSelectedTab(newTabs.length > 0 ? newTabs[newTabs.length - 1].id : group === "side" ? "library" : "notebook");
+        const selectedTab = group === "side" ? selectedSideTab : selectedMainTab;
+        if (selectedTab === tabId) {
+            setSelectedTab(getFallbackTab(group, newTabs[group]));
         }
     }
+    function moveTab(tabId: string, toGroup: string) {
+        const existingTab = findTab(tabId);
+        console.log("movetab: existingTab", existingTab);
+        if (!existingTab) return;
+        const group = getTabGroup(tabId);
+        console.log("movetab: group", group);
+        if (!group) return;
+        const filteredTabs: Record<string, TabItemType[]> = {...tabs, [group]: tabs[group].filter(t => t.id !== tabId)};
+        setTabs(filteredTabs);
+        if (group === "main") {
+            setSelectedMainTab(filteredTabs[group]!.length > 0 ? filteredTabs[group][filteredTabs[group].length - 1].id : "notebook");
+        } else {
+            setSelectedSideTab(filteredTabs[group]!.length > 0 ? filteredTabs[group][filteredTabs[group].length - 1].id : "library");
+        }
+        setTabs({...filteredTabs, [toGroup]: [...filteredTabs[toGroup], existingTab]});
+        if (toGroup === "main") {
+            setSelectedMainTab(tabId);
+        } else {
+            setSelectedSideTab(tabId);
+        }
+    }
+
     return (
-        <TabsContext.Provider value={{ mainTabs, setMainTabs, sideTabs, setSideTabs, selectedMainTab, setSelectedMainTab, selectedSideTab, setSelectedSideTab, addOrGoToTab, closeTab }}>
-            <DragDropProvider onDragEnd={(event)=>{
-                if (event.canceled) return;
-                const {source} = event.operation;
-                if (isSortable(source)) {
-                    const {initialIndex, index, initialGroup, group} = source;
-                    if (initialGroup === group) {
-                        // Same group: reorder within the list
-                        const groupItems = group === "main" ? [...mainTabs] : [...sideTabs];
-                        const [removed] = groupItems.splice(initialIndex, 1);
-                        groupItems.splice(index, 0, removed);
-                        if (group === "main") {
-                            setMainTabs(groupItems);
-                            setSelectedMainTab(removed.id);
-                        } else {
-                            setSideTabs(groupItems);
-                            setSelectedSideTab(removed.id);
-                        }
-
-                    } else {
-                        // Different groups: move between lists
-                        const sourceItems = initialGroup === "main" ? [...mainTabs] : [...sideTabs];
-                        const targetItems = group === "main" ? [...mainTabs] : [...sideTabs];
-                        const [removed] = sourceItems.splice(initialIndex, 1);
-                        targetItems.splice(index, 0, removed);
-                        if (initialGroup === "main") {
-                            setMainTabs(sourceItems);
-                            setSideTabs(targetItems);
-                        } else {
-                            setSideTabs(sourceItems);
-                            setMainTabs(targetItems);
-                        }
+        <TabsContext.Provider value={{ tabs, setTabs, selectedMainTab, setSelectedMainTab, selectedSideTab, setSelectedSideTab, addOrGoToTab, closeTab, moveTab }}>
+            <DragDropProvider
+                onDragStart={() => {
+                    tabsSnapshotRef.current = {
+                        main: [...tabs.main],
+                        side: [...tabs.side],
+                    };
+                }}
+                onDragOver={(event) => {
+                    const {source} = event.operation;
+                    if (!isSortable(source)) {
+                        return;
                     }
-                }
 
-            }}>
+                    const moveTabs = move as unknown as (
+                        items: Record<"main" | "side", TabItemType[]>,
+                        dragEvent: unknown,
+                    ) => Record<"main" | "side", TabItemType[]>;
+                    const nextTabs = moveTabs(tabs as Record<"main" | "side", TabItemType[]>, event);
+
+                    setTabs(nextTabs);
+                    syncSelectionAfterMove(nextTabs, source.id);
+                }}
+                onDragEnd={(event) => {
+                    if (event.canceled) {
+                        setTabs(tabsSnapshotRef.current);
+                        return;
+                    }
+                }}
+            >
                 {children}
             </DragDropProvider>
         </TabsContext.Provider>

@@ -11,15 +11,15 @@ import { DraggableTabItem } from "./(tabbar)/DraggableTabItem";
 import TabContent from "./(tabbar)/TabContent";
 
 export default function MainPanel() {
-    const { mainTabs } = useTabs();
+    const { tabs } = useTabs();
     const { isMobile } = useSidebar();
     const {setCollapsedRightSidebar, collapsedRightSidebar} = useNotebook();
     return (
         <div className="flex flex-col h-full w-full rounded-t-lg border border-b-0 border-neutral-200 dark:border-neutral-900 bg-card h-full">
-            <TabList className="w-full h-max shrink-y-0 z-30">
+            <TabList group="main" className="w-full h-max shrink-y-0 z-30">
                 <TabItem label={"Notebook"} id={"notebook"} group={"main"} />
-                {mainTabs.map((tab, index) => (
-                    <DraggableTabItem key={tab.id} label={tab.label} id={tab.id} index={index} group={"main"} />
+                {tabs.main.length > 0 && tabs.main.map((tab, index) => (
+                    <DraggableTabItem key={tab.id} label={tab.label} id={tab.id} index={index} group={"main"} closable />
                 ))}
                 <div className="flex-1"/>
                 {!isMobile && <div className="flex items-center">
@@ -32,7 +32,7 @@ export default function MainPanel() {
                 <TabContent tabId={"notebook"} group={"main"}>
                     <NotebookPanel />
                 </TabContent>
-                {mainTabs.map((tab) => (
+                {tabs.main.length > 0 && tabs.main.map((tab) => (
                     <TabContent key={tab.id} tabId={tab.id} group={"main"}>
                         {tab.component}
                     </TabContent>

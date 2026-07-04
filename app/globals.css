@@ -293,7 +293,7 @@
 .bn-block {
   margin-top: 10px !important;
 }
-
+a
 .bn-block:has(.bn-block-content[data-content-type="table"]), .bn-block:has(.bn-block-content[data-content-type="heading"]) {
   /* Select .bn-block when it contains a table content block */
   margin-top: 0 !important;

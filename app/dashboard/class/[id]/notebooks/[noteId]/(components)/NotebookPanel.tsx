@@ -182,9 +182,11 @@ export default function NotebookPanel(){
             {(noteCtx?.notesHistory.length! > 0 && noteCtx?.notesStatus != "submitted" && !noteCtx?.isStoringFiles) ? 
             <AnimatePresence>
                 <div ref={contentRef} className={`h-full overflow-auto pb-4 pt-4  ${useLightNotebookTheme ? "light" : "dark"} min-w-full`}>
-                    <h1 id={slugify(noteCtx?.metaObject?.header || "")}>{noteCtx?.metaObject?.header}</h1>
-                    <TypographyLead>{noteCtx?.metaObject?.subtitle}</TypographyLead>
-                    <Separator className="mb-8"/>
+                    <div className="px-10 pt-4 pb-4">
+                        <h1 className="text-4xl font-bold mb-6" id={slugify(noteCtx?.metaObject?.header || "")}>{noteCtx?.metaObject?.header}</h1>
+                        <TypographyLead>{noteCtx?.metaObject?.subtitle}</TypographyLead>
+                        <Separator className="mt-4"/>
+                    </div>
                     <BlockNoteView
                         theme={useLightNotebookTheme ? "light" : "dark"}
                         className={useLightNotebookTheme ? "light" : "dark"}
