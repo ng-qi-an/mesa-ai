@@ -59,7 +59,7 @@ export default function ChatsPanel({setSidebarTool, chatsList, setChatsList, sel
                 {loading ? [...Array(5)].map((_, index) => (
                     <Skeleton className="h-12 my-0.5" key={index}/>
                 )) : chatsList.length > 0 ? chatsList.map((chat, index) => 
-                    <div onClick={()=> addOrGoToTab({label: chat.name, id: chat.id, component: <ChatMessagesPanel initialChat={chat} setSelectedChatId={setSelectedChatId} />}, "side")} key={index} className="cursor-pointer flex items-center gap-3 group hover:bg-secondary px-3 py-2 rounded-md w-full relative">
+                    <div onClick={()=> addOrGoToTab({label: chat.name, id: chat.id, component: <ChatMessagesPanel chatId={chat.id} chatName={chat.name} />}, "side")} key={index} className="cursor-pointer flex items-center gap-3 group hover:bg-secondary px-3 py-2 rounded-md w-full relative">
                         <MessageSquare className="text-muted-foreground group-hover:text-foreground size-4"/>
                         <div className="flex flex-col pl-1">
                             <p className="truncate text-sm w-full font-medium">

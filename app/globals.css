@@ -286,6 +286,28 @@
   font-size: var(--text-2xl);
 }
 
+.bn-side-menu[data-block-type=heading][data-level="2"] {
+  height: 74px !important;
+}
+
+.bn-block {
+  margin-top: 10px !important;
+}
+
+.bn-block:has(.bn-block-content[data-content-type="table"]), .bn-block:has(.bn-block-content[data-content-type="heading"]) {
+  /* Select .bn-block when it contains a table content block */
+  margin-top: 0 !important;
+}
+
+.bn-inline-content {
+  line-height: 1.6;
+}
+
+.bn-block-content:not([data-text-color]) .bn-inline-content > strong, .bn-block-content[data-content-type="heading"]:not([data-text-color]) {
+  color: var(--foreground);
+}
+
+
 .bn-root[data-color-scheme="dark"] .bn-block-group[data-node-type="blockGroup"] ::before {
   border-color: var(--border) !important;
 }

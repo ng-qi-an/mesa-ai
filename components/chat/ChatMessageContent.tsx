@@ -70,7 +70,7 @@ export default function ChatMessageContent({message, isLastMessage, isStreaming}
               </MessageResponse>
             );
         })}
-        {message.role == "assistant" && <MessageToolbar className={`${isLastMessage ? "opacity-100" : "opacity-0"} ${!isStreaming && "group-hover:opacity-100"} transition-opacity`}>
+        {message.role == "assistant" && <MessageToolbar className={`mt-0 ${isLastMessage ? "opacity-100" : "opacity-0"} ${!isStreaming && "group-hover:opacity-100"} transition-opacity`}>
           {modelObject && <p className="text-xs text-muted-foreground flex items-center gap-2 cursor-default"><ModelSelectorLogo provider={modelObject.name.split("/")[0]} /> {modelObject.label}</p>}
         <MessageActions>
           <MessageAction

@@ -1,7 +1,7 @@
 'use client';
 import { Card, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { ChevronLeft } from "lucide-react";
+import { ChevronLeft, Menu } from "lucide-react";
 import { useEffect, useState } from "react";
 import Logo from "@/components/logo";
 import {
@@ -33,13 +33,18 @@ import ChatMessageContent from "@/components/chat/ChatMessageContent";
 import ChatActionsDropdown from "./ChatActionsDropdown";
 import { allowedMimeTypes } from "@/lib/utils";
 import { useClass } from "@/components/providers/class-provider";
-import { chatModels, ThinkingLevels } from "@/lib/utils/models";
+import { chatModels, ChatUIMessage, ThinkingLevels } from "@/lib/utils/models";
+import { Button } from "@/components/ui/button";
+import { motion } from "motion/react";
+import getChat from "@/lib/actions/chat/getChat";
 
-export default function ChatMessagesPanel({setSelectedChatId, initialChat}: {setSelectedChatId: (chat: string) => void, initialChat: ChatSelect}){
+export default function ChatMessagesPanel({chatId: initialChatId, chatName: initialChatName}: {chatId?: string, chatName: string}){
     const noteCtx = useNotebook();
     const {_class} = useClass();
     const [text, setText] = useState<string>("");
-    const [chat, setChat] = useState<ChatSelect>(initialChat);
+    const [chat, setChat] = useState<ChatSelect | null>(null);
+    const [chatName, setChatName] = useState<string>(initialChatName);
+    const [loadingChat, setLoadingChat] = useState<boolean>(true);
     const [files, setFiles] = useState<ChatAttachmentType[]>([]);
     const [previousFiles, setPreviousFiles] = useState<ChatAttachmentType[]>([]);
     const [previousText, setPreviousText] = useState<string>("");
@@ -49,67 +54,92 @@ export default function ChatMessagesPanel({setSelectedChatId, initialChat}: {set
         transport: new DefaultChatTransport({
             api: '/api/notebook/chat',
         }),
-        messages: chat.messages,
+        messages: [],
         onFinish: async ({messages}) => {
             setMessages(messages);
         }
     }); 
     useEffect(()=>{
-        console.log("ChatMessagesPanel mounted with chat:", initialChat);
+        (async()=>{
+            if (!initialChatId) return;
+            const result = await getChat(initialChatId);
+            if (!result) {
+                toast.error("Failed to load chat. Please close andf try again.");
+                setLoadingChat(false);
+                return;
+            } else {
+                console.log("Loaded chat!")
+                setChat(result);
+                setMessages(result.messages as ChatUIMessage[]);
+                setChatName(result.name);
+                setLoadingChat(false);
+            }
+        })();
     }, [])
+    useEffect(()=>{
+        if (!chat) return;
+        setChatName(chat.name);
+    }, [chat])
 
     return <>
-        <div className={`bg-card h-full pb-2!`}>
-            <CardHeader className="items-center group flex cursor-pointer relative">
-                <div className="flex w-full items-center gap-1" onClick={()=> setSelectedChatId("")}>
-                    <ChevronLeft onClick={()=> setSelectedChatId("")} className="text-muted-foreground group-hover:text-foreground size-4"/>
-                    <CardTitle 
-                    className="ml-2 text-muted-foreground group-hover:text-foreground w-full">
-                        {chat.name}
-                    </CardTitle>
+        <motion.div initial={{ opacity: 1 }} animate={{ opacity: 1 }} className={`bg-card h-full flex flex-col pb-3`}>
+            <div className="flex items-center h-12 shrink-0 px-3 items-center border-b">
+                <div className="flex w-full items-center gap-2">
+                    <Button variant="ghost" size="icon-sm" className="text-muted-foreground shrink-0">
+                        <Menu className="size-4"/>
+                    </Button>
+                    <p className="text-sm w-full">
+                        {chatName}
+                    </p>
                 </div>
-                <ChatActionsDropdown triggerClassName="inline-block w-fit absolute -top-1 right-4" chat={chat} onRename={(newName) => {
+                {chat && <ChatActionsDropdown triggerClassName="" chat={chat} onRename={(newName) => {
                     setChat({...chat, name: newName});
                 }} onDelete={()=>{
-                    setSelectedChatId("");
-                }}/>
-            </CardHeader>
-            <div className="flex-1 min-h-0 flex flex-col">
-                <Separator className="mb-2" />
-                <Conversation className="relative min-h-0">
-                    <ConversationContent>
-                        {(status == "submitted" || (status == "streaming" && messages.at(-1)?.parts.length == 0)) &&
-                        <Message from="assistant">
-                            <MessageContent className="flex flex-row items-center gap-3">
-                                <Logo type="favicon" className="size-4 invert" />
-                                <Shimmer>
-                                    Analysing..
-                                </Shimmer>
-                            </MessageContent>
-                        </Message>}
-                        {(status == "ready" && messages.length === 0) ? (
-                        <ConversationEmptyState
-                            description="Messages will appear here as the conversation progresses."
-                            icon={<MessageSquareIcon className="size-6" />}
-                            title="Start a conversation"
-                        />
-                        ) : messages.map((message, index) => (
-                        <Message from={message.role} key={message.id}>
-                            <ChatMessageContent
-                                message={message}
-                                isLastMessage={index === messages.length - 1}
-                                isStreaming={status =="streaming"}
-                            />
-                        </Message>
-                        ))}
-                    </ConversationContent>
-                    <ConversationScrollButton />
-                </Conversation>
+                    // setSelectedChatId("");
+                }}/>}
+            </div>
+            <div className="flex-1 min-h-0 flex flex-col px-1">
+                {loadingChat ? <>
+                <div className="flex-1"/></>
+                : !chat ? <></>
+                : <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="h-full flex flex-col overflow-auto">
+                        <Conversation className="relative min-h-0">
+                            <ConversationContent>
+                                {(status == "ready" && messages.length === 0) ? (
+                                <ConversationEmptyState
+                                    description="Messages will appear here as the conversation progresses."
+                                    icon={<MessageSquareIcon className="size-6" />}
+                                    title="Start a conversation"
+                                />
+                                ) : messages.map((message, index) => (
+                                <Message from={message.role} key={message.id}>
+                                    <ChatMessageContent
+                                        message={message as ChatUIMessage}
+                                        isLastMessage={index === messages.length - 1}
+                                        isStreaming={status =="streaming"}
+                                    />
+                                </Message>
+                                ))}
+                                {(status == "submitted" || (status == "streaming" && messages.at(-1)?.parts.length == 0)) &&
+                                <Message from="assistant">
+                                    <MessageContent className="flex flex-row items-center gap-3">
+                                        <Logo type="favicon" className="size-4 invert" />
+                                        <Shimmer>
+                                            Analysing..
+                                        </Shimmer>
+                                    </MessageContent>
+                                </Message>}
+                            </ConversationContent>
+                            <ConversationScrollButton />
+                        </Conversation>
+                    </motion.div>
+                }
                 <PromptInput
                     globalDrop
                     multiple
                     accept={allowedMimeTypes.join(",")}
                     onSubmit={async(message: PromptInputMessage) => {
+                        if (!chat) return;
                         if (!message.text.trim() || status == "submitted" || status == "streaming"){
                             return;
                         }
@@ -172,6 +202,6 @@ export default function ChatMessagesPanel({setSelectedChatId, initialChat}: {set
                     />
                 </PromptInput>
             </div>
-        </div>
+        </motion.div>
     </>
 }

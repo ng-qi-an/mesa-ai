@@ -1,11 +1,11 @@
 'use client';
 import { Button } from "@/components/ui/button";
-import { Card, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardAction, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty";
 import { Separator } from "@/components/ui/separator";
 import { Spinner } from "@/components/ui/spinner";
 import { TypographyLead } from "@/components/ui/typography/lead";
-import { ArrowUp, CircleAlert, Moon, Notebook, RefreshCw, Settings2, Sidebar, Sparkles, StopCircle, Sun } from "lucide-react";
+import { ArrowUp, CircleAlert, Moon, Notebook, RefreshCw, Settings2, Sidebar, Sparkle, Sparkles, StopCircle, Sun, X } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useRef, useState } from "react";
 import { createMathPlugin } from '@streamdown/math';
@@ -50,6 +50,7 @@ export default function NotebookPanel(){
     const [forceLightNotebook, setForceLightNotebook] = useState(false);
     const {currentTour, setCurrentStep} = useNextStep();
     const isMobile = useIsMobile();
+    const [showOutdatedSources, setShowOutdatedSources] = useState(false);
     const editor = useCreateBlockNote();
     
     useEffect(() => {
@@ -102,44 +103,67 @@ export default function NotebookPanel(){
 
         return () => observer.disconnect();
     }, [noteCtx?.notesHistory, editor])
+    useEffect(()=>{
+        setShowOutdatedSources(noteCtx.sourceFiles.length > 0 && !checkFileStoreMatch(noteCtx.sourceFiles, noteCtx.files.map(f=> f.id)))
+    },[noteCtx.sourceFiles, noteCtx.files])
     return  noteCtx && <> 
         <NoteSettingsDialog open={showNoteSettings} onOpenChange={setShowNoteSettings}/>
-        {noteCtx.sourceFiles.length > 0 &&  !checkFileStoreMatch(noteCtx.sourceFiles, noteCtx.files.map(f=> f.id)) && 
-        <Tooltip>
-            <TooltipTrigger asChild>
-                <Badge variant="destructive" className="cursor-default ml-auto mr-28">
-                    <CircleAlert data-icon="inline-start" />
-                    Outdated
-                </Badge>
-            </TooltipTrigger>
-            <TooltipContent>
-                <p>"Sync sources" to update the notebook with latest sources.</p>
-            </TooltipContent>
-        </Tooltip>}
-        <div className="h-full gap-2 flex flex-col w-full overflow-y-auto relative bg-card">
+        <div className="h-full gap-2 flex flex-col w-full overflow-hidden relative bg-card">
+            { showOutdatedSources && <Card size="sm" className={`absolute right-0 bottom-[-110px] hover:bottom-0 transition-all z-20 bg-card/90 backdrop-blur-lg rounded-b-none border-b-0 border-l-0 w-[300px]`}>
+                <CardHeader>
+                    <CardTitle>Outdated sources</CardTitle>
+                    <CardDescription>Changes were made to your source list. Click here to learn more.</CardDescription>
+                    <CardAction><Button variant="ghost" size="icon-xs" onClick={()=> setShowOutdatedSources(false)}><X /></Button></CardAction>
+                </CardHeader>
+                <CardContent>
+                    <p className="text-muted-foreground">Press <b className="text-foreground">"Generate"</b> to update with the latest content.</p>
+                </CardContent>
+                <CardFooter>
+                    <Button variant="ghost" onClick={()=> setShowOutdatedSources(false)}>
+                        Don't show again
+                    </Button>
+                    <Button className="ml-auto" onClick={()=> noteCtx.setShowGenerateNotesDialog(true)}>
+                        Generate
+                    </Button>
+                </CardFooter>
+            </Card>}
             <div className="absolute left-0 bottom-0 bg-card p-1 pb-2 border-t border-r rounded-tr-lg flex flex-col z-20 items-center gap-2">
-                <Tooltip open={(noteCtx.notesHistory.length === 0 || noteCtx?.isGenerating || noteCtx?.isStoringFiles || noteCtx?.isEmbeddingImages) ? undefined : false}>
+                <Tooltip>
                     <TooltipTrigger asChild>
                         <span className="inline-block w-fit">
-                            <Button disabled={noteCtx.notesHistory.length === 0 || noteCtx?.isGenerating} onClick={()=> {
-                                setShowNoteSettings(true);
-                            }} size={'icon-sm'} className="text-muted-foreground" variant={'ghost'}>
-                                {noteCtx?.isGenerating ? <Spinner/> : <Settings2/>}
+                            <Button disabled={noteCtx?.isGenerating || noteCtx?.isEmbeddingImages} onClick={()=> {
+                                noteCtx?.setShowGenerateNotesDialog(true);
+                            }} size={'icon-sm'} className={`text-muted-foreground ${showOutdatedSources ? 'text-primary hover:text-primary' : ''}`} variant={'ghost'}>
+                                {(noteCtx?.isGenerating || noteCtx?.isEmbeddingImages) ? <Spinner/> : <Sparkle/>}
                             </Button>
                         </span>
                     </TooltipTrigger>
                     <TooltipContent side="right" align="end">
-                        <p>{noteCtx?.isStoringFiles ? 
-                                "Extracting content.."
-                            : noteCtx?.isMetaLoading ?
+                        <p>{noteCtx?.isMetaLoading ?
                                 "Generating topics..."
                             : noteCtx?.isNotesLoading ?
                                 "Writing notes..."
                             : noteCtx?.isEmbeddingImages ?
                                 "Embedding images..."
-                            : "Note settings can't be changed before generating notes"
+                            : showOutdatedSources ?
+                                "Generate notes from new sources"
+                            : "Regenerate notes"
                             }
                         </p>
+                    </TooltipContent>
+                </Tooltip>
+                <Tooltip>
+                    <TooltipTrigger asChild>
+                        <span className="inline-block w-fit">
+                            <Button disabled={noteCtx.notesHistory.length === 0 || noteCtx?.isGenerating} onClick={()=> {
+                                setShowNoteSettings(true);
+                            }} size={'icon-sm'} className="text-muted-foreground" variant={'ghost'}>
+                                <Settings2/>
+                            </Button>
+                        </span>
+                    </TooltipTrigger>
+                    <TooltipContent side="right" align="end">
+                        {noteCtx.isGenerating ? "Can't edit while generating" : "Customize content"}
                     </TooltipContent>
                 </Tooltip>
                 <Tooltip>
@@ -222,26 +246,6 @@ export default function NotebookPanel(){
                             Stop generating
                         </Button>
                     : <></>)
-                    : (noteCtx.sourceFiles.length > 0 && !checkFileStoreMatch(noteCtx.sourceFiles, noteCtx.files.map(f=> f.id))) ?
-                        <Button variant={'raised'} disabled={noteCtx!.files.length < 1} size={'lg'} className="px-4" onClick={() => {
-                            noteCtx?.setShowGenerateNotesDialog(true);
-                        }}>
-                            <RefreshCw/>
-                            Sync sources
-                        </Button>
-                    : (noteCtx?.notesHistory && noteCtx.notesHistory.length) ?
-                        <form onSubmit={async(e)=>{
-                            e.preventDefault();
-                            if (!followup.trim()) return;
-                            const followupInstructions = `Apply only the requested changes to the current notes. Keep all unrelated content as-is unless absolutely necessary for consistency.\n\nRequested changes:\n${followup.trim()}`;
-                            await generateNotes({ instructions: followupInstructions, includeContext: false });
-                            setFollowup("");
-                        }} className="w-full max-w-[400px] relative flex items-center">
-                            <Input value={followup} onChange={(e) => setFollowup(e.target.value)} className="bg-secondary/85 dark:bg-secondary/85 backdrop-blur-md rounded-lg text-lg h-12 px-6 pr-12" placeholder="Type a follow up to modify content" />
-                            <Button disabled={!followup.trim()} size={'icon-sm'} className="absolute right-1.5 rounded-lg">
-                                <ArrowUp/>
-                            </Button>
-                        </form>
                     : (!noteCtx?.metaObject || !noteCtx.metaObject.header || !noteCtx.isGenerating && noteCtx.notesHistory.length === 0) && <Button variant={'raised'} disabled={noteCtx!.files.length < 1} size={'lg'} className="px-4" onClick={() => {
                         noteCtx?.setShowGenerateNotesDialog(true);
                         if (currentTour == "onboarding"){

@@ -99,7 +99,7 @@ export default function LibraryPanel(){
         : <>
             <div className="flex gap-2 bg-card pb-3 pt-1 pl-1 pr-1 mr-4">
                 {selectedType != "all" && (
-                    <Button variant="outline" className={`shrink-0`} size="icon-lg" onClick={()=> setSelectedType("all")}>
+                    <Button variant="outline" className={`shrink-0`} size="icon-lg" onClick={()=> {setSelectedType("all"); setSelectedGroup("item")}}>
                         <ChevronLeft className="size-4"/>
                     </Button>
                 )}
@@ -200,10 +200,10 @@ export default function LibraryPanel(){
                     <LibraryItemGroup label="Sources" items={files.map((file) => ({ id: file.id, label: file.name, description: relativeTime(file.dateModified, {capitalize: true}), type: "sources" }))} />
                     <Separator className="mb-0 mt-1"/>
                 </>}
-                {Object.values(sortedItems).flat().length > 0 ? Object.keys(sortedItems).map((key, index) => {
+                {Object.values(sortedItems).flat().length > 0 ? Object.keys(sortedItems).filter((key)=> sortedItems[key].length > 0).map((key, index) => {
                     return <Fragment key={index}>
                         <LibraryItemGroup label={key} items={sortedItems[key].map((item) => ({ id: item.id, label: item.name, description: relativeTime(item.dateModified, {capitalize: true}), type: item.type}))} onLabelClick={(selectedGroup == "item" && selectedType == "all") ? ((key) => {setSelectedType(key); setSelectedGroup("modified")}) : undefined} limit={3} />
-                        <Separator className="mb-0 mt-1"/>
+                        {index < Object.keys(sortedItems).filter((key)=> sortedItems[key].length > 0).length - 1 && <Separator className="mb-0 mt-1"/>}
                     </Fragment>
                 }) : <Empty>
                     <EmptyMedia variant={"icon"}>
