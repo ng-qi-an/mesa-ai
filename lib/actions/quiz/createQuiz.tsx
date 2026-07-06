@@ -24,9 +24,6 @@ export default async function createQuiz(classId: string, {noteId, fileStoreId, 
     const { rawFinishReason, finishReason, output } = await generateText({
         model: google("gemini-3.1-flash-lite-preview"),
         output: Output.object({ schema: quizQuestionsSchema }),
-        tools: fileStoreId ? {
-            file_search: google.tools.fileSearch({fileSearchStoreNames: [fileStoreId], metadataFilter: fileSearchMetaQuery(fileIds)}),
-        } : undefined,
         toolChoice: "required",
         system: `
         # Subject-specific guidelines
