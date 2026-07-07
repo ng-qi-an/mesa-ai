@@ -36,7 +36,7 @@ export default function QuizCreatePanel({quizList, setQuizList, setSelectedQuizI
     async function createHandler(){
         setCreating(true);
         try {
-            const result = await createQuiz(id as string, {noteId: noteCtx.noteId!, fileStoreId: _class.fileStoreId!, subject: _class.subject, fileIds: noteCtx.files.map((f) => f.id), name, topics: selectedTopics, difficulty, questionTypes: selectedQuestionTypes.map((t) => t.value), length, instructions});
+            const result = await createQuiz(id as string, {noteId: noteCtx.noteId!, subject: _class.subject, fileIds: noteCtx.files.map((f) => f.id), name, topics: selectedTopics, difficulty, questionTypes: selectedQuestionTypes.map((t) => t.value), length, instructions});
             console.log("Created quiz:", result);
             setQuizList([...result, ...quizList]);
             setSelectedQuizId(result[0].id);

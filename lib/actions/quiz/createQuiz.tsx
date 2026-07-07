@@ -3,15 +3,16 @@
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { quizResponses, quizzes } from "@/lib/schemas/schema";
-import { fileSearchMetaQuery } from "@/lib/utils/models";
-import { google } from "@ai-sdk/google";
+import { chatModels } from "@/lib/utils/models";
 import { generateText, Output } from "ai";
 import { generateId } from "better-auth";
 import { headers } from "next/headers";
 import { quizQuestionsSchema } from "./quizSchema";
 import { availableSubjects } from "@/lib/subjects/subjectsList";
+import constructProvider from "@/lib/utils/constructProvider";
+import getNotebookFiles from "../notebook/getNotebookFiles";
 
-export default async function createQuiz(classId: string, {noteId, fileStoreId, fileIds, name, subject, topics, difficulty, questionTypes, length, instructions}: {noteId?: string, fileStoreId: string, fileIds: string[], name: string, subject: keyof typeof availableSubjects, topics: string[], difficulty: string, questionTypes: string[], length: string, instructions: string}) {
+export default async function createQuiz(classId: string, {noteId, fileIds, name, subject, topics, difficulty, questionTypes, length, instructions}: {noteId?: string, fileIds: string[], name: string, subject: keyof typeof availableSubjects, topics: string[], difficulty: string, questionTypes: string[], length: string, instructions: string}) {
     const session = await auth.api.getSession({
         headers: await headers()
     })
@@ -21,8 +22,15 @@ export default async function createQuiz(classId: string, {noteId, fileStoreId, 
     if (!fileIds || fileIds.length === 0) {
         throw new Error("At least one file ID is required");
     }
+    if (!noteId){
+        throw new Error("Notebook ID is required");
+    }
+    const files = await getNotebookFiles(noteId, true);
+    console.log("Real files", files)
+    console.log("Sent files:", files.filter((f)=> f.markdown != null).map(f => ({type: "file" as const, data: f.markdown, mediaType: "text/markdown", fileName: f.name})))
+
     const { rawFinishReason, finishReason, output } = await generateText({
-        model: google("gemini-3.1-flash-lite-preview"),
+        model: constructProvider(chatModels[0]).chat(chatModels[0].name),
         output: Output.object({ schema: quizQuestionsSchema }),
         toolChoice: "required",
         system: `
@@ -30,9 +38,9 @@ export default async function createQuiz(classId: string, {noteId, fileStoreId, 
         ${availableSubjects[subject].instructions.quiz}
         
         # Content guidelines
-        ${fileStoreId ? "- Use the file_search tool to access the content of the notes and generate quiz questions based on that content." : "Use the files provided by the user to generate quiz questions."}
+        - Generate questions only of the following types: ${questionTypes.join(", ")}. This setting takes highest prority, all other types MUST NOT be generated.
+        - Use the files provided by the user to generate questions and answers. You may use your general knowledge to supplement answers, but it must be supported by the sources. 
         - Only make notes based on these topics: ${topics.join(", ")}.
-        - Generate questions only of the following types: ${questionTypes.join(", ")}. This setting takes highest prority, all other types will be disallowed.
         - Generate only ${length == "short" ? "7 questions for quick reviews" : length == "medium" ? "12 questions for a standard quiz" : "20 questions for comprehensive quizzes that test understanding of topics"}.
         
         # Question types
@@ -93,7 +101,10 @@ export default async function createQuiz(classId: string, {noteId, fileStoreId, 
         - Normal: A mix of easy and hard questions. (Suggested: 50/50. Control at discretion)
         - Hard: More hard and nuanced questions. (Suggested: 70/30. Control at discretion)
         `,
-        prompt: "# User's instructions\n" + instructions,
+        prompt: [{role: "user", content: [
+            ...files.filter((f)=> f.markdown).map(f => ({type: "file" as const, data: btoa(String.fromCharCode(...new TextEncoder().encode(f.markdown!))), mediaType: "text/markdown", fileName: f.name})),
+            {type:"text", text: "# User's instructions\n" + instructions}]
+        }],
     })
     if (finishReason == "stop"){
         const quiz =  await db.insert(quizzes).values({
