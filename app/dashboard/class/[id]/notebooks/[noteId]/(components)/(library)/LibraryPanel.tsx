@@ -16,6 +16,7 @@ import { addNotebookFiles } from "../../(actions)/addNotebookFiles";
 import { Separator } from "@/components/ui/separator";
 import { Popover, PopoverContent, PopoverHeader, PopoverTitle, PopoverTrigger } from "@/components/ui/popover";
 import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty";
+import { useTabs } from "@/components/providers/tabs-provider";
 
 export default function LibraryPanel(){
     const [selectedType, setSelectedType] = useState<string>("all");
@@ -27,18 +28,20 @@ export default function LibraryPanel(){
     const [sortedItems, setSortedItems] = useState<Record<string, any[]>>({});
     const {files, noteId, setFiles} = useNotebook();
     const [showFileSelector, setShowFileSelector] = useState(false);
+    const { selectedSideTab } = useTabs();
     useEffect(()=>{
-        (async()=>{
-            setLoadingItems(true);
-            const raw = await getNotebookItems(noteId);
+        if (selectedSideTab == "library") {
+            (async()=>{
+                const raw = await getNotebookItems(noteId);
 
-            if (raw) {
-                setItems(raw);
-            } else {
-                toast.error("Failed to load notebook items. Please refresh and try again.")
-            }
-        })();
-    }, [])
+                if (raw) {
+                    setItems(raw);
+                } else {
+                    toast.error("Failed to load notebook items. Please refresh and try again.")
+                }
+            })();
+        }
+    }, [selectedSideTab])
     useEffect(()=>{
         if (Object.keys(items).length > 0) {
             setSortedItems(groupAndFilterItems(items, selectedType, selectedGroup, selectedSort, selectedSortDirection));
