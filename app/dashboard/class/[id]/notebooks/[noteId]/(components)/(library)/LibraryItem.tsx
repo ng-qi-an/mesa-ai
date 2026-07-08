@@ -4,6 +4,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import { Button } from "@/components/ui/button";
 import ChatMessagesPanel from "../(apps)/(chats)/ChatMessagesPanel";
 import { useTabs } from "@/components/providers/tabs-provider";
+import QuizPanel from "../(apps)/(quiz)/QuizPanel";
 
 export default function LibraryItem({item}: {item: LibraryItemType}){
     const {addOrGoToTab} = useTabs();
@@ -12,6 +13,8 @@ export default function LibraryItem({item}: {item: LibraryItemType}){
         onClick={()=>{
             if (item.type == "chats"){
                 addOrGoToTab({label: item.label, id: item.id, component: <ChatMessagesPanel chatId={item.id} chatName={item.label} />}, "side")
+            } else if (item.type == "quizzes"){
+                addOrGoToTab({label: item.label, id: item.id, component: <QuizPanel quizId={item.id} />}, "side")
             }
         }}
     >

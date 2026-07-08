@@ -11,8 +11,9 @@ type TabsContextType = {
     selectedSideTab: string;
     setSelectedSideTab: React.Dispatch<React.SetStateAction<string>>;
     addOrGoToTab: (tab: TabItemType, group: "main" | "side") => void;
-    closeTab: (tabId: string, group: "main" | "side") => void;
+    closeTab: (tabId: string) => void;
     moveTab: (tabId: string, toGroup: "main" | "side") => void;
+    getTabGroup: (tabId: string) => "main" | "side" | undefined;
 }
 
 export type TabItemType = {
@@ -83,7 +84,7 @@ export default function TabsProvider({children}: {children: React.ReactNode}) {
             } else {
                 return false;
             }
-        });
+        }) as "main" | "side" | undefined;
     }
     function addOrGoToTab(tab: TabItemType, group: "main" | "side"){
         const existingTab = findTab(tab.id);
@@ -102,7 +103,9 @@ export default function TabsProvider({children}: {children: React.ReactNode}) {
             setSelectedMainTab(tab.id);
         }
     }
-    function closeTab(tabId: string, group: "main" | "side") {
+    function closeTab(tabId: string) {
+        const group = getTabGroup(tabId);
+        if (!group) return;
         const newTabs = {...tabs, [group]: tabs[group].filter(t => t.id !== tabId)};
         const setSelectedTab = group === "side" ? setSelectedSideTab : setSelectedMainTab;
         setTabs(newTabs);
@@ -134,7 +137,7 @@ export default function TabsProvider({children}: {children: React.ReactNode}) {
     }
 
     return (
-        <TabsContext.Provider value={{ tabs, setTabs, selectedMainTab, setSelectedMainTab, selectedSideTab, setSelectedSideTab, addOrGoToTab, closeTab, moveTab }}>
+        <TabsContext.Provider value={{ tabs, setTabs, selectedMainTab, setSelectedMainTab, selectedSideTab, setSelectedSideTab, addOrGoToTab, closeTab, getTabGroup, moveTab }}>
             <DragDropProvider
                 onDragStart={() => {
                     tabsSnapshotRef.current = {

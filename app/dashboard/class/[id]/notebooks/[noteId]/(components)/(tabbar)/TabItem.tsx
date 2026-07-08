@@ -19,7 +19,7 @@ export function TabItem({label, id, group, ref, closable, isDragging}: {label: s
         <span className={`ml-1 ${activeTab == id ? "text-muted-foreground" : "opacity-0 group-hover:opacity-100 group-hover:text-muted-foreground"}`} onClick={(e) => {
           e.stopPropagation();
           console.log("close clicked!");
-          closeTab(id, group as "main" | "side");
+          closeTab(id);
         }}>
           <X size={15} />
         </span>

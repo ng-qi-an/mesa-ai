@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import getQuizResponsesList from "@/lib/actions/quiz/getQuizResponsesList";
 import { toast } from "sonner";
 import { Card, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowRight, ChevronLeft, ListTodo, PenLine, RotateCw, Star } from "lucide-react";
+import { ArrowRight, ChevronLeft, History, ListTodo, Maximize2, Minimize2, PenLine, RotateCw, Star } from "lucide-react";
 import QuizActionsDropdown from "@/components/quiz/QuizActionsDropdown";
 import { Spinner } from "@/components/ui/spinner";
 import { Separator } from "@/components/ui/separator";
@@ -14,18 +14,29 @@ import getNumberOfCorrectAnswers from "@/lib/actions/quiz/GetNumberOfCorrectAnsw
 import { Item, ItemMedia, ItemActions, ItemContent, ItemTitle, ItemDescription } from "@/components/ui/item";
 import { Button } from "@/components/ui/button";
 import createEmptyResponse from "@/lib/actions/quiz/createEmptyResponse";
-export default function QuizPanel({quiz: importedQuiz, setSelectedQuizId}: {quiz: QuizSelect, setSelectedQuizId: (id: string) => void}){
-    const [quiz, setQuiz] = useState(importedQuiz);
+import getQuiz from "@/lib/actions/quiz/getQuiz";
+import { useTabs } from "@/components/providers/tabs-provider";
+export default function QuizPanel({quizId}: {quizId: string}){
+    const [quiz, setQuiz] = useState(null as QuizSelect | null);
     const [isAttempting, setIsAttempting] = useState(false);
     const [responses, setResponses] = useState<QuizResponseSelect[]>([]);
     const [selectedResponseId, setSelectedResponseId] = useState<string>("");
     const incompleteAttempt = responses.find(r => !r.completedQuiz);
     const [loading, setLoading] = useState(true);
+    const { moveTab, getTabGroup, closeTab } = useTabs();
+    const activeTabGroup = quiz ? getTabGroup(quiz.id) : undefined;
+    
     useEffect(()=>{
         (async()=>{
             setLoading(true);
             try {
-                const r = await getQuizResponsesList(quiz.id);
+                const raw = await getQuiz(quizId);
+                if (!raw){
+                    toast.error("Quiz not found. It may have been deleted.");
+                    return;
+                }
+                setQuiz(raw);
+                const r = await getQuizResponsesList(raw.id);
                 if (r.find((x)=> !x.completedQuiz)) {
                     console.log("Found an incomplete quiz response, loading attempting view", r.find((x)=> !x.completedQuiz));
                     setIsAttempting(true);
@@ -38,22 +49,31 @@ export default function QuizPanel({quiz: importedQuiz, setSelectedQuizId}: {quiz
             }
         })();
     }, [])
-    return (loading || !isAttempting) ? 
-    <Card size="sm" className={`rounded-md ring-neutral-200 dark:ring-neutral-900 h-full pb-2!`}>
-        <CardHeader className="items-center group flex cursor-pointer relative">
-            <div className="flex w-full items-center gap-1" onClick={()=> selectedResponseId ? setSelectedResponseId("") : setSelectedQuizId("")}>
-                <ChevronLeft onClick={()=> selectedResponseId ? setSelectedResponseId("") : setSelectedQuizId("")} className="text-muted-foreground group-hover:text-foreground size-4"/>
-                <CardTitle
-                className="ml-2 text-muted-foreground group-hover:text-foreground w-full">
-                    {selectedResponseId ? "Response details" : quiz.name}
-                </CardTitle>
+    return ((loading || !isAttempting) && quiz) ? 
+    <div className={`bg-card h-full flex flex-col pb-3`}>
+        <div className="flex items-center h-12 shrink-0 px-3 items-center border-b">
+            <div className="flex w-full items-center gap-2">
+                {selectedResponseId ? <Button variant="ghost" size="icon-sm" className="text-muted-foreground shrink-0" onClick={()=> selectedResponseId && setSelectedResponseId("")}>
+                    <ChevronLeft className="size-4"/>
+                </Button> : <Button variant="ghost" size="icon-sm" className="text-muted-foreground shrink-0 pointer-events-none">
+                    <ListTodo className="size-4"/>
+                </Button>}
+                <p className="text-sm w-full">
+                    {quiz.name}
+                </p>
+                <Button variant="ghost" size="icon-sm" className="text-muted-foreground shrink-0" onClick={()=>{
+                    if (!quiz) return;
+                    moveTab(quiz.id!, activeTabGroup === "side" ? "main" : "side")
+                }}>
+                    {activeTabGroup == "side" ? <Maximize2 className="size-4"/> : <Minimize2 className="size-4"/>}
+                </Button>
             </div>
-            <QuizActionsDropdown triggerClassName="inline-block w-fit absolute -top-1 right-4" quiz={quiz} onRename={(newName) => {
+            <QuizActionsDropdown triggerClassName="" quiz={quiz} onRename={(newName) => {
                setQuiz({...quiz, name: newName});
             }} onDelete={()=>{
-                setSelectedQuizId("");
+                closeTab(quiz.id);
             }}/>
-        </CardHeader>
+        </div>
         <div className="h-full w-full flex flex-col min-h-0">
             <Separator className="mb-2" />
             {loading ? <div className="h-full w-full flex flex-col justify-center items-center">
@@ -113,6 +133,6 @@ export default function QuizPanel({quiz: importedQuiz, setSelectedQuizId}: {quiz
             </div>
             }
         </div>
-    </Card>
-    : isAttempting && <QuizNewResponsePanel quiz={quiz} setQuiz={setQuiz} setSelectedQuizId={setSelectedQuizId} response={incompleteAttempt!} responses={responses} setResponses={setResponses} setSelectedResponseId={setSelectedResponseId} setIsAttempting={setIsAttempting}/>;
+    </div>
+    : (isAttempting && quiz) && <QuizNewResponsePanel quiz={quiz} setQuiz={setQuiz} response={incompleteAttempt!} responses={responses} setResponses={setResponses} setSelectedResponseId={setSelectedResponseId} setIsAttempting={setIsAttempting}/>;
 }

@@ -1,5 +1,5 @@
 'use client';
-import { Maximize, Maximize2, Menu } from "lucide-react";
+import { Maximize, Maximize2, Menu, Minimize2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import Logo from "@/components/logo";
 import {
@@ -50,7 +50,8 @@ export default function ChatMessagesPanel({chatId: initialChatId, chatName: init
     const [previousText, setPreviousText] = useState<string>("");
     const [thinkingLevel, setThinkingLevel] = useState<ThinkingLevels>("low");
     const [selectedModel, setSelectedModel] = useState<string>(chatModels[0].name);
-    const { moveTab } = useTabs();
+    const { moveTab, closeTab, getTabGroup } = useTabs();
+    const activeTabGroup = chat ? getTabGroup(chat.id) : undefined;
     const { messages, sendMessage, setMessages, status, stop } = useChat({
         transport: new DefaultChatTransport({
             api: '/api/notebook/chat',
@@ -97,15 +98,15 @@ export default function ChatMessagesPanel({chatId: initialChatId, chatName: init
                     </p>
                     <Button variant="ghost" size="icon-sm" className="text-muted-foreground shrink-0" onClick={()=>{
                         if (!chat) return;
-                        moveTab(chat.id!, "main")
+                        moveTab(chat.id!, activeTabGroup === "side" ? "main" : "side")
                     }}>
-                        <Maximize2 className="size-4"/>
+                        {activeTabGroup == "side" ? <Maximize2 className="size-4"/> : <Minimize2 className="size-4"/>}
                     </Button>
                 </div>
                 {chat && <ChatActionsDropdown triggerClassName="" chat={chat} onRename={(newName) => {
                     setChat({...chat, name: newName});
                 }} onDelete={()=>{
-                    // setSelectedChatId("");
+                    closeTab(chat.id);
                 }}/>}
             </div>
             <div className="flex-1 min-h-0 flex flex-col px-1">
