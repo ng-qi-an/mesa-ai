@@ -82,11 +82,9 @@ export async function POST(req: Request) {
             },
             anthropic: {
                 thinking: {
-                    type: "adaptive"
+                    type: "adaptive",
+                    effort: convertEffortLevel("anthropic", context.selectedModel, context.thinkingLevel)
                 },
-                effort: {
-                    level: convertEffortLevel("anthropic", context.selectedModel, context.thinkingLevel)
-                }
             },
             google: {
                 thinkingConfig: {
@@ -123,7 +121,8 @@ export async function POST(req: Request) {
                 try {
                     console.log("Extracting model from provider metadata");
                     const finalModel = (part.providerMetadata as {gateway: {routing: {modelAttempts: Array<{canonicalSlug: string}>}}}).gateway.routing.modelAttempts.at(-1)!.canonicalSlug
-                    console.log("Final model used:", finalModel);
+                    const modelAttempts = (part.providerMetadata as {gateway: {routing: {modelAttempts: Array<{canonicalSlug: string}>}}}).gateway.routing.modelAttempts
+                    console.log("Final model used:", finalModel, "attempts:", modelAttempts.map((attempt)=> JSON.stringify(attempt)));
                     return {
                         model: finalModel
                     }

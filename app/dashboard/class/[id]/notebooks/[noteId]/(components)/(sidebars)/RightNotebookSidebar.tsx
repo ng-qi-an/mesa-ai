@@ -5,8 +5,6 @@ import { DraggableTabItem } from "../(tabbar)/DraggableTabItem";
 import TabContent from "../(tabbar)/TabContent";
 import LibraryPanel from "../(library)/LibraryPanel";
 import ChatMessagesPanel from "../(apps)/(chats)/ChatMessagesPanel";
-import CreateQuiz from "@/lib/actions/quiz/createQuiz";
-import QuizControllerPanel from "../(apps)/(quiz)/QuizControllerPanel";
 
 export default function RightNotebookSidebar(){
     const { tabs } = useTabs();
@@ -15,7 +13,6 @@ export default function RightNotebookSidebar(){
             <TabList group="side">
                 <TabItem label={"Chat"} id={"chat"} group={"side"} />
                 <TabItem label={"Library"} id={"library"} group={"side"} />
-                <TabItem label={"Quiz"} id={"quiz"} group={"side"} />
                 {tabs.side.length > 0 && tabs.side.map((tab, index) => (
                     <DraggableTabItem key={tab.id} label={tab.label} id={tab.id} closable={true} index={index} group={"side"} />
                 ))}
@@ -26,9 +23,6 @@ export default function RightNotebookSidebar(){
                 </TabContent>
                 <TabContent tabId={"library"} group={"side"}>
                     <LibraryPanel/>
-                </TabContent>
-                <TabContent tabId={"quiz"} group={"side"}>
-                    <QuizControllerPanel setSidebarTool={()=>{}}/>
                 </TabContent>
                 {tabs.side.length > 0 && tabs.side.map((tab) => (
                     <TabContent key={tab.id} tabId={tab.id} group={"side"}>

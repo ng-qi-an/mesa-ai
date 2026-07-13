@@ -17,6 +17,8 @@ import { Separator } from "@/components/ui/separator";
 import { Popover, PopoverContent, PopoverHeader, PopoverTitle, PopoverTrigger } from "@/components/ui/popover";
 import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty";
 import { useTabs } from "@/components/providers/tabs-provider";
+import QuizCreateDialog from "../(apps)/(quiz)/QuizCreateDialog";
+import QuizPanel from "../(apps)/(quiz)/QuizPanel";
 
 export default function LibraryPanel(){
     const [selectedType, setSelectedType] = useState<string>("all");
@@ -28,7 +30,8 @@ export default function LibraryPanel(){
     const [sortedItems, setSortedItems] = useState<Record<string, any[]>>({});
     const {files, noteId, setFiles} = useNotebook();
     const [showFileSelector, setShowFileSelector] = useState(false);
-    const { selectedSideTab } = useTabs();
+    const [showCreateQuizDialog, setShowCreateQuizDialog] = useState(false);
+    const { selectedSideTab, addOrGoToTab } = useTabs();
     useEffect(()=>{
         if (selectedSideTab == "library") {
             (async()=>{
@@ -93,6 +96,10 @@ export default function LibraryPanel(){
             setFiles((x) => [...x, ...finalFiles]);
             await addNotebookFiles(noteId, finalFiles.map(f=>f.id));
             setShowFileSelector(false);
+        }}/>
+        <QuizCreateDialog open={showCreateQuizDialog} setOpen={setShowCreateQuizDialog} onCreated={(quiz)=>{
+            setShowCreateQuizDialog(false);
+            addOrGoToTab({label: quiz.name, id: quiz.id, component: <QuizPanel quizId={quiz.id} />}, "side")
         }}/>
         {loadingItems ? <div className="flex flex-col gap-2">
             {[...Array(5)].map((_, index) => (
@@ -205,7 +212,7 @@ export default function LibraryPanel(){
                 </>}
                 {Object.values(sortedItems).flat().length > 0 ? Object.keys(sortedItems).filter((key)=> sortedItems[key].length > 0).map((key, index) => {
                     return <Fragment key={index}>
-                        <LibraryItemGroup label={key} items={sortedItems[key].map((item) => ({ id: item.id, label: item.name, description: relativeTime(item.dateModified, {capitalize: true}), type: item.type}))} onLabelClick={(selectedGroup == "item" && selectedType == "all") ? ((key) => {setSelectedType(key); setSelectedGroup("modified")}) : undefined} limit={3} />
+                        <LibraryItemGroup label={key} items={sortedItems[key].map((item) => ({ id: item.id, label: item.name, description: relativeTime(item.dateModified, {capitalize: true}), type: item.type}))} onLabelClick={(selectedGroup == "item" && selectedType == "all") ? ((key) => {setSelectedType(key); setSelectedGroup("modified")}) : undefined} limit={selectedType === "all" ? 3 : undefined} />
                         {index < Object.keys(sortedItems).filter((key)=> sortedItems[key].length > 0).length - 1 && <Separator className="mb-0 mt-1"/>}
                     </Fragment>
                 }) : <Empty>
@@ -245,7 +252,7 @@ export default function LibraryPanel(){
                     <DropdownMenuGroup>
                         <DropdownMenuItem><MessageSquare/> New Chat</DropdownMenuItem>
                         <DropdownMenuItem><WalletCards/> New Flashcards</DropdownMenuItem>
-                        <DropdownMenuItem><ListTodo/> New Quiz</DropdownMenuItem>
+                        <DropdownMenuItem onClick={()=> setShowCreateQuizDialog(true)}><ListTodo/> New Quiz</DropdownMenuItem>
                     </DropdownMenuGroup>
                 </DropdownMenuContent>
             </DropdownMenu>
