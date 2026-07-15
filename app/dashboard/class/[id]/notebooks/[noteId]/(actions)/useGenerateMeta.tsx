@@ -12,9 +12,9 @@ export function useGenerateMeta(){
         setIsStoringFiles(true);
         console.log("Generating topics with instructions:", customInstructions, "and files:", customFiles, "and length:", customLength);
         setMetaObject(undefined);
+        setBlocks([]);
         setNotesHistory([]);
         setTopicWeights({});
-        setBlocks([]);
         if (!fileStoreId){
             throw new Error("No file store ID found for this class");
         }

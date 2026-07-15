@@ -8,7 +8,6 @@ import { TypographyLead } from "@/components/ui/typography/lead";
 import { Cloud, CloudCheck, CloudSync, Moon, Notebook, Settings2, Sparkle, Sparkles, StopCircle, Sun, X } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useRef, useState } from "react";
-import { createMathPlugin } from '@streamdown/math';
 import { slugify } from "./SectionsPanel";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useNotebook } from "@/components/providers/notebook-provider";
@@ -27,20 +26,12 @@ import "@blocknote/shadcn/style.css";
 
 // Tiptap
 import 'katex/dist/katex.min.css'
-import { Mathematics, mathMigrationRegex, migrateMathStrings } from '@tiptap/extension-mathematics'
-import { createExtension } from "@blocknote/core";
 import saveNotebookBlocks from "@/lib/actions/notebook/saveNotebookBlocks";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { InlineMathInputRule, migrateDollarMathToInlineMath, notebookSchema } from "./(notebook)/NotebookSchema";
+import { WavyBackground } from "@/components/ui/wavy-background";
+import { Shimmer } from "@/components/ai-elements/shimmer";
 
-const math = createMathPlugin({
-  singleDollarTextMath: true,
-});
-
-
-const MathExtension = createExtension({
-  key: "customBlockExtension",
-  tiptapExtensions: [Mathematics],
-});
 
 export default function NotebookPanel(){
     const noteCtx = useNotebook()
@@ -54,18 +45,12 @@ export default function NotebookPanel(){
     const [showOutdatedSources, setShowOutdatedSources] = useState(false);
     const [savingInterval, setSavingInterval] = useState<any>(null);
     const  [savingBlocks, setSavingBlocks] = useState(false);
+    const editorRef = useRef<HTMLDivElement>(null);
     const editor = useCreateBlockNote({
-        extensions: [MathExtension],
-        inlineOptions: {
-            onClick: (node:any, pos:number) => {
-                // you can do anything on click, e.g. open a dialog to edit the math node
-                // or just a prompt to edit the LaTeX code for a quick prototype
-                const katex = prompt('Enter new calculation:', node.attrs.latex)
-                if (katex) {
-                    editor._tiptapEditor.chain().setNodeSelection(pos).updateInlineMath({ latex: katex }).focus().run()
-                }
-            },
-        }
+        schema: notebookSchema,
+        _tiptapOptions: {
+            extensions: [InlineMathInputRule],
+        },
     });
     
     useEffect(() => {
@@ -78,11 +63,7 @@ export default function NotebookPanel(){
     }, []);
     useEffect(()=>{
         if (!editor) return;
-        console.log("Editor is event is set");
-        console.log("Editor is mounted and ready");
-        editor.replaceBlocks(editor.document, noteCtx.blocks);
-        migrateMathStrings(editor._tiptapEditor, mathMigrationRegex)
-        console.log("Set initial blocks!")
+        if (noteCtx.isGenerating) return;
         const cleanupOnChange = editor.onChange((editor) => {
             setSavingBlocks(true);
             if (savingInterval){
@@ -93,7 +74,8 @@ export default function NotebookPanel(){
                     clearTimeout(oldInterval);
                 }
                 return setTimeout(async()=>{
-                    await saveNotebookBlocks(noteCtx.noteId, {blocks: editor.document});
+                    const newBlocks = await saveNotebookBlocks(noteCtx.noteId, {blocks: editor.document});
+                    noteCtx.setBlocks(newBlocks.blocks);
                     console.log("Saved successfully!")
                     setSavingBlocks(false);
                 }, 1000)
@@ -126,6 +108,12 @@ export default function NotebookPanel(){
         return ()=>{
             cleanupOnChange();
         }
+    }, [editor, noteCtx.isGenerating])
+    useEffect(()=>{
+        console.log("Editor is event is set");
+        console.log("Editor is mounted and ready");
+        editor.replaceBlocks(editor.document, noteCtx.blocks);
+        console.log("Set initial blocks!")
     }, [editor])
 
     useEffect(() => {
@@ -141,19 +129,37 @@ export default function NotebookPanel(){
     // Track which heading is visible using IntersectionObserver
     useEffect(() => {
         if (noteCtx?.notesHistory.length <= 1 || !contentRef.current || !editor) return;
-        const markdown = noteCtx?.getActualNotes(noteCtx.notesHistory)
-        const blocks = editor.tryParseMarkdownToBlocks(markdown);
-        editor.replaceBlocks(editor.document, blocks);
-        migrateMathStrings(editor._tiptapEditor, mathMigrationRegex)
-        noteCtx.setBlocks(editor.document)
+        try {
+            const markdown = noteCtx?.getActualNotes(noteCtx.notesHistory)
+            if (!markdown) return;
+            console.log("Turning markdown into blocks")
+            const blocks = editor.tryParseMarkdownToBlocks(markdown);
+            editor.replaceBlocks(editor.document, blocks);
+            console.log("Replaced blocks with new markdown")
+            migrateDollarMathToInlineMath(editor);
+            console.log("Migrated dollar math to inline math")
+            noteCtx.setBlocks(editor.document)
+        } catch (error) {
+            console.error("Error occurred while updating blocks:", error);
+        }
     }, [noteCtx?.notesHistory, editor])
     useEffect(()=>{
         setShowOutdatedSources(noteCtx.sourceFiles.length > 0 && !checkFileStoreMatch(noteCtx.sourceFiles, noteCtx.files.map(f=> f.id)))
     },[noteCtx.sourceFiles, noteCtx.files])
+    useEffect(()=>{
+        if (noteCtx.isMetaLoading && editor){
+            console.log("Loading meta and resetting editor")
+            try {
+                editor.replaceBlocks(editor.document, []);
+            } catch (error) {
+                console.error("Error occurred while resetting editor:", error);
+            }
+        }
+    }, [noteCtx.isMetaLoading, editor])
     return  noteCtx && <> 
         <NoteSettingsDialog open={showNoteSettings} onOpenChange={setShowNoteSettings}/>
         <div className="h-full gap-2 flex flex-col w-full overflow-hidden relative bg-card">
-            { showOutdatedSources && <Card size="sm" className={`absolute right-0 bottom-[-110px] hover:bottom-0 transition-all z-20 bg-card/90 backdrop-blur-lg rounded-b-none border-b-0 border-l-0 w-[300px]`}>
+            { showOutdatedSources && <Card size="sm" className={`absolute right-0 bottom-[-110px] hover:bottom-0 transition-all z-[60] bg-card/90 backdrop-blur-lg rounded-b-none border-b-0 border-l-0 w-[300px]`}>
                 <CardHeader>
                     <CardTitle>Outdated sources</CardTitle>
                     <CardDescription>Changes were made to your source list. Click here to learn more.</CardDescription>
@@ -171,7 +177,7 @@ export default function NotebookPanel(){
                     </Button>
                 </CardFooter>
             </Card>}
-            <div className="absolute left-0 bottom-0 bg-card p-1 pb-2 border-t border-r rounded-tr-lg flex flex-col z-20 items-center gap-2">
+            <div className="absolute left-0 bottom-0 bg-card p-1 pb-2 border-t border-r rounded-tr-lg flex flex-col z-[60] items-center gap-2">
                 <Tooltip>
                     <TooltipTrigger asChild>
                         <span>
@@ -242,36 +248,37 @@ export default function NotebookPanel(){
                     </TooltipContent>
                 </Tooltip>
             </div>
-            {((noteCtx?.notesHistory.length > 0 || noteCtx.blocks.length > 0) && noteCtx?.notesStatus != "submitted" && !noteCtx?.isStoringFiles) ? 
-            <AnimatePresence>
-                <div ref={contentRef} className={`h-full overflow-auto pb-4 pt-4  ${useLightNotebookTheme ? "light" : "dark"} min-w-full`}>
-                    <div className="px-10 pt-4 pb-4">
-                        <h1 className="text-4xl font-bold mb-6" id={slugify(noteCtx?.metaObject?.header || "")}>{noteCtx?.metaObject?.header}</h1>
-                        <TypographyLead>{noteCtx?.metaObject?.subtitle}</TypographyLead>
-                        <Separator className="mt-4"/>
-                    </div>
-                    <BlockNoteView
-                        theme={useLightNotebookTheme ? "light" : "dark"}
-                        className={useLightNotebookTheme ? "light" : "dark"}
-                        editor={editor}
-                        editable={!noteCtx.isGenerating || !noteCtx.isEmbeddingImages}
-                        shadCNComponents={{
-                            // Pass modified ShadCN components from your project here.
-                            // Otherwise, the default ShadCN components will be used.
-                        }}
-                    />
-                    {/* <Streamdown plugins={{math}} isAnimating={noteCtx.isContentGenerating} animated={{animation: "fadeIn"}} remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeSlug]}>
-                        {noteCtx?.getActualNotes(noteCtx.notesHistory)}
-                    </Streamdown> */}
+            <div ref={contentRef} className={`h-full overflow-auto pb-4 pt-4  ${useLightNotebookTheme ? "light" : "dark"} min-w-full`}>
+                <div className="px-10 pt-4 pb-4">
+                    <h1 className="text-4xl font-bold mb-6" id={slugify(noteCtx?.metaObject?.header || "")}>{noteCtx?.metaObject?.header}</h1>
+                    <TypographyLead>{noteCtx?.metaObject?.subtitle}</TypographyLead>
+                    <Separator className="mt-4"/>
                 </div>
-            </AnimatePresence>
-            : <div className="relative h-full overflow-hidden">
+                <BlockNoteView
+                    theme={useLightNotebookTheme ? "light" : "dark"}
+                    className={useLightNotebookTheme ? "light" : "dark"}
+                    editor={editor}
+                    ref={editorRef}
+                    editable={!noteCtx.isGenerating || !noteCtx.isEmbeddingImages}
+                    shadCNComponents={{
+                        // Pass modified ShadCN components from your project here.
+                        // Otherwise, the default ShadCN components will be used.
+                    }}
+                />
+            </div>
+            {(noteCtx.notesStatus == "streaming") && <>
+            <div className="absolute bottom-0 left-0 w-full bg-gradient-to-t from-primary/50 via-primary/0 to-primary/0 animate-movingGradient z-[70] items-end pb-18 flex justify-center pointer-events-none">
+            </div>
+            <div className="absolute bottom-0 left-0 w-full bg-gradient-to-t from-card to-card/0 animate-movingGradient z-[60] items-end pb-6 flex justify-center pointer-events-none">
+            </div>
+            </>}
+            {(noteCtx.isMetaLoading || noteCtx.notesStatus == "submitted" || noteCtx.blocks.length == 0) && <div className="h-full overflow-hidden absolute top-0 left-0 w-full bg-card z-[50]">
                 {noteCtx?.metaObject && noteCtx.isGenerating && <div className="flex flex-col absolute items-center justify-center top-0 left-0 h-full w-full">
                     <p className="w-[80%] gap-10 text-justify leading-10 overflow-hidden">
                         {noteCtx.metaObject.topics?.filter((topic): topic is string => topic !== undefined).map((topic:string, index:number)=> {
                             return <motion.span layout initial={{opacity: 0}} animate={{opacity: index % 2 == 0 ? 0.15 : 0.3}} key={index} className={`sm:text-2xl md:text-3xl lg:text-4xl xl:text-5xl 2xl:text-6xl text-muted-foreground font-bold break-all ${(index % 2 ? "pulse-darker" : "pulse-lighter")} `}> {topic}</motion.span>
                         })}
-                    </p>
+                    </p>    
                 </div>}
                 <Empty className="h-full absolute z-10 top-0 left-0 w-full bg-card/80">
                     {noteCtx?.isStoringFiles ?
@@ -301,12 +308,12 @@ export default function NotebookPanel(){
                         </EmptyHeader>
                     }
                 </Empty>
-            </div>
-            }
+            </div>}
             <AnimatePresence mode="wait">
-                <motion.div key={noteCtx?.isContentGenerating ? 'stopGeneratingButton' : 'generateButton'} initial={{scale: 0.95, opacity: 0}} animate={{scale: 1, opacity: 1}} exit={{scale: 0.95, opacity: 0}} className="absolute bottom-2 z-10 left-0 w-full flex px-4 justify-center">
+                <motion.div key={noteCtx?.isContentGenerating ? 'stopGeneratingButton' : 'generateButton'} initial={{scale: 0.95, opacity: 0}} animate={{scale: 1, opacity: 1}} exit={{scale: 0.95, opacity: 0}} className="absolute bottom-2 left-0 w-full flex px-4 justify-center z-[80] pb-4">
+                    
                     {noteCtx?.isGenerating ? (noteCtx?.isContentGenerating ?
-                        <Button variant={'secondaryRaised'} size={'lg'} className="px-4" onClick={() => noteCtx?.stopGeneration()}>
+                        <Button variant={noteCtx.notesStatus == "streaming" ? 'raised' : "secondaryRaised"} size="lg" className="px-4" onClick={() => noteCtx?.stopGeneration()}>
                             <StopCircle/>
                             Stop generating
                         </Button>
