@@ -5,19 +5,12 @@ import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/
 import { Separator } from "@/components/ui/separator";
 import { Spinner } from "@/components/ui/spinner";
 import { TypographyLead } from "@/components/ui/typography/lead";
-import { ArrowUp, CircleAlert, Moon, Notebook, RefreshCw, Settings2, Sidebar, Sparkle, Sparkles, StopCircle, Sun, X } from "lucide-react";
+import { Cloud, CloudCheck, CloudSync, Moon, Notebook, Settings2, Sparkle, Sparkles, StopCircle, Sun, X } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useRef, useState } from "react";
 import { createMathPlugin } from '@streamdown/math';
-//@ts-ignore
-import 'katex/dist/katex.min.css';
-import {DragDropProvider} from '@dnd-kit/react';
-
 import { slugify } from "./SectionsPanel";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { Input } from "@/components/ui/input";
-import { Shimmer } from "@/components/ai-elements/shimmer";
-import { Badge } from "@/components/ui/badge";
 import { useNotebook } from "@/components/providers/notebook-provider";
 import { useGenerateNotes } from "../(actions)/generateNotes";
 import NoteSettingsDialog from "./(modals)/NoteSettingsDialog";
@@ -31,13 +24,22 @@ import "@blocknote/core/fonts/inter.css";
 import { useCreateBlockNote } from "@blocknote/react";
 import { BlockNoteView } from "@blocknote/shadcn";
 import "@blocknote/shadcn/style.css";
-import { TabList } from "./(tabbar)/TabList";
-import { TabItem } from "./(tabbar)/TabItem";
-import { isSortable } from "@dnd-kit/react/sortable";
 
+// Tiptap
+import 'katex/dist/katex.min.css'
+import { Mathematics, mathMigrationRegex, migrateMathStrings } from '@tiptap/extension-mathematics'
+import { createExtension } from "@blocknote/core";
+import saveNotebookBlocks from "@/lib/actions/notebook/saveNotebookBlocks";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
 const math = createMathPlugin({
   singleDollarTextMath: true,
+});
+
+
+const MathExtension = createExtension({
+  key: "customBlockExtension",
+  tiptapExtensions: [Mathematics],
 });
 
 export default function NotebookPanel(){
@@ -46,12 +48,25 @@ export default function NotebookPanel(){
     const { resolvedTheme } = useTheme();
     const contentRef = useRef<HTMLDivElement>(null);
     const [showNoteSettings, setShowNoteSettings] =  useState(false);
-    const [followup, setFollowup] = useState("");
     const [forceLightNotebook, setForceLightNotebook] = useState(false);
     const {currentTour, setCurrentStep} = useNextStep();
     const isMobile = useIsMobile();
     const [showOutdatedSources, setShowOutdatedSources] = useState(false);
-    const editor = useCreateBlockNote();
+    const [savingInterval, setSavingInterval] = useState<any>(null);
+    const  [savingBlocks, setSavingBlocks] = useState(false);
+    const editor = useCreateBlockNote({
+        extensions: [MathExtension],
+        inlineOptions: {
+            onClick: (node:any, pos:number) => {
+                // you can do anything on click, e.g. open a dialog to edit the math node
+                // or just a prompt to edit the LaTeX code for a quick prototype
+                const katex = prompt('Enter new calculation:', node.attrs.latex)
+                if (katex) {
+                    editor._tiptapEditor.chain().setNodeSelection(pos).updateInlineMath({ latex: katex }).focus().run()
+                }
+            },
+        }
+    });
     
     useEffect(() => {
         try {
@@ -61,6 +76,57 @@ export default function NotebookPanel(){
             // Ignore localStorage issues.
         }
     }, []);
+    useEffect(()=>{
+        if (!editor) return;
+        console.log("Editor is event is set");
+        console.log("Editor is mounted and ready");
+        editor.replaceBlocks(editor.document, noteCtx.blocks);
+        migrateMathStrings(editor._tiptapEditor, mathMigrationRegex)
+        console.log("Set initial blocks!")
+        const cleanupOnChange = editor.onChange((editor) => {
+            setSavingBlocks(true);
+            if (savingInterval){
+                clearTimeout(savingInterval);
+            }
+            setSavingInterval((oldInterval: NodeJS.Timeout | null) => {
+                if (oldInterval){
+                    clearTimeout(oldInterval);
+                }
+                return setTimeout(async()=>{
+                    await saveNotebookBlocks(noteCtx.noteId, {blocks: editor.document});
+                    console.log("Saved successfully!")
+                    setSavingBlocks(false);
+                }, 1000)
+            })
+        });
+        // const headings = contentRef.current.querySelectorAll('h2[id], h1[id]');
+        // if (headings.length === 0) return;
+        // const observerCallback: IntersectionObserverCallback = (entries) => {
+        //     // Find the first heading that is intersecting
+        //     const visibleEntries = entries.filter(entry => entry.isIntersecting);
+        //     if (visibleEntries.length > 0) {
+        //         // Sort by their position in the document and pick the topmost
+        //         const sorted = visibleEntries.sort((a, b) => {
+        //             return a.boundingClientRect.top - b.boundingClientRect.top;
+        //         });
+        //         const topHeading = sorted[0].target as HTMLElement;
+        //         noteCtx?.setActiveSection(topHeading.id);
+        //     }
+        // };
+
+        // const observer = new IntersectionObserver(observerCallback, {
+        //     root: contentRef.current.parentElement,
+        //     rootMargin: '-10% 0px -70% 0px',
+        //     threshold: 0,
+        // });
+
+        // headings.forEach(heading => observer.observe(heading));
+
+        // return () => observer.disconnect();
+        return ()=>{
+            cleanupOnChange();
+        }
+    }, [editor])
 
     useEffect(() => {
         try {
@@ -75,33 +141,11 @@ export default function NotebookPanel(){
     // Track which heading is visible using IntersectionObserver
     useEffect(() => {
         if (noteCtx?.notesHistory.length <= 1 || !contentRef.current || !editor) return;
-        const blocks = editor.tryParseMarkdownToBlocks(noteCtx?.getActualNotes(noteCtx.notesHistory));
+        const markdown = noteCtx?.getActualNotes(noteCtx.notesHistory)
+        const blocks = editor.tryParseMarkdownToBlocks(markdown);
         editor.replaceBlocks(editor.document, blocks);
-        const headings = contentRef.current.querySelectorAll('h2[id], h1[id]');
-        if (headings.length === 0) return;
-
-        const observerCallback: IntersectionObserverCallback = (entries) => {
-            // Find the first heading that is intersecting
-            const visibleEntries = entries.filter(entry => entry.isIntersecting);
-            if (visibleEntries.length > 0) {
-                // Sort by their position in the document and pick the topmost
-                const sorted = visibleEntries.sort((a, b) => {
-                    return a.boundingClientRect.top - b.boundingClientRect.top;
-                });
-                const topHeading = sorted[0].target as HTMLElement;
-                noteCtx?.setActiveSection(topHeading.id);
-            }
-        };
-
-        const observer = new IntersectionObserver(observerCallback, {
-            root: contentRef.current.parentElement,
-            rootMargin: '-10% 0px -70% 0px',
-            threshold: 0,
-        });
-
-        headings.forEach(heading => observer.observe(heading));
-
-        return () => observer.disconnect();
+        migrateMathStrings(editor._tiptapEditor, mathMigrationRegex)
+        noteCtx.setBlocks(editor.document)
     }, [noteCtx?.notesHistory, editor])
     useEffect(()=>{
         setShowOutdatedSources(noteCtx.sourceFiles.length > 0 && !checkFileStoreMatch(noteCtx.sourceFiles, noteCtx.files.map(f=> f.id)))
@@ -130,6 +174,25 @@ export default function NotebookPanel(){
             <div className="absolute left-0 bottom-0 bg-card p-1 pb-2 border-t border-r rounded-tr-lg flex flex-col z-20 items-center gap-2">
                 <Tooltip>
                     <TooltipTrigger asChild>
+                        <span>
+                            <Popover>
+                                <PopoverTrigger asChild>
+                                    <Button size={'icon-sm'} className={`${savingBlocks ? "text-muted-foreground" : "text-muted-foreground"}`} variant={'ghost'}>
+                                        {savingBlocks ? <CloudSync/> : <Cloud/>}
+                                    </Button>
+                                </PopoverTrigger>
+                                <PopoverContent side="right" align="start" sideOffset={10}>
+                                    <p className="text-sm text-muted-foreground">{savingBlocks ? "Saving blocks..." : "All changes saved"}</p>
+                                </PopoverContent>
+                            </Popover>
+                        </span>
+                    </TooltipTrigger>
+                    <TooltipContent side="right">
+                        {savingBlocks ? "Saving..." : "All changes saved"}
+                    </TooltipContent>
+                </Tooltip>
+                <Tooltip>
+                    <TooltipTrigger asChild>
                         <span className="inline-block w-fit">
                             <Button disabled={noteCtx?.isGenerating || noteCtx?.isEmbeddingImages} onClick={()=> {
                                 noteCtx?.setShowGenerateNotesDialog(true);
@@ -155,7 +218,7 @@ export default function NotebookPanel(){
                 <Tooltip>
                     <TooltipTrigger asChild>
                         <span className="inline-block w-fit">
-                            <Button disabled={noteCtx.notesHistory.length === 0 || noteCtx?.isGenerating} onClick={()=> {
+                            <Button disabled={noteCtx.blocks.length === 0 || noteCtx?.isGenerating} onClick={()=> {
                                 setShowNoteSettings(true);
                             }} size={'icon-sm'} className="text-muted-foreground" variant={'ghost'}>
                                 <Settings2/>
@@ -179,7 +242,7 @@ export default function NotebookPanel(){
                     </TooltipContent>
                 </Tooltip>
             </div>
-            {(noteCtx?.notesHistory.length! > 0 && noteCtx?.notesStatus != "submitted" && !noteCtx?.isStoringFiles) ? 
+            {((noteCtx?.notesHistory.length > 0 || noteCtx.blocks.length > 0) && noteCtx?.notesStatus != "submitted" && !noteCtx?.isStoringFiles) ? 
             <AnimatePresence>
                 <div ref={contentRef} className={`h-full overflow-auto pb-4 pt-4  ${useLightNotebookTheme ? "light" : "dark"} min-w-full`}>
                     <div className="px-10 pt-4 pb-4">
@@ -248,7 +311,7 @@ export default function NotebookPanel(){
                             Stop generating
                         </Button>
                     : <></>)
-                    : (!noteCtx?.metaObject || !noteCtx.metaObject.header || !noteCtx.isGenerating && noteCtx.notesHistory.length === 0) && <Button variant={'raised'} disabled={noteCtx!.files.length < 1} size={'lg'} className="px-4" onClick={() => {
+                    : (!noteCtx?.metaObject || !noteCtx.metaObject.header || !noteCtx.isGenerating && noteCtx.blocks.length === 0) && <Button variant={'raised'} disabled={noteCtx!.files.length < 1} size={'lg'} className="px-4" onClick={() => {
                         noteCtx?.setShowGenerateNotesDialog(true);
                         if (currentTour == "onboarding"){
                             setCurrentStep(10, 100);

@@ -12,6 +12,7 @@ import { useParams } from "next/navigation";
 import SaveToNotebook from "@/app/dashboard/class/[id]/notebooks/[noteId]/(actions)/saveToNotebook";
 import { useClass } from "./class-provider";
 import { availableSubjects } from "@/lib/subjects/subjectsList";
+import saveNotebookBlocks from "@/lib/actions/notebook/saveNotebookBlocks";
 
 export type NotebookContextType = {
     // Ui States
@@ -28,6 +29,8 @@ export type NotebookContextType = {
     // Content States
     noteId: string;
     name: string;
+    blocks: any[];
+    setBlocks: (blocks: any[]) => void;
     setName: (name: string) => void;
     subject: keyof typeof availableSubjects;
     files: FileSelect[];
@@ -105,6 +108,7 @@ export default function NotebookProvider({children, data}: {children: React.Reac
     // };
     const [name, setName] = useState(data.name);
     const [files, setFiles] = useState<FileSelect[]>(data.files || []);
+    const [blocks, setBlocks] = useState<any[]>(data.blocks || []);
     const [retryCount, setRetryCount] = useState(0);
     const [sourceFiles, setSourceFiles] = useState<string[]>(data.sourceFiles || []);
     const instructionsRef = useRef<string>(data.instructions || "");
@@ -162,27 +166,7 @@ export default function NotebookProvider({children, data}: {children: React.Reac
         }
     }, [internalMetaObject])
     const { messages:notesHistory, setMessages: setNotesHistory, sendMessage:sendNotesFollowup, status:notesStatus, stop: notesStop, regenerate } = useChat({
-        messages: data.content ? [
-            {
-                id: generateId,
-                role: "user",
-                parts: [
-                    {
-                        type: 'text',
-                        text: defaultNotesInstructions(length, _class.subject, instructions, Object.keys(topicWeights))
-                    }
-                ]
-            },
-            {
-            id: generateId(),
-            role: "assistant",
-            parts: [
-                {
-                    type: "text",
-                    text: data.content
-                }
-            ]
-        }] as UIMessage[] : [],
+        messages: [],
         transport: new DefaultChatTransport({
             api: '/api/notebook/generate-notes',
         }),
@@ -200,8 +184,6 @@ export default function NotebookProvider({children, data}: {children: React.Reac
                 regenerate();
                 setRetryCount(retryCount + 1);
             }
-
-            await SaveToNotebook(noteId, {content: res.message.parts.map((part) => part.type === "text" ? part.text : "").join("")});
             setIsEmbeddingImages(true);
             const parts = await Promise.all(
                 res.message.parts.map(async (part) => 
@@ -214,7 +196,14 @@ export default function NotebookProvider({children, data}: {children: React.Reac
             const updatedMessages = [...notesHistory];
             updatedMessages[updatedMessages.length - 1] = finalMessage;
             setNotesHistory(updatedMessages);
-            await SaveToNotebook(noteId, {content: finalMessage.parts.map((part) => part.type === "text" ? part.text : "").join("")});
+            const markdown = finalMessage.parts.map((part) => part.type === "text" ? part.text : "").join("");
+            if (markdown.trim().length === 0) {
+                console.warn("No markdown content generated, skipping embedding images and saving.");
+                setIsEmbeddingImages(false);
+                return;
+            }
+            const finalBlocks = await saveNotebookBlocks(noteId, {markdown});
+            setBlocks(finalBlocks.blocks);
             setIsEmbeddingImages(false);
             console.log("Finished embedding images");
         },
@@ -268,6 +257,8 @@ export default function NotebookProvider({children, data}: {children: React.Reac
         // Content States
             noteId,
             subject: _class.subject,
+            blocks: blocks,
+            setBlocks: setBlocks,
             name,
             setName,
             files, 

@@ -15,7 +15,7 @@ export default function MainPanel() {
     const { isMobile } = useSidebar();
     const {setCollapsedRightSidebar, collapsedRightSidebar} = useNotebook();
     return (
-        <div className="flex flex-col h-full w-full rounded-t-lg border border-b-0 border-neutral-200 dark:border-neutral-900 bg-card h-full">
+        <div className="flex flex-col h-full w-full rounded-lg border border-neutral-200 dark:border-neutral-900 bg-card h-full">
             <TabList group="main" className="w-full h-max shrink-y-0 z-30">
                 <TabItem label={"Notebook"} id={"notebook"} group={"main"} />
                 {tabs.main.length > 0 && tabs.main.map((tab, index) => (

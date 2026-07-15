@@ -79,7 +79,7 @@ export default function Page(){
                 </div>
             </>}
                 <TabsProvider>
-                    <div className={`${isMobile && (selectedTab != "notebook" ? "opacity-0 pointer-events-none" : 'opacity-100')} pt-4 pl-4 flex-1 min-h-0 flex`}>
+                    <div className={`${isMobile && (selectedTab != "notebook" ? "opacity-0 pointer-events-none" : 'opacity-100')} p-3 flex-1 min-h-0 flex`}>
                         <ResizablePanelGroup orientation="horizontal">
                             <ResizablePanel>
                                 <MainPanel/>

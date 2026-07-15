@@ -81,6 +81,7 @@ export const notebook = pgTable("notebook", {
     sourceFiles: jsonb("source_files").$type<string[]>().default([]),
     fileStoreId: text("file_store_id"),
     content: text("content"),
+    blocks: jsonb("blocks").$type<any[]>(),
     dateCreated: timestamp("date_created").notNull().defaultNow(),
     dateModified: timestamp("date_modified").notNull().defaultNow(),
 })

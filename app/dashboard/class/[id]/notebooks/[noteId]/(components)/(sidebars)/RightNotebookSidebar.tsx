@@ -9,7 +9,7 @@ import ChatMessagesPanel from "../(apps)/(chats)/ChatMessagesPanel";
 export default function RightNotebookSidebar(){
     const { tabs } = useTabs();
     return <div className="h-full flex flex-col gap-3">
-        <div className="flex flex-col h-full rounded-tl-lg border border-r-0 border-b-0 border-neutral-200 dark:border-neutral-900 bg-card h-full">
+        <div className="flex flex-col h-full rounded-lg border border-neutral-200 dark:border-neutral-900 bg-card h-full">
             <TabList group="side">
                 <TabItem label={"Chat"} id={"chat"} group={"side"} />
                 <TabItem label={"Library"} id={"library"} group={"side"} />

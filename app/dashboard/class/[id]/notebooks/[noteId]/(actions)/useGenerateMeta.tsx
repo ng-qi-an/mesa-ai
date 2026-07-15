@@ -3,7 +3,7 @@ import { useNotebook } from "@/components/providers/notebook-provider";
 import SaveToNotebook from "./saveToNotebook";
 
 export function useGenerateMeta(){
-    const { noteId, setNotesHistory, setTopicWeights, setCollapseSections, files, instructions, length, setSourceFiles, setIsStoringFiles, setInstructions, setLength, setMetaObject, metaSubmit } = useNotebook();
+    const { noteId, setNotesHistory, setTopicWeights, setCollapseSections, files, instructions, length, setSourceFiles, setIsStoringFiles, setInstructions, setLength, setMetaObject, metaSubmit, setBlocks } = useNotebook();
     const { _class: {fileStoreId} } = useClass();
     async function generateMeta(customProps?: Record<string, any>){
         const customInstructions = customProps?.instructions ?? instructions;
@@ -14,6 +14,7 @@ export function useGenerateMeta(){
         setMetaObject(undefined);
         setNotesHistory([]);
         setTopicWeights({});
+        setBlocks([]);
         if (!fileStoreId){
             throw new Error("No file store ID found for this class");
         }

@@ -240,7 +240,7 @@ export default function LibraryPanel(){
             {files.length > 0 &&
             <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                    <Button variant="raised" className="absolute bottom-8 right-6" size="lg">
+                    <Button variant="raised" className="absolute bottom-6 right-4" size="lg">
                         Create new <Plus/>
                     </Button>
                 </DropdownMenuTrigger>
