@@ -28,7 +28,7 @@ export default async function addUserFileClient(files: File[], urls: {url: strin
                         throw new Error("Failed to rag file to DB!");
                     }
                 } catch (error) {
-                    await deleteUserFile(url.id, parent);        
+                    await deleteUserFile(url.id);        
                     throw new Error(`Failed to upload file to DB`);
                 }
             } else {

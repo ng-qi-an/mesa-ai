@@ -45,7 +45,7 @@ export function DeleteFileFolderDialog({isFolder, count, itemId, parent, open, o
                             if (isFolder){
                                 await deleteUserFolder(itemId, true);
                             } else {
-                                await deleteUserFile(itemId, parent || "");
+                                await deleteUserFile(itemId);
                             }
                         } catch (error) {
                             console.log("Error deleting item:", error);

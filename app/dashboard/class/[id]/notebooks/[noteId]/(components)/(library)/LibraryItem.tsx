@@ -5,10 +5,14 @@ import { Button } from "@/components/ui/button";
 import ChatMessagesPanel from "../(apps)/(chats)/ChatMessagesPanel";
 import { useTabs } from "@/components/providers/tabs-provider";
 import QuizPanel from "../(apps)/(quiz)/QuizPanel";
+import SourceItemDropdown from "./SourceItemDropdown";
+import { useNotebook } from "@/components/providers/notebook-provider";
 
 export default function LibraryItem({item}: {item: LibraryItemType}){
     const {addOrGoToTab} = useTabs();
     const Icon = item.type == "quizzes" ? ListTodo : item.type == "sources" ? FileIcon : item.type == "chats" ? MessageSquare : CircleQuestionMark;
+    const ItemDropdown = item.type == "sources" ? SourceItemDropdown : null
+    const { noteId } = useNotebook();
     return <div className="cursor-pointer flex items-center gap-3 group hover:bg-secondary px-3 pr-1 py-2 rounded-md w-full relative"
         onClick={()=>{
             if (item.type == "chats"){
@@ -27,15 +31,19 @@ export default function LibraryItem({item}: {item: LibraryItemType}){
                 {item.description}
             </p>
         </div>
-        <Tooltip>
-            <TooltipContent side="bottom" align="end">
-                <p>More options</p>
-            </TooltipContent>
-            <TooltipTrigger asChild>
-                <Button variant="ghost" size="icon-sm" className="text-muted-foreground">
-                    <MoreVertical/>
-                </Button>
-            </TooltipTrigger>
-        </Tooltip>
+        {ItemDropdown && (
+                <Tooltip>
+                    <TooltipContent side="bottom" align="end">
+                        <p>More options</p>
+                    </TooltipContent>
+                    <TooltipTrigger asChild>
+                        <ItemDropdown id={item.id} noteId={noteId}>
+                            <Button variant="ghost" size="icon-sm" className="text-muted-foreground">
+                                <MoreVertical/>
+                            </Button>
+                        </ItemDropdown>
+                    </TooltipTrigger>
+                </Tooltip>
+        )}
     </div>
 }

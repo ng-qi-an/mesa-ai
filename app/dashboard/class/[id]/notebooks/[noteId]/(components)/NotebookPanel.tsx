@@ -272,7 +272,7 @@ export default function NotebookPanel(){
             <div className="absolute bottom-0 left-0 w-full bg-gradient-to-t from-card to-card/0 animate-movingGradient z-[60] items-end pb-6 flex justify-center pointer-events-none">
             </div>
             </>}
-            {(noteCtx.isMetaLoading || noteCtx.notesStatus == "submitted" || noteCtx.blocks.length == 0) && <div className="h-full overflow-hidden absolute top-0 left-0 w-full bg-card z-[50]">
+            {(noteCtx.isMetaLoading || noteCtx.notesStatus == "submitted" || noteCtx.blocks.length == 0 || !noteCtx.metaObject?.header) && <div className="h-full overflow-hidden absolute top-0 left-0 w-full bg-card z-[50]">
                 {noteCtx?.metaObject && noteCtx.isGenerating && <div className="flex flex-col absolute items-center justify-center top-0 left-0 h-full w-full">
                     <p className="w-[80%] gap-10 text-justify leading-10 overflow-hidden">
                         {noteCtx.metaObject.topics?.filter((topic): topic is string => topic !== undefined).map((topic:string, index:number)=> {
