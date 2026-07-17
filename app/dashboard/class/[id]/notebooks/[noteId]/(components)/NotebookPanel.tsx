@@ -17,7 +17,7 @@ import { useTheme } from "next-themes";
 import checkFileStoreMatch from "../(actions)/checkFileStoreMatch";
 import { useNextStep } from "nextstepjs";
 import { useIsMobile } from "@/hooks/use-mobile";
-
+import SoftAurora from "@/components/SoftAurora";
 // Blocknote
 import "@blocknote/core/fonts/inter.css";
 import { useCreateBlockNote } from "@blocknote/react";
@@ -265,12 +265,32 @@ export default function NotebookPanel(){
                     }}
                 />
             </div>
-            {(noteCtx.notesStatus == "streaming") && <>
+            <AnimatePresence>
+                {(noteCtx.notesStatus == "streaming") && <motion.div initial={{bottom: -400}} animate={{bottom: -200}} exit={{bottom: -400}} className="absolute left-0 z-[70] w-full h-[350px] rounded-b-lg overflow-hidden pointer-events-none">
+                    <div className="relative w-full blur-sm h-full overflow-hidden rounded-b-lg">
+                        <SoftAurora
+                            speed={2.5}
+                            scale={1.5}
+                            brightness={1.5}
+                            noiseFrequency={2}
+                            noiseAmplitude={1}
+                            bandHeight={0.5}
+                            bandSpread={1.2}
+                            octaveDecay={0.05}
+                            layerOffset={1}
+                            colorSpeed={1}
+                            enableMouseInteraction={false}
+                            mouseInfluence={0.25}
+                        />
+                    </div>
+                </motion.div>}
+            </AnimatePresence>
+            {/* {(noteCtx.notesStatus == "streaming") && <>
             <div className="absolute bottom-0 left-0 w-full bg-gradient-to-t from-primary/50 via-primary/0 to-primary/0 animate-movingGradient z-[70] items-end pb-18 flex justify-center pointer-events-none">
             </div>
             <div className="absolute bottom-0 left-0 w-full bg-gradient-to-t from-card to-card/0 animate-movingGradient z-[60] items-end pb-6 flex justify-center pointer-events-none">
             </div>
-            </>}
+            </>} */}
             {(noteCtx.isMetaLoading || noteCtx.notesStatus == "submitted" || noteCtx.blocks.length == 0 || !noteCtx.metaObject?.header) && <div className="h-full overflow-hidden absolute top-0 left-0 w-full bg-card z-[50]">
                 {noteCtx?.metaObject && noteCtx.isGenerating && <div className="flex flex-col absolute items-center justify-center top-0 left-0 h-full w-full">
                     <p className="w-[80%] gap-10 text-justify leading-10 overflow-hidden">
