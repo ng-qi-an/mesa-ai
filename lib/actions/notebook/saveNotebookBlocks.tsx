@@ -1,16 +1,12 @@
 'use server';
+import { notebookSchemaServer } from "@/app/dashboard/class/[id]/notebooks/[noteId]/(components)/(notebook)/notebookSchemaServer";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { notebook } from "@/lib/schemas/schema";
-import { createExtension } from "@blocknote/core";
 import { ServerBlockNoteEditor } from "@blocknote/server-util";
-import Mathematics from "@tiptap/extension-mathematics";
 import { and, eq } from "drizzle-orm";
 import { headers } from "next/headers";
-const MathExtension = createExtension({
-  key: "customBlockExtension",
-  tiptapExtensions: [Mathematics],
-});
+
 
 export default async function saveNotebookBlocks(noteId: string, {markdown, blocks}: {markdown?: string, blocks?: any[]}) {
     const session  =  await auth.api.getSession({
@@ -23,8 +19,8 @@ export default async function saveNotebookBlocks(noteId: string, {markdown, bloc
         throw new Error("Either markdown or blocks must be provided");
     }
     const editor = ServerBlockNoteEditor.create({
-        extensions: [MathExtension]
-    });
+        schema: notebookSchemaServer
+    })
     var finalBlocks = blocks || [];
     if (markdown){
         finalBlocks = await editor.tryParseMarkdownToBlocks(markdown) || [];

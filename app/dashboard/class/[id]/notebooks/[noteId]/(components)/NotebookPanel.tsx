@@ -28,9 +28,8 @@ import "@blocknote/shadcn/style.css";
 import 'katex/dist/katex.min.css'
 import saveNotebookBlocks from "@/lib/actions/notebook/saveNotebookBlocks";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { InlineMathInputRule, migrateDollarMathToInlineMath, notebookSchema } from "./(notebook)/NotebookSchema";
-import { WavyBackground } from "@/components/ui/wavy-background";
-import { Shimmer } from "@/components/ai-elements/shimmer";
+import { notebookSchema } from "./(notebook)/NotebookSchema";
+import { InlineMathInputRule, migrateDollarMathToInlineMath } from "./(notebook)/mathExtensionUtils";
 
 
 export default function NotebookPanel(){

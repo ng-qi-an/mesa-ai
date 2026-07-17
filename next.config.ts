@@ -8,7 +8,6 @@ const nextConfig: NextConfig = {
     minimumCacheTTL: 60 * 60 * 24 * 7,
   },
   serverExternalPackages: [
-    "@blocknote/core",
     "@blocknote/react",
     "@blocknote/server-util",
   ],
