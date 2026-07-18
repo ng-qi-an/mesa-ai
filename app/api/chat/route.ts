@@ -21,7 +21,7 @@ export async function POST(req: Request) {
         throw new Error("Chat ID is required");
     }
     const result = streamText({
-        system: `
+        instructions: `
         ${availableSubjects[context.subject].instructions.chat}
         `,
         model: context.selectedModel || chatModels[0].name,
@@ -60,7 +60,7 @@ export async function POST(req: Request) {
                 reasoningEffort: convertEffortLevel("deepseek", context.selectedModel, context.thinkingLevel)
             }
         },
-        onFinish: async({totalUsage})=>{
+        onEnd: async({totalUsage})=>{
             console.log("[CHAT STREAM] Stream finished with total tokens:", totalUsage.totalTokens);
             // The user usage limit thing should go here
         }
@@ -87,7 +87,7 @@ export async function POST(req: Request) {
             prefix: 'msg-assistant',
             size: 16,
         }),
-        onFinish: async({messages, responseMessage})=>{
+        onEnd: async({messages, responseMessage})=>{
             console.log("[CHAT STREAM] Stream finished! Saving chat to DB!")
             console.log("assistant message:", responseMessage);
             messages

@@ -8,6 +8,7 @@ const similarityThreshold = 0.2; // Adjust this threshold as needed (0 to 1, whe
 export interface SearchResult {
   content: string;
   similarity: number;
+  fileId: string;
 }
 
 export async function retrieveChunks(fileIds: string[], query: string, limit = 10): Promise<SearchResult[]> {
@@ -28,9 +29,8 @@ export async function retrieveChunks(fileIds: string[], query: string, limit = 1
   try {
     const similaritySQL = sql<number>`1 - (${cosineDistance(fileChunks.embedding, queryEmbedding)})`;
     const results = await db.select({content: fileChunks.content, fileId: fileChunks.fileId, similarity: similaritySQL}).from(fileChunks).where(and(sql`${similaritySQL} > ${similarityThreshold}`, inArray(fileChunks.fileId, fileIds))).orderBy(sql`${similaritySQL} DESC`).limit(limit);
-
-
     console.log("🔍 Found chunks:", results.map((result)=> result.similarity));
+    console.log("File ids", results.map((result)=> result.fileId));
     return results
   } catch (error) {
     console.error("Error retrieving chunks:", error);

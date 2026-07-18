@@ -1,8 +1,7 @@
-import { streamText, UIMessage, convertToModelMessages } from 'ai';
-import { google, GoogleGenerativeAIProviderOptions } from "@ai-sdk/google";
+import { streamText, UIMessage, convertToModelMessages, createUIMessageStreamResponse, toUIMessageStream } from 'ai';
 import { auth } from '@/lib/auth';
 import { headers } from 'next/headers';
-import { chatModels, fileSearchMetaQuery } from '@/lib/utils/models';
+import { chatModels } from '@/lib/utils/models';
 import { db } from '@/lib/db';
 import constructProvider from '@/lib/utils/constructProvider';
 
@@ -51,24 +50,14 @@ export async function POST(req: Request) {
     console.log("Generating notes for user:", session.user.id);
     const result = streamText({
         model: constructProvider(chatModels[0]).chat(chatModels[0].name), // "google/gemini-3-flash-preview",
-        system: `You are an intelligent note-taking assistant that will generate structured notes. To guide your notes, you will be provided with files. You will use those files, in conjunction with the user's instructions, to generate a set of content-guided structred notes.
+        instructions: `You are an intelligent note-taking assistant that will generate structured notes. To guide your notes, you will be provided with files. You will use those files, in conjunction with the user's instructions, to generate a set of content-guided structred notes.
         ## File sources
         Below are the files the user uploaded as sources. Use them to ground your note generation and ensure all notes are supported by the content in these files.
         ${files.map(f => `### ${f.name} (${f.contentType})\n\n${f.markdown}`).join("\n\n")}
         `,
         messages: await convertToModelMessages(context.messages),
-        providerOptions: {
-            google: {
-                thinkingConfig: {
-                    thinkingLevel: "minimal",
-                },
-            } satisfies GoogleGenerativeAIProviderOptions
-        }
+        reasoning: "minimal"
     });
+    return createUIMessageStreamResponse({stream: toUIMessageStream({stream: result.stream})})
 
-    return result.toUIMessageStreamResponse({
-        onFinish: async()=>{
-
-        }
-    });
 }

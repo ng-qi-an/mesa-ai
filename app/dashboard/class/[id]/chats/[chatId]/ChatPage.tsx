@@ -10,7 +10,6 @@ import Logo from "@/components/logo";
 import { useChatContext } from "@/components/providers/chat-provider";
 import { useClass } from "@/components/providers/class-provider";
 import { Button } from "@/components/ui/button";
-import saveToChat from "@/lib/actions/chat/saveToChat";
 import SendChatMessage, { ChatAttachmentType } from "@/lib/actions/chat/sendChatMessage";
 import { ChatSelect } from "@/lib/schemas/schema";
 import { allowedMimeTypes } from "@/lib/utils";

@@ -15,7 +15,7 @@ export default async function markTextAnswer({response, questionTitle, correctAn
                 thinkingLevel: "minimal",
             }
         },
-        system: `
+        instructions: `
         # Role
         You are a marker for student's text answers in a quiz.
         

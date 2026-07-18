@@ -1,5 +1,4 @@
 import { streamText, Output } from 'ai';
-import { google, GoogleGenerativeAIProviderOptions } from "@ai-sdk/google";
 import { noteMetaSchema } from '../schema';
 import { auth } from '@/lib/auth';
 import { headers } from 'next/headers';
@@ -47,7 +46,7 @@ export async function POST(req: Request) {
     const result = streamText({
         model: constructProvider(chatModels[0]).chat(chatModels[0].name),
         output: Output.object({ schema: noteMetaSchema }),
-        system: `
+        instructions: `
         ## Output Guidelines
             ### Topic Naming Rules
             - Use noun phrases or short descriptive titles
@@ -92,14 +91,7 @@ export async function POST(req: Request) {
         Provided below are the files the user uploaded as soruces. Use them to ground your topic generation and ensure all topics are supported by the content in these files.
         ${files.map(f => `### ${f.name} (${f.contentType})\n\n${f.markdown}`).join("\n\n")}
         `,
-        providerOptions: {
-            google: {
-                thinkingConfig: {
-                    thinkingLevel: "minimal",
-                    // thinkingBudget: 0
-                },
-            } satisfies GoogleGenerativeAIProviderOptions
-        }
+        reasoning: "minimal"
     });
     return result.toTextStreamResponse();
 }

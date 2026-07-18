@@ -58,7 +58,11 @@ export async function ragFile(fileId: string, contentType: string) {
         model: constructProvider(summaryModels[0]).chat(summaryModels[0].name),
         messages: [{role: "user", content: [
           {type: "text", text: `Your role is to extract details from images to be chunked later. Describe the content of the image in detail, including any text, objects, or diagrams. Be descriptive but concise. Focus on factual description rather than interpretation or speculation. You can use relevant markdown formatting. Keep to a maximum of 400 words.`},
-          {type: "image", image: data}
+          {
+            type: 'file',
+            data: data,
+            mediaType: 'image'
+          }
         ]}],
         providerOptions: {
           openrouter: {

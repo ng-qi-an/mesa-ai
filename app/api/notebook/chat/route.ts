@@ -1,10 +1,8 @@
-import { streamText, UIMessage, convertToModelMessages, stepCountIs, createIdGenerator } from 'ai';
-import { google, GoogleGenerativeAIProviderOptions } from "@ai-sdk/google";
+import { streamText, convertToModelMessages, isStepCount, createIdGenerator, toUIMessageStream, createUIMessageStreamResponse } from 'ai';
 import { auth } from '@/lib/auth';
 import { headers } from 'next/headers';
 import { chatModels, ChatUIMessage, convertEffortLevel, fileSearchMetaQuery, ThinkingLevels } from '@/lib/utils/models';
 import { availableSubjects } from '@/lib/subjects/subjectsList';
-import constructProvider from '@/lib/utils/constructProvider';
 import { searchDocumentsTool } from '@/lib/rag-actions/searchDocumentsTool';
 import { db } from '@/lib/db';
 import { listDocumentsTool } from '@/lib/rag-actions/listDocumentsTool';
@@ -59,7 +57,7 @@ export async function POST(req: Request) {
             listDocuments: listDocumentsTool(files.map(f => f.id)),
             searchDocuments: searchDocumentsTool(files.map(f => f.id)),
         },
-        system: `
+        instructions: `
         ${availableSubjects[context.subject].instructions.chat}
         ## File sources
         This chat has been provided with student's notes and slide decks. You should use them to ground your responses when necessary.
@@ -69,49 +67,20 @@ export async function POST(req: Request) {
         - Should no relevant information be found, try a broader search query. 
         - If all tool calls are exhausted, answer to the best of your ability with the general information you have. You must mention that your answer may be incomplete.
         `,
-        stopWhen: stepCountIs(5), // lets the model use tools and continue
-        providerOptions: {
-           gateway: {
-                sort: 'cost',
-                models: chatModels.filter((model)=> model.name != context.selectedModel).map((model) => model.name),
-            },
-            openrouter: {
-                reasoning: {
-                    effort: convertEffortLevel("openrouter", context.selectedModel, context.thinkingLevel)
-                }
-            },
-            anthropic: {
-                thinking: {
-                    type: "adaptive",
-                    effort: convertEffortLevel("anthropic", context.selectedModel, context.thinkingLevel)
-                },
-            },
-            google: {
-                thinkingConfig: {
-                    thinkingLevel: convertEffortLevel("google", context.selectedModel, context.thinkingLevel),
-                    includeThoughts: true,
-                },
-            },
-            openai: {
-                reasoningEffort: convertEffortLevel("openai", context.selectedModel, context.thinkingLevel)
-            },
-            deepseek: {
-                thinking: {
-                    type: "enabled"
-                },
-                reasoningEffort: convertEffortLevel("deepseek", context.selectedModel, context.thinkingLevel)
-            }
-        }
+        stopWhen: isStepCount(5), // lets the model use tools and continue
+        reasoning: context.thinkingLevel,
     });
-    return result.toUIMessageStreamResponse({
-        sendReasoning: true,
-        sendSources: true,
+    return createUIMessageStreamResponse({
+        stream: toUIMessageStream({
+            stream: result.stream, 
+            sendReasoning: true,
+            sendSources: true,
         originalMessages: context.messages,
         generateMessageId: createIdGenerator({
             prefix: 'msg-assistant',
             size: 16,
         }),
-        onFinish: async({messages, responseMessage}:{messages: ChatUIMessage[], responseMessage: ChatUIMessage})=>{
+        onEnd: async({messages, responseMessage}:{messages: ChatUIMessage[], responseMessage: ChatUIMessage})=>{
             console.log("[CHAT STREAM] Stream finished! Saving chat to DB!")
             console.log("assistant message:", responseMessage);
             await saveToChat(context.chatId, { messages });
@@ -133,6 +102,6 @@ export async function POST(req: Request) {
                     };
                 }
             }
-        }
-    });
+        }})
+    })
 }

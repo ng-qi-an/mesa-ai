@@ -56,7 +56,7 @@ export default function ChatMessagesPanel({chatId: initialChatId, chatName: init
         transport: new DefaultChatTransport({
             api: '/api/notebook/chat',
         }),
-        messages: [],
+        messages: [] as ChatUIMessage[],
         onFinish: async ({messages}) => {
             setMessages(messages);
         }
@@ -126,7 +126,7 @@ export default function ChatMessagesPanel({chatId: initialChatId, chatName: init
                         : <Conversation className="relative min-h-0 h-full">
                             <ConversationContent>
                                 {messages.map((message, index) => (
-                                (index === messages.length - 1 ? !(status == "streaming" && messages.at(-1)?.parts.length == 0) : true) && <Message from={message.role} key={message.id}>
+                                !(messages.length -1 == index && message.role == "assistant" && message.parts.length == 0) && <Message from={message.role} key={message.id}>
                                     <ChatMessageContent
                                         message={message as ChatUIMessage}
                                         isLastMessage={index === messages.length - 1}
@@ -134,8 +134,7 @@ export default function ChatMessagesPanel({chatId: initialChatId, chatName: init
                                     />
                                 </Message>
                                 ))}
-                                {(status == "submitted" || (status == "streaming" && messages.at(-1)?.parts.length == 0)) &&
-                                <Message from="assistant">
+                                {status == "submitted" || (status == "streaming" && (messages.length > 1 && messages.at(-1)!.role == "assistant" && messages.at(-1)!.parts.length == 0))  && <Message from="assistant">
                                     <MessageContent className="flex flex-row items-center gap-3">
                                         <Logo type="favicon" className="size-4 invert" />
                                         <Shimmer>
