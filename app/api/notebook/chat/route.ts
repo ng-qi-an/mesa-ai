@@ -1,4 +1,4 @@
-import { streamText, convertToModelMessages, isStepCount, createIdGenerator, toUIMessageStream, createUIMessageStreamResponse } from 'ai';
+import { streamText, convertToModelMessages, isStepCount, createIdGenerator, toUIMessageStream, createUIMessageStreamResponse, gateway } from 'ai';
 import { auth } from '@/lib/auth';
 import { headers } from 'next/headers';
 import { chatModels, ChatUIMessage, convertEffortLevel, fileSearchMetaQuery, ThinkingLevels } from '@/lib/utils/models';
@@ -56,6 +56,10 @@ export async function POST(req: Request) {
         tools: {
             listDocuments: listDocumentsTool(files.map(f => f.id)),
             searchDocuments: searchDocumentsTool(files.map(f => f.id)),
+            perplexity_search: gateway.tools.perplexitySearch({
+                maxResults: 5,
+                country: "SG",
+            }),
         },
         instructions: `
         ${availableSubjects[context.subject].instructions.chat}

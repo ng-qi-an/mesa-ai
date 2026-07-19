@@ -13,6 +13,8 @@ export type ChatContextType = {
     setNewThinkingLevel: (level: ThinkingLevels) => void;
     newSelectedModel: string;
     setNewSelectedModel: (model: string) => void;
+    loadingChatName: boolean;
+    setLoadingChatName: (loading: boolean) => void;
 }
 
 const ChatContext = createContext<ChatContextType | undefined>(undefined);

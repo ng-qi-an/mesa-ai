@@ -10,7 +10,7 @@ import { cn } from "@/lib/utils";
 import { MoreVertical, Pencil, Trash } from "lucide-react";
 import { useState } from "react";
 
-export default function ChatActionsDropdown({chat, triggerClassName, onRename, onDelete}:{chat: ChatSelect, triggerClassName?: string, onRename: (newName: string) => void, onDelete: () => void}) {
+export default function ChatActionsDropdown({chat, triggerClassName, disabled, onRename, onDelete}:{chat?: ChatSelect |null, triggerClassName?: string, disabled?: boolean, onRename: (newName: string) => void, onDelete: () => void}) {
     const [showRenameDialog, setShowRenameDialog] = useState(false);
     const [showDeleteDialog, setShowDeleteDialog] = useState(false);
     return <div onClick={(e) => e.stopPropagation()} onPointerDown={(e) => e.stopPropagation()} className="ml-auto h-full flex items-center justify-center">
@@ -18,11 +18,9 @@ export default function ChatActionsDropdown({chat, triggerClassName, onRename, o
         <DropdownMenu>
             <TooltipTrigger asChild>
                 <DropdownMenuTrigger asChild>
-                    <span className={triggerClassName}>
-                        <Button size={'icon-sm'} onClick={(e)=> e.stopPropagation()} className={cn("text-muted-foreground")} variant={'ghost'}>
-                            <MoreVertical/>
-                        </Button>
-                    </span>
+                    <Button disabled={disabled} size={'icon-sm'} onClick={(e)=> e.stopPropagation()} className={cn("text-muted-foreground")} variant={'ghost'}>
+                        <MoreVertical/>
+                    </Button>
                 </DropdownMenuTrigger>
             </TooltipTrigger>
             <DropdownMenuContent align="end">
@@ -34,7 +32,9 @@ export default function ChatActionsDropdown({chat, triggerClassName, onRename, o
             <p>More options</p>
         </TooltipContent>
     </Tooltip>
+    {chat &&<>
     <RenameChatDialog open={showRenameDialog} setOpen={setShowRenameDialog} chatid={chat.id} initialName={chat.name} onSubmit={onRename}/>
     <DeleteChatDialog chatId={chat.id} open={showDeleteDialog} onOpenChange={setShowDeleteDialog} onSubmit={onDelete}/>
+    </>}
 </div>
 }

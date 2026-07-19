@@ -2,6 +2,7 @@ import { DragDropProvider } from "@dnd-kit/react";
 import { isSortable } from "@dnd-kit/react/sortable";
 import { createContext, useContext, useRef, useState } from "react";
 import {move} from '@dnd-kit/helpers';
+import { LucideIcon } from "lucide-react";
 
 type TabsContextType = {
     tabs: Record<string, TabItemType[]>;
@@ -14,11 +15,12 @@ type TabsContextType = {
     closeTab: (tabId: string) => void;
     moveTab: (tabId: string, toGroup: "main" | "side") => void;
     getTabGroup: (tabId: string) => "main" | "side" | undefined;
+    updateTab: (tabId: string, updatedTab: Partial<TabItemType>) => void;
 }
 
 export type TabItemType = {
     label: string;
-    icon?: React.ElementType;
+    icon?: LucideIcon;
     id: string;
     component: React.ReactNode;
 }
@@ -135,9 +137,15 @@ export default function TabsProvider({children}: {children: React.ReactNode}) {
             setSelectedSideTab(tabId);
         }
     }
+    function updateTab(tabId: string, updatedTab: Partial<TabItemType>) {
+        const group = getTabGroup(tabId);
+        if (!group) return;
+        const updatedTabs = tabs[group].map(tab => tab.id === tabId ? {...tab, ...updatedTab} : tab);
+        setTabs({...tabs, [group]: updatedTabs});
+    }
 
     return (
-        <TabsContext.Provider value={{ tabs, setTabs, selectedMainTab, setSelectedMainTab, selectedSideTab, setSelectedSideTab, addOrGoToTab, closeTab, getTabGroup, moveTab }}>
+        <TabsContext.Provider value={{ tabs, setTabs, selectedMainTab, setSelectedMainTab, selectedSideTab, setSelectedSideTab, addOrGoToTab, closeTab, getTabGroup, moveTab, updateTab }}>
             <DragDropProvider
                 onDragStart={() => {
                     tabsSnapshotRef.current = {

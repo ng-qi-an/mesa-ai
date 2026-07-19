@@ -14,12 +14,12 @@ export default function RightNotebookSidebar(){
                 <TabItem label={"Chat"} id={"chat"} group={"side"} />
                 <TabItem label={"Library"} id={"library"} group={"side"} />
                 {tabs.side.length > 0 && tabs.side.map((tab, index) => (
-                    <DraggableTabItem key={tab.id} label={tab.label} id={tab.id} closable={true} index={index} group={"side"} />
+                    <DraggableTabItem icon={tab.icon} key={tab.id} label={tab.label} id={tab.id} closable={true} index={index} group={"side"} />
                 ))}
             </TabList>
             <div className="flex-1 relative h-full w-full">
                 <TabContent tabId={"chat"} group={"side"}>
-                    <ChatMessagesPanel chatName={"New Chat"}/>
+                    <ChatMessagesPanel isMainChat chatName={"New Chat"}/>
                 </TabContent>
                 <TabContent tabId={"library"} group={"side"}>
                     <LibraryPanel/>

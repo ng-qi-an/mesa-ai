@@ -25,7 +25,7 @@ export default function QuizNewResponsePanel({quiz, setQuiz, response, responses
     const [marking, setMarking] = useState(false);
     const [answerReasoning, setAnswerReasoning] = useState<QuizTextAnswerExplanationType | null>(null);
     const [revealAnswer, setRevealAnswer] = useState(false);
-    const { moveTab, closeTab, getTabGroup } = useTabs();
+    const { moveTab, closeTab, getTabGroup, updateTab } = useTabs();
     const activeTabGroup = quiz ? getTabGroup(quiz.id) : undefined;
 
     useEffect(()=>{
@@ -81,7 +81,7 @@ export default function QuizNewResponsePanel({quiz, setQuiz, response, responses
                 <Button disabled={responses.length < 2} onClick={()=> setIsAttempting(false)} variant="ghost" size="icon-sm" className="text-muted-foreground shrink-0">
                     <History className="size-4"/>
                 </Button>
-                <p className="text-sm w-full">
+                <p className="text-sm w-full line-clamp-1">
                     {quiz.name}
                 </p>
                 <Button variant="ghost" size="icon-sm" className="text-muted-foreground shrink-0" onClick={()=>{
@@ -93,6 +93,7 @@ export default function QuizNewResponsePanel({quiz, setQuiz, response, responses
             </div>
             <QuizActionsDropdown triggerClassName="" quiz={quiz} onRename={(newName) => {
                 setQuiz({...quiz, name: newName});
+                updateTab(quiz.id, {label: newName});
             }} onDelete={()=>{
                 closeTab(quiz.id);
             }}/>

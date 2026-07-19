@@ -9,16 +9,20 @@ import SourceItemDropdown from "./SourceItemDropdown";
 import { useNotebook } from "@/components/providers/notebook-provider";
 
 export default function LibraryItem({item}: {item: LibraryItemType}){
-    const {addOrGoToTab} = useTabs();
+    const {addOrGoToTab, setSelectedSideTab} = useTabs();
     const Icon = item.type == "quizzes" ? ListTodo : item.type == "sources" ? FileIcon : item.type == "chats" ? MessageSquare : CircleQuestionMark;
     const ItemDropdown = item.type == "sources" ? SourceItemDropdown : null
-    const { noteId } = useNotebook();
+    const { noteId, mainChatId } = useNotebook();
     return <div className="cursor-pointer flex items-center gap-3 group hover:bg-secondary px-3 pr-1 py-2 rounded-md w-full relative"
         onClick={()=>{
             if (item.type == "chats"){
-                addOrGoToTab({label: item.label, id: item.id, component: <ChatMessagesPanel chatId={item.id} chatName={item.label} />}, "side")
+                if (item.id == mainChatId) {
+                    setSelectedSideTab("chat");
+                } else {
+                    addOrGoToTab({icon: MessageSquare, label: item.label, id: item.id, component: <ChatMessagesPanel chatId={item.id} chatName={item.label} />}, "side")
+                }
             } else if (item.type == "quizzes"){
-                addOrGoToTab({label: item.label, id: item.id, component: <QuizPanel quizId={item.id} />}, "side")
+                addOrGoToTab({icon: ListTodo, label: item.label, id: item.id, component: <QuizPanel quizId={item.id} />}, "side")
             }
         }}
     >

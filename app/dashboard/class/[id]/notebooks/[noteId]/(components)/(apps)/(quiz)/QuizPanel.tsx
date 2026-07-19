@@ -23,7 +23,7 @@ export default function QuizPanel({quizId}: {quizId: string}){
     const [selectedResponseId, setSelectedResponseId] = useState<string>("");
     const incompleteAttempt = responses.find(r => !r.completedQuiz);
     const [loading, setLoading] = useState(true);
-    const { moveTab, getTabGroup, closeTab } = useTabs();
+    const { moveTab, getTabGroup, closeTab, updateTab } = useTabs();
     const activeTabGroup = quiz ? getTabGroup(quiz.id) : undefined;
     
     useEffect(()=>{
@@ -53,12 +53,10 @@ export default function QuizPanel({quizId}: {quizId: string}){
     <div className={`bg-card h-full flex flex-col pb-3`}>
         <div className="flex items-center h-12 shrink-0 px-3 items-center border-b">
             <div className="flex w-full items-center gap-2">
-                {selectedResponseId ? <Button variant="ghost" size="icon-sm" className="text-muted-foreground shrink-0" onClick={()=> selectedResponseId && setSelectedResponseId("")}>
+                {selectedResponseId && <Button variant="ghost" size="icon-sm" className="text-muted-foreground shrink-0" onClick={()=> selectedResponseId && setSelectedResponseId("")}>
                     <ChevronLeft className="size-4"/>
-                </Button> : <Button variant="ghost" size="icon-sm" className="text-muted-foreground shrink-0 pointer-events-none">
-                    <ListTodo className="size-4"/>
                 </Button>}
-                <p className="text-sm w-full">
+                <p className={`text-sm w-full line-clamp-1 ${!selectedResponseId ? "pl-2" : ""}`}>
                     {quiz.name}
                 </p>
                 <Button variant="ghost" size="icon-sm" className="text-muted-foreground shrink-0" onClick={()=>{
@@ -70,6 +68,7 @@ export default function QuizPanel({quizId}: {quizId: string}){
             </div>
             <QuizActionsDropdown triggerClassName="" quiz={quiz} onRename={(newName) => {
                setQuiz({...quiz, name: newName});
+               updateTab(quiz.id, {label: newName});
             }} onDelete={()=>{
                 closeTab(quiz.id);
             }}/>

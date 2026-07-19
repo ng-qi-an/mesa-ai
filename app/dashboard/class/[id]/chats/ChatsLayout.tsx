@@ -24,6 +24,7 @@ export default function ChatsLayout({children, chats}: {chats: ChatSelect[], chi
     const [newThinkingLevel, setNewThinkingLevel] = useState<ThinkingLevels>("low");
     const [newSelectedModel, setNewSelectedModel] = useState(chatModels[0].name);
     const [showChatList, setShowChatList] = useState(!isMobile);
+    const [loadingChatName, setLoadingChatName] = useState<boolean>(false);
 
     const groupedChats = groupedTime(chats, chats.map((chat) => chat.dateModified));
 
@@ -80,7 +81,7 @@ export default function ChatsLayout({children, chats}: {chats: ChatSelect[], chi
                     <Fragment key={grp.key}>
                         <p className={`text-xs font-medium text-muted-foreground px-3 mb-1 ${index > 0 && "mt-4"}`}>{grp.label}</p>
                         {grp.items.map((chat) => (
-                            <ChatListItem key={chat.id} active={chat.id == chatId} chat={chat} />
+                            <ChatListItem loadingChatName={loadingChatName} key={chat.id} active={chat.id == chatId} chat={chat} />
                         ))}
                     </Fragment>
                 ))}
@@ -102,7 +103,7 @@ export default function ChatsLayout({children, chats}: {chats: ChatSelect[], chi
                     router.push(`/dashboard/class/${id}/chats`);
                 }}>{!isMobile && "Create new"}<MessageSquarePlus/></Button>
             </PageHeader>
-            <ChatProvider value={{newText, setNewText, newFiles, setNewFiles, newThinkingLevel, setNewThinkingLevel, newSelectedModel, setNewSelectedModel}}>
+            <ChatProvider value={{newText, setNewText, newFiles, setNewFiles, newThinkingLevel, setNewThinkingLevel, newSelectedModel, setNewSelectedModel, loadingChatName, setLoadingChatName}}>
                 <div className="w-full flex-1 min-h-0 flex flex-col">
                     {children}
                 </div>

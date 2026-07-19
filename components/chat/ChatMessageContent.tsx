@@ -3,13 +3,15 @@ import { Reasoning, ReasoningContent, ReasoningTrigger } from "@/components/ai-e
 import { generateId, TextUIPart, ToolUIPart } from "ai";
 import ChatAttachments from "./ChatAttachments";
 import { Source, Sources, SourcesContent, SourcesTrigger } from "../ai-elements/sources";
-import { CopyIcon, File, FileSearch, FileText, RefreshCcwIcon, Scroll, SearchIcon } from "lucide-react";
+import { CopyIcon, File, FileSearch, FileText, Globe, RefreshCcwIcon, Scroll, SearchIcon, TextSearch } from "lucide-react";
 import { chatModels, ChatUIMessage } from "@/lib/utils/models";
 import { ModelSelectorLogo } from "../ai-elements/model-selector";
 import { Shimmer } from "../ai-elements/shimmer";
 import { Task, TaskContent, TaskItem, TaskItemFile, TaskTrigger } from "../ai-elements/task";
 import { Spinner } from "../ui/spinner";
 import React from "react";
+import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
+import { cn } from "@/lib/utils";
 
 export default function ChatMessageContent({message, isLastMessage, isStreaming}: {message: ChatUIMessage, isLastMessage: boolean, isStreaming: boolean}){
   const reasoningParts = message.parts.filter((part) => part.type === "reasoning");
@@ -34,7 +36,7 @@ export default function ChatMessageContent({message, isLastMessage, isStreaming}
   });
   return <>
     {fileParts.length > 0 && <ChatAttachments files={fileParts.map((f)=> ({...f, id: generateId()}))}/>}
-    <MessageContent className="group">
+    <MessageContent className={cn("group", message.role== "assistant" && "w-full")}>
       {isGrounded && <Sources className="flex flex-wrap gap-2">
         <SourcesTrigger className="w-full hover:underline text-muted-foreground data-[state=open]:text-foreground cursor-pointer" count={sourceParts.length}/>
         {sourceParts.map((part, i) => {
@@ -47,16 +49,16 @@ export default function ChatMessageContent({message, isLastMessage, isStreaming}
               </SourcesContent>
         })}
       </Sources>}
-      {reasoningParts.length > 0 && (
-        <Reasoning className="w-full" isStreaming={isLastMessage && isStreaming && message.parts.at(-1)?.type === "reasoning"}>
-          <ReasoningTrigger />
-          <ReasoningContent>{reasoningParts.map((part) => part.text).join("\n\n")}</ReasoningContent>
-        </Reasoning>
-      )}
       <div className="flex flex-col gap-4">
+        {reasoningParts.length > 0 && (
+          <Reasoning className="w-full" isStreaming={isLastMessage && isStreaming && message.parts.at(-1)?.type === "reasoning"}>
+            <ReasoningTrigger />
+            <ReasoningContent>{reasoningParts.map((part) => part.text).join("\n\n")}</ReasoningContent>
+          </Reasoning>
+        )}
         {groupedParts.map((groupedPart, i)=>{
           if (groupedPart.type == "text"){
-            return <MessageResponse key={`${message.id}-${i}`}>{(groupedPart as TextUIPart).text}</MessageResponse>;
+            return <div key={`${message.id}-${i}`} className="my-0"><MessageResponse >{(groupedPart as TextUIPart).text}</MessageResponse></div>;
           } else if (groupedPart.type.startsWith("tool-")){
             const lastPart = (groupedPart as {type: string, parts: ToolUIPart[]}).parts[(groupedPart as {type: string, parts: ToolUIPart[]}).parts.length - 1];
             return <Task key={`${message.id}-${i}`} defaultOpen={false}>
@@ -70,7 +72,32 @@ export default function ChatMessageContent({message, isLastMessage, isStreaming}
                     const output = part.output as {results: {content: any, similarity: any, fileId: string}[], sourceFiles: {name: string, id: string}[]}
                     return <React.Fragment key={`${message.id}-${part.toolCallId}`}>
                       <TaskItem className="flex items-start gap-2"><SearchIcon className="size-4 shrink-0 mt-1"/> <p>Searching for "{part.input ? (part.input as { query: string }).query : ""}"</p></TaskItem>
-                      {output ? <TaskItem className="flex items-start gap-2 mb-2"><FileText className="size-4 shrink-0 mt-1"/> <p className="flex flex-wrap items-center gap-2">Retrieved {output.results.length} result{output.results.length !== 0 && "s"} from {output.sourceFiles && output.sourceFiles.map((file)=> <TaskItemFile className="opacity-70"><File className="size-4"/> {file.name}</TaskItemFile>)} </p></TaskItem> : <></>}
+                      {output ? <TaskItem className="flex flex-wrap items-start gap-2 mb-3"><FileText className="size-4 shrink-0 mt-1"/> <p className="">Retrieved {output.results.length} result{output.results.length !== 0 && "s"} from</p> {output.sourceFiles && output.sourceFiles.map((file)=> <TaskItemFile key={file.id} className="opacity-70"><File className="size-4"/> {file.name}</TaskItemFile>)}</TaskItem> : <></>}
+                    </React.Fragment>
+                  })}
+                </TaskContent>
+              </> : groupedPart.type == "tool-perplexity_search" ? <>
+                <TaskTrigger title={lastPart.state ==  "output-available" ? "Searched the web" : "Searching the web..."} icon={lastPart.state== "output-available" ? <Globe className="size-4"/> : <Spinner className="size-4"/>} />
+                <TaskContent>
+                  {groupedPart.parts.map((part)=>{
+                    const output = part.output as {results: {last_updated: string, title:string,  url: string}[]}
+                    return <React.Fragment key={`${message.id}-${part.toolCallId}`}>
+                      <TaskItem className="flex items-start gap-2"><SearchIcon className="size-4 shrink-0 mt-1"/> <p>Searching for "{part.input ? (part.input as { query: string }).query : ""}"</p></TaskItem>
+                      {output ? <TaskItem className="flex items-start gap-2 mb-2"><TextSearch className="size-4 shrink-0 mt-1"/>
+                          <Popover>
+                            <PopoverTrigger asChild>
+                              <span className="hover:text-foreground cursor-pointer transition-all">Retrieved {output.results.length} webpage{output.results.length !== 0 && "s"}</span>
+                            </PopoverTrigger>
+                            <PopoverContent align="start"sideOffset={10} className="w-68 flex flex-col gap-0 p-2">
+                              {output.results.map((result, index)=>{
+                                return <a href={result.url} key={`${result.title}+${result.url}+${part.toolCallId}+${index}`} target="_blank" rel="noopener noreferrer" className="flex flex-col gap-1 py-2 px-2 cursor-pointer hover:bg-secondary rounded-lg">
+                                  <p className="line-clamp-1 font-medium">{result.title}</p>
+                                  <p className="text-xs text-muted-foreground line-clamp-1">{result.url}</p>
+                                </a>
+                              })}
+                            </PopoverContent>
+                          </Popover>
+                        </TaskItem> : <></>}
                     </React.Fragment>
                   })}
                 </TaskContent>

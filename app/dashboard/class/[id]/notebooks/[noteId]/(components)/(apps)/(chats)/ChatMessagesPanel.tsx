@@ -1,5 +1,5 @@
 'use client';
-import { Maximize, Maximize2, Menu, Minimize2 } from "lucide-react";
+import { Maximize, Maximize2, Menu, Minimize2, Plus } from "lucide-react";
 import { useEffect, useState } from "react";
 import Logo from "@/components/logo";
 import {
@@ -37,77 +37,151 @@ import getChat from "@/lib/actions/chat/getChat";
 import createChat from "@/lib/actions/chat/createChat";
 import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty";
 import { useTabs } from "@/components/providers/tabs-provider";
+import ExpandMinimiseButton from "../../(tabbar)/ExpandMinimiseButton";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import generateChatName from "@/lib/actions/chat/generateChatName";
+import { Skeleton } from "@/components/ui/skeleton";
+import ChatListDrawer from "./ChatListDrawer";
 
-export default function ChatMessagesPanel({chatId: initialChatId, chatName: initialChatName}: {chatId?: string, chatName: string}){
+export default function ChatMessagesPanel({chatId: initialChatId, chatName: initialChatName, isMainChat}: {chatId?: string, chatName: string, isMainChat?: boolean}){
     const noteCtx = useNotebook();
     const {_class} = useClass();
     const [text, setText] = useState<string>("");
     const [chat, setChat] = useState<ChatSelect | null>(null);
     const [chatName, setChatName] = useState<string>(initialChatName);
     const [loadingChat, setLoadingChat] = useState<boolean>(true);
+    const [loadingChatName, setLoadingChatName] = useState<boolean>(false);
     const [files, setFiles] = useState<ChatAttachmentType[]>([]);
     const [previousFiles, setPreviousFiles] = useState<ChatAttachmentType[]>([]);
     const [previousText, setPreviousText] = useState<string>("");
     const [thinkingLevel, setThinkingLevel] = useState<ThinkingLevels>("low");
     const [selectedModel, setSelectedModel] = useState<string>(chatModels[0].name);
-    const { moveTab, closeTab, getTabGroup } = useTabs();
-    const activeTabGroup = chat ? getTabGroup(chat.id) : undefined;
+    const [showChatList, setShowChatList] = useState<boolean>(false);
+    const { closeTab, updateTab } = useTabs();
     const { messages, sendMessage, setMessages, status, stop } = useChat({
         transport: new DefaultChatTransport({
             api: '/api/notebook/chat',
         }),
         messages: [] as ChatUIMessage[],
+        throttle: 100,
         onFinish: async ({messages}) => {
             setMessages(messages);
         }
     }); 
+    async function fetchChat(chatId: string){
+        setLoadingChat(true);
+        const result = await getChat(chatId);
+        if (!result) {
+            toast.error("Failed to load chat. Please close andf try again.");
+            setLoadingChat(false);
+            return;
+        } else {
+            console.log("Loaded chat!")
+            setChat(result);
+            setMessages(result.messages as ChatUIMessage[]);
+            setChatName(result.name);
+            setLoadingChat(false);
+        }
+    }
     useEffect(()=>{
-        (async()=>{
-            if (!initialChatId) {
-                setLoadingChat(false);
-                return;
-            };
-            const result = await getChat(initialChatId);
-            if (!result) {
-                toast.error("Failed to load chat. Please close andf try again.");
-                setLoadingChat(false);
-                return;
-            } else {
-                console.log("Loaded chat!")
-                setChat(result);
-                setMessages(result.messages as ChatUIMessage[]);
-                setChatName(result.name);
-                setLoadingChat(false);
-            }
-        })();
+        if (!initialChatId) {
+            setLoadingChat(false);
+            return;
+        } else {
+            fetchChat(initialChatId);
+        }
     }, [])
     useEffect(()=>{
         if (!chat) return;
         setChatName(chat.name);
+        if (isMainChat){
+            noteCtx.setMainChatId(chat.id);
+        }
     }, [chat])
+    useEffect(()=>{
+        if (!chat) return;
+        updateTab(chat.id, {label: chatName});
+    }, [chatName])
 
     return <>
         <motion.div initial={{ opacity: 1 }} animate={{ opacity: 1 }} className={`bg-card h-full flex flex-col pb-3`}>
             <div className="flex items-center h-12 shrink-0 px-3 items-center border-b">
                 <div className="flex w-full items-center gap-2">
-                    <Button variant="ghost" size="icon-sm" className="text-muted-foreground shrink-0">
-                        <Menu className="size-4"/>
-                    </Button>
-                    <p className="text-sm w-full">
+                    {isMainChat && <><Tooltip> 
+                        <TooltipTrigger asChild>
+                        <Button onClick={()=> setShowChatList(true)} variant="ghost" size="icon-sm" className="text-muted-foreground shrink-0">
+                            <Menu className="size-4"/>
+                        </Button>
+                        </TooltipTrigger>
+                        <TooltipContent side="bottom">
+                            <p>View other chats.</p>
+                        </TooltipContent>
+                    </Tooltip>
+                    <ChatListDrawer show={showChatList} setShow={setShowChatList} onChange={(chatId)=>{
+                        if (!chatId){
+                            setChat(null);
+                            setChatName("New Chat");
+                            setMessages([]);
+                            noteCtx.setMainChatId(null);
+                        } else {
+                            fetchChat(chatId);
+                        }
+                    }} onRename={(chatId, newName)=>{
+                        if (noteCtx.mainChatId == chatId){
+                            setChatName(newName);
+                        } else {
+                            updateTab(chatId, {label: newName});
+                        }
+                    }} onDelete={(chatId)=>{
+                        if (noteCtx.mainChatId == chatId){
+                            setChat(null);
+                            setChatName("New Chat");
+                            setMessages([]);
+                            noteCtx.setMainChatId(null);
+                        } else {
+                            closeTab(chatId);
+                        }
+                    }}/>
+                    </>}
+                    {loadingChatName ? <Skeleton className={`${!isMainChat && "ml-2"} w-[50%] mr-auto h-6`}/> :
+                    <p className={`text-sm w-full ${!isMainChat && "pl-2"} line-clamp-1`}>
                         {chatName}
-                    </p>
-                    <Button variant="ghost" size="icon-sm" className="text-muted-foreground shrink-0" onClick={()=>{
-                        if (!chat) return;
-                        moveTab(chat.id!, activeTabGroup === "side" ? "main" : "side")
-                    }}>
-                        {activeTabGroup == "side" ? <Maximize2 className="size-4"/> : <Minimize2 className="size-4"/>}
-                    </Button>
+                    </p>}
+                    {isMainChat ? <> 
+                    <Tooltip> 
+                        <TooltipTrigger asChild>
+                            <Button disabled={messages.length == 0} variant="ghost" size="icon-sm" className={"text-muted-foreground shrink-0"} onClick={()=>{
+                                setChat(null);
+                                setChatName("New Chat");
+                                setMessages([]);
+                                noteCtx.setMainChatId(null);
+                            }}>
+                                <Plus/>
+                            </Button>
+                        </TooltipTrigger>
+                        <TooltipContent side="bottom" align="end">
+                            <p>Start a new chat. Your chats are still saved.</p>
+                        </TooltipContent>
+                    </Tooltip>
+                    </>
+                    :
+                    <ExpandMinimiseButton tabId={chat?.id}/>}
                 </div>
-                {chat && <ChatActionsDropdown triggerClassName="" chat={chat} onRename={(newName) => {
-                    setChat({...chat, name: newName});
+                <ChatActionsDropdown disabled={!chat} triggerClassName="" chat={chat} onRename={(newName) => {
+                    if (chat){
+                        setChat({...chat, name: newName});
+                        setChatName(newName);
+                    }
                 }} onDelete={()=>{
-                    closeTab(chat.id);
-                }}/>}
+                    if (isMainChat){
+                        setChat(null);
+                        setChatName("New Chat");
+                        setMessages([]);
+                        noteCtx.setMainChatId(null);
+                    } else {
+                        chat && closeTab(chat.id);
+                    }
+                }}/>
             </div>
             <div className="flex-1 min-h-0 flex flex-col px-1">
                 {loadingChat ? <>
@@ -203,7 +277,18 @@ export default function ChatMessagesPanel({chatId: initialChatId, chatName: init
 
                         const r = await SendChatMessage({message, files, sendMessage, thinkingLevel, selectedModel, chatId: chatId, bodyOptions: {noteId: noteCtx.noteId, subject: _class.subject}});
                         console.log("SendChatMessage result:", r);
-                        if (r === "failed_uploads") {
+                        if (r == "success"){
+                            console.log("Current messages length", messages.length);
+                            if (messages.length == 0){
+                                setLoadingChatName(true);
+                                const name = await generateChatName({chatId, message: message.text});
+                                if (name) {
+                                    setChatName(name);
+                                    setChat((c)=> c ? {...c, name} : c);
+                                }
+                                setLoadingChatName(false);
+                            }
+                        }  else if (r === "failed_uploads") {
                             toast.warning("Some files failed to upload.");
                         } else if (r === "error") {
                             setText(oldText);

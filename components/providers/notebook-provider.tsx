@@ -28,6 +28,8 @@ export type NotebookContextType = {
     setShowGenerateNotesDialog: (show: boolean) => void;
     // Content States
     noteId: string;
+    mainChatId: string | null;
+    setMainChatId: (id: string | null) => void;
     name: string;
     blocks: any[];
     setBlocks: (blocks: any[]) => void;
@@ -109,6 +111,7 @@ export default function NotebookProvider({children, data}: {children: React.Reac
     const [name, setName] = useState(data.name);
     const [files, setFiles] = useState<FileSelect[]>(data.files || []);
     const [blocks, setBlocks] = useState<any[]>(data.blocks || []);
+    const [mainChatId, setMainChatId] = useState<string | null>(null);
     const [retryCount, setRetryCount] = useState(0);
     const [sourceFiles, setSourceFiles] = useState<string[]>(data.sourceFiles || []);
     const instructionsRef = useRef<string>(data.instructions || "");
@@ -170,6 +173,7 @@ export default function NotebookProvider({children, data}: {children: React.Reac
         transport: new DefaultChatTransport({
             api: '/api/notebook/generate-notes',
         }),
+        throttle: 100,
         onFinish: async (res)=>{
             console.log("Finished generating notes: ", res);
             if (res.isError){
@@ -256,6 +260,8 @@ export default function NotebookProvider({children, data}: {children: React.Reac
             setShowGenerateNotesDialog,
         // Content States
             noteId,
+            mainChatId,
+            setMainChatId,
             subject: _class.subject,
             blocks: blocks,
             setBlocks: setBlocks,

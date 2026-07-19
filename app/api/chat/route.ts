@@ -1,4 +1,4 @@
-import { streamText, convertToModelMessages, createIdGenerator } from 'ai';
+import { streamText, convertToModelMessages, createIdGenerator, gateway } from 'ai';
 import { chatModels, ChatUIMessage, convertEffortLevel, ThinkingLevels } from '@/lib/utils/models';
 import { availableSubjects } from '@/lib/subjects/subjectsList';
 import saveToChat from '@/lib/actions/quiz/saveToChat';
@@ -26,40 +26,20 @@ export async function POST(req: Request) {
         `,
         model: context.selectedModel || chatModels[0].name,
         messages: await convertToModelMessages(context.messages),
+        tools: {
+            perplexity_search: gateway.tools.perplexitySearch({
+                maxResults: 5,
+                country: "SG",
+
+            }),
+        },
         providerOptions: {
             gateway: {
                 sort: 'cost',
                 models: chatModels.filter((model)=> model.name != context.selectedModel).map((model) => model.name),
             },
-            openrouter: {
-                reasoning: {
-                    effort: convertEffortLevel("openrouter", context.selectedModel, context.thinkingLevel)
-                }
-            },
-            anthropic: {
-                thinking: {
-                    type: "adaptive"
-                },
-                effort: {
-                    level: convertEffortLevel("anthropic", context.selectedModel, context.thinkingLevel)
-                }
-            },
-            google: {
-                thinkingConfig: {
-                    thinkingLevel: convertEffortLevel("google", context.selectedModel, context.thinkingLevel),
-                    includeThoughts: true,
-                },
-            },
-            openai: {
-                reasoningEffort: convertEffortLevel("openai", context.selectedModel, context.thinkingLevel)
-            },
-            deepseek: {
-                thinking: {
-                    type: "enabled"
-                },
-                reasoningEffort: convertEffortLevel("deepseek", context.selectedModel, context.thinkingLevel)
-            }
         },
+        reasoning: context.thinkingLevel,
         onEnd: async({totalUsage})=>{
             console.log("[CHAT STREAM] Stream finished with total tokens:", totalUsage.totalTokens);
             // The user usage limit thing should go here
@@ -91,6 +71,9 @@ export async function POST(req: Request) {
             console.log("[CHAT STREAM] Stream finished! Saving chat to DB!")
             console.log("assistant message:", responseMessage);
             messages
+            responseMessage.parts.filter((part)=> part.type.startsWith("tool")).map((toolPart)=>{
+                console.log("Tool part:", JSON.stringify(toolPart, null, 2));
+            })
             await saveToChat(context.chatId, { messages });
         },
         messageMetadata: ({part})=>{

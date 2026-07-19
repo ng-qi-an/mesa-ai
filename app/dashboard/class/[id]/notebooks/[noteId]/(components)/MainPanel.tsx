@@ -19,7 +19,7 @@ export default function MainPanel() {
             <TabList group="main" className="w-full h-max shrink-y-0 z-30">
                 <TabItem label={"Notebook"} id={"notebook"} group={"main"} />
                 {tabs.main.length > 0 && tabs.main.map((tab, index) => (
-                    <DraggableTabItem key={tab.id} label={tab.label} id={tab.id} index={index} group={"main"} closable />
+                    <DraggableTabItem icon={tab.icon} key={tab.id} label={tab.label} id={tab.id} index={index} group={"main"} closable />
                 ))}
                 <div className="flex-1"/>
                 {!isMobile && <div className="flex items-center">
