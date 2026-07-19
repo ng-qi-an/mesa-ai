@@ -1,4 +1,4 @@
-import { text, pgTable, serial, timestamp, AnyPgColumn, jsonb, boolean } from "drizzle-orm/pg-core";
+import { text, pgTable, serial, timestamp, AnyPgColumn, jsonb, boolean, integer, vector } from "drizzle-orm/pg-core";
 import { user } from "./auth-schema";
 import { ChatUIMessage } from "../utils/models";
 import { QuizQuestionItemType, QuizTextAnswerExplanationType } from "../actions/quiz/quizSchema";
@@ -46,12 +46,26 @@ export const files = pgTable("files", {
     classId: text("class_id").notNull().references(() => classes.id, { onDelete: "cascade" }),
     name: text("name").notNull(),
     contentType: text("content_type").notNull(),
+    summary: text("summary"),
+    markdown: text("markdown"),
+    status: text("status").notNull().default("uploaded"),
     dateCreated: timestamp("date_created").notNull().defaultNow(),
     dateModified: timestamp("date_modified").notNull().defaultNow(),
 })
 
 export type FileInsert = typeof files.$inferInsert
 export type FileSelect = typeof files.$inferSelect
+
+export const fileChunks = pgTable("file_chunks", {
+    id: text("id").primaryKey(),
+    fileId: text("file_id").notNull().references(() => files.id, { onDelete: "cascade" }),
+    content: text("content").notNull(),
+    chunkIndex: integer("chunk_index").notNull(),
+    embedding: vector("embedding", { dimensions: 1536 }),
+})
+
+export type FileChunkInsert = typeof fileChunks.$inferInsert
+export type FileChunkSelect = typeof fileChunks.$inferSelect
 
 export const notebook = pgTable("notebook", {
     id: text("id").primaryKey(),
@@ -67,6 +81,7 @@ export const notebook = pgTable("notebook", {
     sourceFiles: jsonb("source_files").$type<string[]>().default([]),
     fileStoreId: text("file_store_id"),
     content: text("content"),
+    blocks: jsonb("blocks").$type<any[]>(),
     dateCreated: timestamp("date_created").notNull().defaultNow(),
     dateModified: timestamp("date_modified").notNull().defaultNow(),
 })
@@ -90,6 +105,8 @@ export const chats = pgTable("chats", {
     notebookId: text("notebook_id").references(() => notebook.id, { onDelete: "cascade" }),
     name: text("name").notNull().default("New chat"),
     messages: jsonb("messages").notNull().$type<ChatUIMessage[]>(),
+    selectedModel: text("selected_model"),
+    thinkingLevel: text("thinking_level"),
     dateCreated: timestamp("date_created").notNull().defaultNow(),
     dateModified: timestamp("date_modified").notNull().defaultNow(),
 })

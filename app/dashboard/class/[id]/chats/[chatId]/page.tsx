@@ -13,5 +13,5 @@ export default async function Page({params}: {params: Promise<{chatId: string, i
     if (!data){
         return redirect(`/dashboard/class/${id}/chats`);
     }
-    return <ChatPage chat={data} />
+    return <ChatPage key={data.id} chat={data} />
 }

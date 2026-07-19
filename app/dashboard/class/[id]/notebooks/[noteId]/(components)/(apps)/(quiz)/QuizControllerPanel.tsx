@@ -12,7 +12,7 @@ export default function QuizControllerPanel({setSidebarTool}: {setSidebarTool: (
     if (selectedQuizId == "create") {
         return <QuizCreatePanel quizList={quizList} setQuizList={setQuizList} setSelectedQuizId={setSelectedQuizId}/>;
     } else if (activeQuiz){
-        return <QuizPanel quiz={activeQuiz} setSelectedQuizId={setSelectedQuizId}/>;
+        return <QuizPanel quizId={selectedQuizId} />;
     } else {
         return <QuizListPanel setSidebarTool={setSidebarTool} quizList={quizList} setQuizList={setQuizList} setSelectedQuizId={setSelectedQuizId}/>;
     }

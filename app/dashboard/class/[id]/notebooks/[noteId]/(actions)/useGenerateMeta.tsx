@@ -3,7 +3,7 @@ import { useNotebook } from "@/components/providers/notebook-provider";
 import SaveToNotebook from "./saveToNotebook";
 
 export function useGenerateMeta(){
-    const { noteId, setNotesHistory, setTopicWeights, setCollapseSections, files, instructions, length, setSourceFiles, setIsStoringFiles, setInstructions, setLength, setMetaObject, metaSubmit } = useNotebook();
+    const { noteId, setNotesHistory, setTopicWeights, setCollapseSections, files, instructions, length, setSourceFiles, setIsStoringFiles, setInstructions, setLength, setMetaObject, metaSubmit, setBlocks } = useNotebook();
     const { _class: {fileStoreId} } = useClass();
     async function generateMeta(customProps?: Record<string, any>){
         const customInstructions = customProps?.instructions ?? instructions;
@@ -12,6 +12,7 @@ export function useGenerateMeta(){
         setIsStoringFiles(true);
         console.log("Generating topics with instructions:", customInstructions, "and files:", customFiles, "and length:", customLength);
         setMetaObject(undefined);
+        setBlocks([]);
         setNotesHistory([]);
         setTopicWeights({});
         if (!fileStoreId){
@@ -64,10 +65,9 @@ export function useGenerateMeta(){
         setInstructions(customInstructions);
         setLength(customLength);
         metaSubmit({
-            fileStoreId: fileStoreId!,
             instructions: customInstructions,
             length: customLength,
-            fileIds: customFiles.map(f=>f.id),
+            id: noteId,
         })
     }
     return { generateMeta };

@@ -1,11 +1,10 @@
 'use client';
 import LeftNotebookSidebar from "./(components)/(sidebars)/LeftNotebookSidebar";
-import NotebookPanel from "./(components)/NotebookPanel";
 import RightNotebookSidebar from "./(components)/(sidebars)/RightNotebookSidebar";
 import { LayoutGroup } from "motion/react";
 import GenerateNotesDialog from "./(components)/(modals)/GenerateNotesDIalog";
 import { Button } from "@/components/ui/button";
-import { Settings, Share } from "lucide-react";
+import { Share } from "lucide-react";
 import { useSidebar } from "@/components/ui/sidebar";
 import { useEffect, useState } from "react";
 import { useNotebook } from "@/components/providers/notebook-provider";
@@ -16,6 +15,9 @@ import MobileTabbar from "./(components)/(sidebars)/MobileTabbar";
 import SourcesPanel from "./(components)/SourcesPanel";
 import { useNextStep } from "nextstepjs";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import MainPanel from "./(components)/MainPanel";
+import TabsProvider from "@/components/providers/tabs-provider";
+import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable";
 
 export default function Page(){
     const {isMobile, setOpen} = useSidebar();
@@ -66,24 +68,30 @@ export default function Page(){
                 </TooltipContent>
             </Tooltip>
         </PageHeader>
-        <LayoutGroup>
-            <GenerateNotesDialog/>
-                <div className="relative flex-1 min-h-0 w-full flex overflow-hidden relative pb-3 sm:pb-4">
-                    {isMobile && <> 
-                        <div className={`absolute z-20 top-0 z-20 h-full w-full p-2 pb-3 ${selectedTab != "sources" ? "opacity-0 pointer-events-none" : 'opacity-100'}`}>
-                            <SourcesPanel/>
-                        </div>
-                        <div className={`absolute z-20 top-0 z-30 h-full w-full p-2 pb-3 ${selectedTab != "apps" ? "opacity-0 pointer-events-none" : 'opacity-100'}`}>
-                            <RightNotebookSidebar/>
-                        </div>
-                    </>}
-                    <div className={`${isMobile && (selectedTab != "notebook" ? "opacity-0 pointer-events-none" : 'opacity-100')} px-2 sm:px-4 gap-3 mt-2 sm:mt-5 flex-1 min-h-0 flex overflow-hidden`}>
-                        {!isMobile && <LeftNotebookSidebar/>}
-                        <NotebookPanel/>
-                        {!isMobile && <RightNotebookSidebar/>}
-                    </div>
+        <GenerateNotesDialog/>
+        <div className="relative flex-1 min-h-0 w-full flex relative">
+            {isMobile && <> 
+                <div className={`absolute z-20 top-0 z-20 h-full w-full p-2 pb-3 ${selectedTab != "sources" ? "opacity-0 pointer-events-none" : 'opacity-100'}`}>
+                    <SourcesPanel/>
                 </div>
-                {isMobile && <MobileTabbar selectedTab={selectedTab} setSelectedTab={setSelectedTab}/>}
-        </LayoutGroup>
+                <div className={`absolute z-20 top-0 z-30 h-full w-full p-2 pb-3 ${selectedTab != "apps" ? "opacity-0 pointer-events-none" : 'opacity-100'}`}>
+                    <RightNotebookSidebar/>
+                </div>
+            </>}
+                <TabsProvider>
+                    <div className={`${isMobile && (selectedTab != "notebook" ? "opacity-0 pointer-events-none" : 'opacity-100')} p-3 flex-1 min-h-0 flex`}>
+                        <ResizablePanelGroup orientation="horizontal">
+                            <ResizablePanel>
+                                <MainPanel/>
+                            </ResizablePanel>
+                            <ResizableHandle className="w-1 bg-transparent hover:bg-muted rounded-lg mx-1"/>
+                            <ResizablePanel defaultSize={"350px"} minSize={"350px"} maxSize={"50%"} collapsible>
+                                <RightNotebookSidebar/>
+                            </ResizablePanel>
+                        </ResizablePanelGroup>
+                    </div>
+                </TabsProvider>
+        </div>
+        {isMobile && <MobileTabbar selectedTab={selectedTab} setSelectedTab={setSelectedTab}/>}
     </div>
 }

@@ -4,11 +4,13 @@ import Logo from "@/components/logo";
 import { Button } from "@/components/ui/button";
 import { DropdownMenuItem, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import { Spinner } from "@/components/ui/spinner";
-import { Square } from "lucide-react";
+import { Brain, BrainCircuit, Rabbit, Scale, Square, Zap } from "lucide-react";
 import { Dispatch, SetStateAction, useEffect, useState } from "react";
 import { ChatAttachmentType } from "../../lib/actions/chat/sendChatMessage";
+import ModelSwitcher from "./ModelSwitcher";
+import { ThinkingLevels } from "@/lib/utils/models";
 
-export default function ChatInputFooter({thinkingLevel, setThinkingLevel, text, files, setFiles, onStop, disableStop, disableSend}:{thinkingLevel: string, setThinkingLevel: (level: string) => void, text: string, files: ChatAttachmentType[], setFiles: Dispatch<SetStateAction<ChatAttachmentType[]>>, onStop: () => void, disableStop: boolean, disableSend: boolean}){
+export default function ChatInputFooter({thinkingLevel, setThinkingLevel, selectedModel, setSelectedModel, text, files, setFiles, onStop, disableStop, disableSend}:{thinkingLevel: ThinkingLevels, setThinkingLevel: (level: ThinkingLevels) => void, selectedModel: string, setSelectedModel: (model: string) => void, text: string, files: ChatAttachmentType[], setFiles: Dispatch<SetStateAction<ChatAttachmentType[]>>, onStop: () => void, disableStop: boolean, disableSend: boolean}){
     const [showMesaDrive, setShowMesaDrive] = useState(false);
     const { files:promptFiles } = usePromptInputAttachments();
     useEffect(()=>{
@@ -40,22 +42,59 @@ export default function ChatInputFooter({thinkingLevel, setThinkingLevel, text, 
                     <DropdownMenuItem onClick={()=> setShowMesaDrive(true)}><Logo className="size-4 mr-1.5"/> Mesa Drive</DropdownMenuItem>
                 </PromptInputActionMenuContent>
             </PromptInputActionMenu>
+            <ModelSwitcher selectedModel={selectedModel} setSelectedModel={setSelectedModel}/>
             <PromptInputSelect
                 onValueChange={setThinkingLevel}
                 value={thinkingLevel}
             >
-                <PromptInputSelectTrigger className="bg-transparent dark:bg-transparent">
+                <PromptInputSelectTrigger className="bg-transparent dark:bg-transparent group">
                 <PromptInputSelectValue />
                 </PromptInputSelectTrigger>
                 <PromptInputSelectContent>
                     <PromptInputSelectItem value={"minimal"}>
-                        Fast
+                        <Zap />
+                        <div className="flex flex-col">
+                            <p>Very fast</p>
+                            <p className="group-data-[slot=select-trigger]:hidden text-xs text-muted-foreground">
+                                Quickest responses, but limited reasoning.
+                            </p>
+                        </div>
                     </PromptInputSelectItem>
                     <PromptInputSelectItem value={"low"}>
-                        Thinking
+                        <Rabbit/>
+                        <div className="flex flex-col">
+                            <p>Fast</p>
+                            <p className="group-data-[slot=select-trigger]:hidden text-xs text-muted-foreground">
+                                Quick responses, some reasoning.
+                            </p>
+                        </div>
                     </PromptInputSelectItem>
                     <PromptInputSelectItem value={"medium"}>
-                        Deep thinking
+                        <Scale/>
+                        <div className="flex flex-col">
+                            <p>Balanced</p>
+                            <p className="group-data-[slot=select-trigger]:hidden text-xs text-muted-foreground">
+                                Average reasoning and response time.
+                            </p>
+                        </div>
+                    </PromptInputSelectItem>
+                    <PromptInputSelectItem value={"high"}>
+                        <Brain/>
+                        <div className="flex flex-col">
+                            <p>Smarter</p>
+                            <p className="group-data-[slot=select-trigger]:hidden text-xs text-muted-foreground">
+                                Better reasoning, slower responses.
+                            </p>
+                        </div>
+                    </PromptInputSelectItem>
+                    <PromptInputSelectItem value={"xhigh"}>
+                        <BrainCircuit/>
+                        <div className="flex flex-col">
+                            <p>Extreme</p>
+                            <p className="group-data-[slot=select-trigger]:hidden text-xs text-muted-foreground">
+                                Most thorough reasoning, longest response time.
+                            </p>
+                        </div>
                     </PromptInputSelectItem>
                 </PromptInputSelectContent>
             </PromptInputSelect>

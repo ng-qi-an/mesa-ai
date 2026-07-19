@@ -120,12 +120,13 @@ export default function NoteSettingsDialog({open, onOpenChange}: {open: boolean,
                 <Button variant="destructive" className="mr-auto" onClick={async() => {
                     onOpenChange(false);
                     noteCtx.setMetaObject(undefined);
+                    noteCtx.setBlocks([]);
                     noteCtx.setNotesHistory([]);
                     noteCtx.setTopicWeights({});
                     noteCtx.setInstructions("");
                     noteCtx.setCollapseSections(true);
                     noteCtx.setLength("balanced");
-                    await SaveToNotebook(noteCtx.noteId, {content: null, title: null, subtitle: null, instructions: null, topicWeights: null});
+                    await SaveToNotebook(noteCtx.noteId, {content: null, title: null, subtitle: null, instructions: null, topicWeights: null, blocks: []});
                 }}>Clear notes</Button>
                 <Button variant="outline" onClick={() => {
                     onOpenChange(false)
@@ -135,6 +136,7 @@ export default function NoteSettingsDialog({open, onOpenChange}: {open: boolean,
                 }}>Cancel</Button>
                 <Button onClick={async() => {
                     onOpenChange(false);
+                    noteCtx.setBlocks([]);
                     noteCtx?.setTopicWeights(topicWeights);
                     noteCtx?.setInstructions(instructions);
                     noteCtx?.setLength(length);

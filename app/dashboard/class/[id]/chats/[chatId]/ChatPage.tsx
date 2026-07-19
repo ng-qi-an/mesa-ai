@@ -10,15 +10,16 @@ import Logo from "@/components/logo";
 import { useChatContext } from "@/components/providers/chat-provider";
 import { useClass } from "@/components/providers/class-provider";
 import { Button } from "@/components/ui/button";
-import saveToChat from "@/lib/actions/chat/saveToChat";
+import generateChatName from "@/lib/actions/chat/generateChatName";
 import SendChatMessage, { ChatAttachmentType } from "@/lib/actions/chat/sendChatMessage";
+import revalidateData from "@/lib/actions/revalidateData";
 import { ChatSelect } from "@/lib/schemas/schema";
 import { allowedMimeTypes } from "@/lib/utils";
-import { chatModels, ChatUIMessage } from "@/lib/utils/models";
+import { chatModels, ChatUIMessage, ThinkingLevels } from "@/lib/utils/models";
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport } from "ai";
 import { ArrowRight, MessageSquareIcon } from "lucide-react";
-import { useSearchParams } from "next/navigation"
+import { usePathname, useSearchParams } from "next/navigation"
 import { useRouter } from "nextjs-toploader/app"
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -28,43 +29,26 @@ export default function ChatPage({chat}:{chat: ChatSelect}){
     const chatCtx = useChatContext();
     const router = useRouter();
     const { _class } = useClass();
-
     const [text, setText] = useState("");
     const [previousText, setPreviousText] = useState("");
     const [files, setFiles] = useState<ChatAttachmentType[]>([]);
     const [previousFiles, setPreviousFiles] = useState<ChatAttachmentType[]>([]);
-    const [thinkingLevel, setThinkingLevel] = useState("minimal");
-    const [chatModelIndex, setChatModelIndex] = useState(0);
+    const [thinkingLevel, setThinkingLevel] = useState<ThinkingLevels>("low");
+    const [selectedModel, setSelectedModel] = useState(chatModels[0].name);
+    const pathname = usePathname();
+
     const promptInputRef = useRef<HTMLTextAreaElement>(null);
 
-    const { messages, sendMessage, setMessages, status, error, stop, clearError, regenerate } = useChat<ChatUIMessage>({
+    const { messages, sendMessage, setMessages, status, error, stop, clearError } = useChat<ChatUIMessage>({
         transport: new DefaultChatTransport({
             api: '/api/chat',
         }),
-        onFinish: async ({messages, finishReason, isAbort, isDisconnect, isError})=>{
-            console.log("Chat finished with reason:", finishReason);
-            if (finishReason === undefined && !isAbort && !isDisconnect && !isError){
-                if (chatModelIndex < chatModels.length - 1){
-                    console.log("Attempting to regenerate with fallback model:", chatModels[chatModelIndex + 1].name);
-                    // await SendChatMessage({message: {text: chatCtx.newText, files: chatCtx.newFiles}, files: chatCtx.newFiles, sendMessage, thinkingLevel: chatCtx.newThinkingLevel, chatId: chat.id, bodyOptions: {chatModelIndex: chatModelIndex + 1}});
-                    setTimeout(()=>{
-                        console.log("Regenerating with fallback model:", chatModels[chatModelIndex + 1].name);
-                        regenerate({body: {chatModelIndex: chatModelIndex + 1, subject: _class.subject}});
-                    }, 0)
-                    setChatModelIndex(chatModelIndex + 1)
-                } else {
-                    setChatModelIndex(0);
-                    console.log("No more fallback models available.");
-                    toast.error("Chat failed to generate a response. Please try again.");
-                }
-            } else {
-                console.log("Chat finished successfully:", finishReason);
-                setChatModelIndex(0);
-            }
-            setMessages(messages);
-            await saveToChat(chat.id, { messages });
-            console.log("isAbort:", isAbort, "isDisconnect:", isDisconnect, "isError:", isError);
-        },
+        // Moved to server-side.
+        // onFinish: async ({messages, isAbort, isDisconnect, isError})=>{
+        //     setMessages(messages);
+        //     await saveToChat(chat.id, { messages });
+        //     console.log("isAbort:", isAbort, "isDisconnect:", isDisconnect, "isError:", isError);
+        // },
         messages: chat.messages,
     });
     
@@ -77,14 +61,24 @@ export default function ChatPage({chat}:{chat: ChatSelect}){
                     const oldText = text;
                     const oldFiles = files;
                     setPreviousText(text);
-                    chatCtx.setNewText("");
                     setPreviousFiles(files);
+                    setTimeout(()=> setThinkingLevel(chatCtx.newThinkingLevel as ThinkingLevels || "minimal"), 0);
+                    setSelectedModel(chatCtx.newSelectedModel);
+                    const r = await SendChatMessage({message: {text: chatCtx.newText, files: chatCtx.newFiles}, files: chatCtx.newFiles, sendMessage, thinkingLevel: chatCtx.newThinkingLevel, selectedModel: chatCtx.newSelectedModel, chatId: chat.id, bodyOptions: {subject: _class.subject}});
+                    chatCtx.setNewText("");
                     chatCtx.setNewFiles([]);
-                    setThinkingLevel(chatCtx.newThinkingLevel);
-                    chatCtx.setNewThinkingLevel("minimal");
-                    const r = await SendChatMessage({message: {text: chatCtx.newText, files: chatCtx.newFiles}, files: chatCtx.newFiles, sendMessage, thinkingLevel: chatCtx.newThinkingLevel, chatId: chat.id, bodyOptions: {chatModelIndex, subject: _class.subject}});
+                    chatCtx.setNewThinkingLevel("low");
                     console.log("SendChatMessage result:", r);
-                    if (r === "failed_uploads") {
+                    if (r == "success"){
+                        console.log("Current messages length", messages.length);
+                        chatCtx.setLoadingChatName(true);
+                        const name = await generateChatName({chatId: chat.id, message: chatCtx.newText});
+                        if (name) {
+                            console.log("Generated chat name:", name);
+                            await revalidateData(pathname);
+                        }
+                        chatCtx.setLoadingChatName(false);
+                    } else if (r === "failed_uploads") {
                         toast.warning("Some files failed to upload.");
                     } else if (r === "error") {
                         setText(oldText);
@@ -93,12 +87,19 @@ export default function ChatPage({chat}:{chat: ChatSelect}){
                     }
                     router.replace(window.location.pathname);
                 }
+            } else {
+                console.log("Loaded thinking level:", chat.thinkingLevel)
+                setSelectedModel(chat.selectedModel || chatModels[0].name);
+                setTimeout(()=> setThinkingLevel(chat.thinkingLevel as ThinkingLevels || "minimal"), 0);
             }
         })();
         return ()=>{
             stop();
         }
     }, [])
+    useEffect(()=>{
+        console.log("Thinking level changed to:", thinkingLevel);
+    }, [thinkingLevel])
 
     return <div className="flex flex-col h-full flex-1 min-h-0 w-full items-center py-4">
         <Conversation className="relative min-h-0 w-full max-w-2xl">
@@ -110,7 +111,7 @@ export default function ChatPage({chat}:{chat: ChatSelect}){
                     title="Start a conversation"
                 />
                 ) : messages.map((message, index) => (
-                <Message from={message.role} key={message.id}>
+                !(messages.length -1 == index && message.role == "assistant" && message.parts.length == 0) && <Message from={message.role} key={message.id}>
                     <ChatMessageContent
                         message={message}
                         isLastMessage={index === messages.length - 1}
@@ -118,11 +119,11 @@ export default function ChatPage({chat}:{chat: ChatSelect}){
                     />
                 </Message>
                 ))}
-                {status == "submitted" && <Message from="assistant">
+                {status == "submitted" || (status == "streaming" && (messages.length > 1 && messages.at(-1)!.role == "assistant" && messages.at(-1)!.parts.length == 0)) && <Message from="assistant">
                     <MessageContent className="flex flex-row items-center gap-3">
                         <Logo type="favicon" className="size-4 invert" />
                         <Shimmer>
-                            {`Analysing.. ${chatModelIndex == 1 ? "(Attempt 2)" : chatModelIndex == 2 ? "(Attempt 3)" : ""}`}
+                            {`Analysing..`}
                         </Shimmer>
                     </MessageContent>
                 </Message>}
@@ -158,7 +159,7 @@ export default function ChatPage({chat}:{chat: ChatSelect}){
                 setPreviousFiles(files);
                 setText("");
                 setFiles([]);
-                const r = await SendChatMessage({message: message, files: files, sendMessage, thinkingLevel: thinkingLevel, chatId: chat.id, bodyOptions: {subject: _class.subject}});
+                const r = await SendChatMessage({message: message, files: files, sendMessage, thinkingLevel: thinkingLevel, selectedModel: selectedModel, chatId: chat.id, bodyOptions: {subject: _class.subject}});
                 console.log("SendChatMessage result:", r);
                 if (r === "failed_uploads") {
                     toast.warning("Some files failed to upload.");
@@ -173,7 +174,7 @@ export default function ChatPage({chat}:{chat: ChatSelect}){
             <PromptInputBody>
                 <PromptInputTextarea ref={promptInputRef} onChange={(e) => setText(e.target.value)} value={text}/>
             </PromptInputBody>
-            <ChatInputFooter files={files} setFiles={setFiles} text={text} thinkingLevel={thinkingLevel} setThinkingLevel={setThinkingLevel} 
+            <ChatInputFooter files={files} setFiles={setFiles} text={text} thinkingLevel={thinkingLevel} setThinkingLevel={setThinkingLevel} selectedModel={selectedModel} setSelectedModel={setSelectedModel}
                 onStop={()=>{
                     stop();
                     setText(previousText);

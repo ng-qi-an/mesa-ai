@@ -1,11 +1,12 @@
 'use server';
-import { google } from "@ai-sdk/google";
 import { generateText, Output } from "ai";
 import { quizTextAnswerExplanation } from "./quizSchema";
+import constructProvider from "@/lib/utils/constructProvider";
+import { chatModels } from "@/lib/utils/models";
 
 export default async function markTextAnswer({response, questionTitle, correctAnswer, longText, hint}: {response: string, questionTitle: string, correctAnswer: string, longText: boolean, hint: string}) {
     const { rawFinishReason, finishReason, output } = await generateText({
-        model: google("gemini-3-flash-preview"),
+        model: constructProvider(chatModels[0]).chat(chatModels[0].name),
         output: Output.object({
             schema: quizTextAnswerExplanation,
         }),
@@ -14,7 +15,7 @@ export default async function markTextAnswer({response, questionTitle, correctAn
                 thinkingLevel: "minimal",
             }
         },
-        system: `
+        instructions: `
         # Role
         You are a marker for student's text answers in a quiz.
         

@@ -58,7 +58,7 @@ export default function NewChat(){
                 <PromptInputBody>
                     <PromptInputTextarea ref={promptInputRef} onChange={(e) => chatCtx.setNewText(e.target.value)} value={chatCtx.newText}/>
                 </PromptInputBody>
-                <ChatInputFooter files={chatCtx.newFiles} setFiles={chatCtx.setNewFiles} text={chatCtx.newText} thinkingLevel={chatCtx.newThinkingLevel} setThinkingLevel={chatCtx.setNewThinkingLevel} 
+                <ChatInputFooter files={chatCtx.newFiles} setFiles={chatCtx.setNewFiles} text={chatCtx.newText} selectedModel={chatCtx.newSelectedModel} setSelectedModel={chatCtx.setNewSelectedModel} thinkingLevel={chatCtx.newThinkingLevel} setThinkingLevel={chatCtx.setNewThinkingLevel} 
                     onStop={()=>{
                         stop();
                     }}

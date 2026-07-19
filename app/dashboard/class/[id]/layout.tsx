@@ -6,7 +6,6 @@ import { ClassProvider } from "@/components/providers/class-provider";
 import getClassServer from "@/lib/actions/classes/getClass";
 import { cn } from "@/lib/utils";
 import { Suspense } from "react";
-import GoogleUnstableNotice from "../../(components)/GoogleUnstableNotice";
 
 export default async function ClassLayout({children, params}: {children: React.ReactNode, params: Promise<{id: string}>}) {
     const resolvedParams = await params;
@@ -22,7 +21,6 @@ export default async function ClassLayout({children, params}: {children: React.R
                 <MainSidebar classes={classes}/>
                 <Suspense fallback={<div className="w-full h-screen flex items-center justify-center">Loading...</div>}>
                     <main className={cn(_class.theme, "w-full h-screen flex flex-col")}>
-                        <GoogleUnstableNotice />
                         {children}
                     </main>
                 </Suspense>

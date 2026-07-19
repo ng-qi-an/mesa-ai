@@ -9,14 +9,14 @@ import { r2 } from "@/lib/r2";
 import deleteStoreFiles from "@/lib/file-search-actions/deleteStoreFiles";
 
 
-export default async function deleteUserFile(fileId: string, parent: string){
+export default async function deleteUserFile(fileId: string){
     const session = await auth.api.getSession({
         headers: await headers()
     })
     if (!session || !session.user) {
         throw new Error("Not authenticated");
     }
-    console.log("Deleting file:", fileId, "parent:", parent, "for user:", session.user.id);
+    console.log("Deleting file:", fileId, "for user:", session.user.id);
     try {
         const fileRecord = await db.query.files.findFirst({
             where: (files, {eq})=> eq(files.id, fileId),
@@ -30,7 +30,6 @@ export default async function deleteUserFile(fileId: string, parent: string){
         await db.delete(files).where(and(
             eq(files.userId, session.user.id),
             eq(files.id, fileId),
-            !parent ? isNull(files.parentId) : eq(files.parentId, parent)
         )).returning()
         const command = new DeleteObjectCommand({
             Bucket: process.env.R2_BUCKET_NAME!,
@@ -41,6 +40,7 @@ export default async function deleteUserFile(fileId: string, parent: string){
             console.log("File deleted from R2:", fileId);
         }
         if (fileRecord.class.fileStoreId){
+            console.log("Deleting file from store with id:", fileRecord.class.fileStoreId);
             await deleteStoreFiles(fileRecord.class.fileStoreId, [fileRecord.id]);
         }
     } catch (error) {

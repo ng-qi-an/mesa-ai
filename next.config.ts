@@ -7,9 +7,14 @@ const nextConfig: NextConfig = {
     formats: ["image/avif", "image/webp"],
     minimumCacheTTL: 60 * 60 * 24 * 7,
   },
+  serverExternalPackages: [
+    "@blocknote/react",
+    "@blocknote/server-util",
+  ],
   experimental: {
     serverActions: {
-      allowedOrigins: ['localhost:3000', "*.app.github.dev"]
+      allowedOrigins: ['localhost:3000', "*.app.github.dev"],
+      bodySizeLimit: '100mb',
     }
   },
   reactStrictMode: false,

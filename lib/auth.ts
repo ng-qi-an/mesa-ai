@@ -38,9 +38,9 @@ export const auth = betterAuth({
         } 
     }, 
     plugins: [
-        nextCookies(),
         dash(),
         passkey(), 
-        admin()
+        admin(),
+        nextCookies(),
     ] 
 });

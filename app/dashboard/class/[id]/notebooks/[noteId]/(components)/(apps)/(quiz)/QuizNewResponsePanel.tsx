@@ -2,7 +2,7 @@
 
 import { QuizResponseSelect, QuizSelect } from "@/lib/schemas/schema";
 import QuizActionsDropdown from "@/components/quiz/QuizActionsDropdown";
-import { ArrowRight, Check, ChevronLeft } from "lucide-react";
+import { ArrowRight, Check, ChevronLeft, History, Maximize2, Minimize2 } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import { Card, CardHeader, CardTitle } from "@/components/ui/card";
 import { useEffect, useState } from "react";
@@ -14,8 +14,9 @@ import { Spinner } from "@/components/ui/spinner";
 import QuizQuestion from "@/components/quiz/QuizQuestion";
 import { Empty, EmptyContent, EmptyHeader } from "@/components/ui/empty";
 import saveResponseAttempt from "@/lib/actions/quiz/saveResponseAttempt";
+import { useTabs } from "@/components/providers/tabs-provider";
 
-export default function QuizNewResponsePanel({quiz, setQuiz, response, responses, setResponses, setSelectedQuizId, setSelectedResponseId, setIsAttempting}: {quiz: QuizSelect, setQuiz: (quiz: QuizSelect) => void, response: QuizResponseSelect, responses: QuizResponseSelect[], setResponses: (responses: QuizResponseSelect[]) => void, setSelectedQuizId: (id: string) => void, setSelectedResponseId: (id: string) => void, setIsAttempting: (attempting: boolean) => void}) {
+export default function QuizNewResponsePanel({quiz, setQuiz, response, responses, setResponses, setSelectedResponseId, setIsAttempting}: {quiz: QuizSelect, setQuiz: (quiz: QuizSelect) => void, response: QuizResponseSelect, responses: QuizResponseSelect[], setResponses: (responses: QuizResponseSelect[]) => void, setSelectedResponseId: (id: string) => void, setIsAttempting: (attempting: boolean) => void}) {
     const [activeQuestionId, setActiveQuestionId] = useState(response.attemptingQuestionId || quiz.questions[0].id);
     const activeQuestion = quiz.questions.find(q => q.id === activeQuestionId);
     const activeIndex = quiz.questions.findIndex(q => q.id === activeQuestionId);
@@ -24,6 +25,8 @@ export default function QuizNewResponsePanel({quiz, setQuiz, response, responses
     const [marking, setMarking] = useState(false);
     const [answerReasoning, setAnswerReasoning] = useState<QuizTextAnswerExplanationType | null>(null);
     const [revealAnswer, setRevealAnswer] = useState(false);
+    const { moveTab, closeTab, getTabGroup, updateTab } = useTabs();
+    const activeTabGroup = quiz ? getTabGroup(quiz.id) : undefined;
 
     useEffect(()=>{
         (async()=>{
@@ -72,21 +75,30 @@ export default function QuizNewResponsePanel({quiz, setQuiz, response, responses
         }
         setMarking(false);
     }
-    return <Card size="sm" className={`rounded-md ring-neutral-200 dark:ring-neutral-900 h-full pb-2!`}>
-        <CardHeader className="items-center group flex cursor-pointer relative">
-            <div className="flex w-full items-center gap-1" onClick={()=> setSelectedQuizId("")}>
-                <ChevronLeft onClick={()=> setSelectedQuizId("")} className="text-muted-foreground group-hover:text-foreground size-4"/>
-                <CardTitle
-                className="ml-2 text-muted-foreground group-hover:text-foreground w-full">
+    return <div className={`bg-card h-full flex flex-col pb-3`}>
+        <div className="flex items-center h-12 shrink-0 px-3 items-center border-b">
+            <div className="flex w-full items-center gap-2">
+                <Button disabled={responses.length < 2} onClick={()=> setIsAttempting(false)} variant="ghost" size="icon-sm" className="text-muted-foreground shrink-0">
+                    <History className="size-4"/>
+                </Button>
+                <p className="text-sm w-full line-clamp-1">
                     {quiz.name}
-                </CardTitle>
+                </p>
+                <Button variant="ghost" size="icon-sm" className="text-muted-foreground shrink-0" onClick={()=>{
+                    if (!quiz) return;
+                    moveTab(quiz.id!, activeTabGroup === "side" ? "main" : "side")
+                }}>
+                    {activeTabGroup == "side" ? <Maximize2 className="size-4"/> : <Minimize2 className="size-4"/>}
+                </Button>
             </div>
-            <QuizActionsDropdown triggerClassName="inline-block w-fit absolute -top-1 right-4" quiz={quiz} onRename={(newName) => {
-               setQuiz({...quiz, name: newName});
+            <QuizActionsDropdown triggerClassName="" quiz={quiz} onRename={(newName) => {
+                setQuiz({...quiz, name: newName});
+                updateTab(quiz.id, {label: newName});
             }} onDelete={()=>{
-                setSelectedQuizId("");
+                closeTab(quiz.id);
             }}/>
-        </CardHeader>
+        </div>
+
         <div className="h-full w-full flex flex-col min-h-0">
             <Separator className="mb-2" />
             {activeQuestion ? <QuizQuestion quiz={quiz} question={activeQuestion} response={questionResponse} setResponse={setQuestionResponse} revealAnswer={revealAnswer} answerReasoning={answerReasoning!} 
@@ -139,5 +151,5 @@ export default function QuizNewResponsePanel({quiz, setQuiz, response, responses
                 </div>
             </div>
         </div>
-    </Card>
+    </div>
 }

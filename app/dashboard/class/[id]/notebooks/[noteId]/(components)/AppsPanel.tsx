@@ -32,48 +32,14 @@ export default function AppsPanel({setSidebarTool}: {setSidebarTool: (tool: stri
             disabled: true
         },
     ]
-    return <Card size="sm" className={`rounded-md ring-neutral-200 dark:ring-neutral-900 ${isCollapsed ? "h-max shrink-0 gap-0!" : "h-full"}`}>
-            <CardHeader className="items-center group flex cursor-pointer relative">
-                {!isMobile && <motion.div
-                    animate={{ rotate: !isCollapsed ? 0 : -90 }}
-                    transition={{ type: "spring", bounce: 0.15, duration: 0.4 }}
-                >
-                    <ChevronDown className="text-muted-foreground group-hover:text-foreground size-4"/>
-                </motion.div>}
-                <CardTitle 
-                onClick={()=> {
-                    if (noteCtx?.collapsedApps){
-                        noteCtx?.setCollapsedApps(false);
-                    } else {
-                        noteCtx?.setCollapsedApps(true);
-                        if (noteCtx?.collapsedSources){
-                            noteCtx?.setCollapsedSources(false);
-                        }
-                    }
-                }} 
-                className="ml-2 text-muted-foreground group-hover:text-foreground w-full">
-                    Apps
-                </CardTitle>
-            </CardHeader>
-            <motion.div 
-                className="grid h-full"
-                initial={false}
-                animate={{ gridTemplateRows: isCollapsed ? "0fr" : "1fr", opacity: isCollapsed ? 0 : 1 }}
-                transition={{ type: "spring", bounce: 0.15, duration: 0.4 }}
-            >
-                <div className="overflow-hidden h-full">
-                    {!isCollapsed && <Separator className="mb-2" />}
-                    <div className="h-full px-2 pb-2 overflow-auto">
-                        <div className="grid grid-cols-2 gap-2 h-max w-full mb-2">
-                            {Apps.map((tool) => (
-                                <div key={tool.name} className={`w-full px-4 py-3 flex flex-col group cursor-pointer rounded-md gap-2 bg-secondary/50 ${tool.disabled ? 'opacity-50 cursor-default pointer-events-none' : 'hover:bg-secondary'}`} onClick={() =>{ if (!tool.disabled) { noteCtx?.setCollapsedSources(true); setSidebarTool(tool.name) } }}>
-                                    <tool.icon className="size-5 text-muted-foreground group-hover:text-foreground"/>
-                                    <p className="text-sm font-medium text-foreground/80 group-hover:text-foreground">{tool.name}</p>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
+    return <div className="h-full pb-2 p-4 overflow-auto bg-card">
+        <div className="grid grid-cols-2 gap-2 h-max w-full mb-2">
+            {Apps.map((tool) => (
+                <div key={tool.name} className={`w-full px-4 py-3 flex flex-col group cursor-pointer rounded-md gap-2 bg-secondary/50 ${tool.disabled ? 'opacity-50 cursor-default pointer-events-none' : 'hover:bg-secondary'}`} onClick={() =>{ if (!tool.disabled) { noteCtx?.setCollapsedSources(true); setSidebarTool(tool.name) } }}>
+                    <tool.icon className="size-5 text-muted-foreground group-hover:text-foreground"/>
+                    <p className="text-sm font-medium text-foreground/80 group-hover:text-foreground">{tool.name}</p>
                 </div>
-            </motion.div>
-        </Card>
+            ))}
+        </div>
+    </div>
 }

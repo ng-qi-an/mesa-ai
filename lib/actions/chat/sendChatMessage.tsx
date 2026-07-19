@@ -3,6 +3,7 @@ import { PromptInputMessage } from "@/components/ai-elements/prompt-input";
 import getAddUserFileURL from "@/lib/r2actions/files/getAddUserFileUrl";
 import { FileUIPart } from "ai";
 import addFileToChatFilesDb from "../../../components/chat/addFileToChatFilesDb";
+import saveToChat from "./saveToChat";
 
 const fileHost = `http://mesa-ai.vercel.app`
 export type ChatAttachmentType = FileUIPart & {
@@ -10,7 +11,7 @@ export type ChatAttachmentType = FileUIPart & {
     drive: boolean;
 }
 
-export default async function SendChatMessage({message, files, sendMessage, thinkingLevel, chatId, bodyOptions}:{message: PromptInputMessage, files: ChatAttachmentType[], sendMessage: any, thinkingLevel: string, chatId: string, bodyOptions?: Record<string, any>}){
+export default async function SendChatMessage({message, files, sendMessage, thinkingLevel, selectedModel, chatId, bodyOptions}:{message: PromptInputMessage, files: ChatAttachmentType[], sendMessage: any, thinkingLevel: string, selectedModel: string, chatId: string, bodyOptions?: Record<string, any>}){
     try {
         let fileUploads;
         let finalFiles: (FileUIPart & { id: string })[] | undefined;
@@ -50,9 +51,12 @@ export default async function SendChatMessage({message, files, sendMessage, thin
                 await addFileToChatFilesDb({files: finalFiles, chatId: chatId});
             }
         }
+        await saveToChat(chatId, {selectedModel: selectedModel, thinkingLevel: thinkingLevel});
         sendMessage({text: message.text, files: finalFiles ? finalFiles : []}, {
             body: {
+                chatId,
                 thinkingLevel,
+                selectedModel,
                 ...bodyOptions,
             },
         });

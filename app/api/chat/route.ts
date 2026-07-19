@@ -1,31 +1,49 @@
-import { streamText, convertToModelMessages } from 'ai';
-import { createOpenRouter } from '@openrouter/ai-sdk-provider';
-import { chatModels, ChatUIMessage, Model } from '@/lib/utils/models';
+import { streamText, convertToModelMessages, createIdGenerator, gateway } from 'ai';
+import { chatModels, ChatUIMessage, convertEffortLevel, ThinkingLevels } from '@/lib/utils/models';
 import { availableSubjects } from '@/lib/subjects/subjectsList';
-
-const maxDuration = 180;
+import saveToChat from '@/lib/actions/quiz/saveToChat';
 
 type ChatRequestType = {
-    thinkingLevel: "minimal" | "low" | "medium";
+    chatId: string;
+    thinkingLevel: ThinkingLevels;
     forceSearch: boolean;
-    chatModelIndex?: number;
     messages: ChatUIMessage[];
     subject: keyof typeof availableSubjects;
+    selectedModel: string;
 }
 
-const openrouter = createOpenRouter({
-  apiKey: process.env.OPENROUTER_API_KEY!,
-});
-
-function createChatStream({model, context, messages}: {model: Model; context: ChatRequestType; messages: Awaited<ReturnType<typeof convertToModelMessages>>}) {
-    return streamText({
-        system: `
+export async function POST(req: Request) {
+    const context: ChatRequestType = await req.json();
+    if (!context.subject) {
+        throw new Error("Subject is required");
+    }
+    if (!context.chatId) {
+        throw new Error("Chat ID is required");
+    }
+    const result = streamText({
+        instructions: `
         ${availableSubjects[context.subject].instructions.chat}
         `,
-        model: openrouter.chat(chatModels[0].name, {models: chatModels.map(m => m.name), reasoning: {
-            effort: context.thinkingLevel,
-        }}),
-        messages,
+        model: context.selectedModel || chatModels[0].name,
+        messages: await convertToModelMessages(context.messages),
+        tools: {
+            perplexity_search: gateway.tools.perplexitySearch({
+                maxResults: 5,
+                country: "SG",
+
+            }),
+        },
+        providerOptions: {
+            gateway: {
+                sort: 'cost',
+                models: chatModels.filter((model)=> model.name != context.selectedModel).map((model) => model.name),
+            },
+        },
+        reasoning: context.thinkingLevel,
+        onEnd: async({totalUsage})=>{
+            console.log("[CHAT STREAM] Stream finished with total tokens:", totalUsage.totalTokens);
+            // The user usage limit thing should go here
+        }
         // tools: model.provider === "google" ? {
         //     google_search: google.tools.googleSearch({}),
         // } : undefined,
@@ -40,35 +58,38 @@ function createChatStream({model, context, messages}: {model: Model; context: Ch
         // } : undefined,
         // timeout: {stepMs: model.timeoutMs, totalMs: maxDuration * 1000},
     });
-}
-
-
-export async function POST(req: Request) {
-    const context: ChatRequestType = await req.json();
-    if (!context.subject) {
-        throw new Error("Subject is required");
-    }
-    const messages = await convertToModelMessages(context.messages);
-    const modelIndex = Number.isInteger(context.chatModelIndex) ? Number(context.chatModelIndex) : 0;
-    const model = chatModels[modelIndex];
-    if (!model) {
-        return new Response("Invalid model index", { status: 400 });
-    }
-    console.log("Using model:", model.name, "with provider:", model.provider, "and thinking level:", context.thinkingLevel);
-    const result = createChatStream({
-        model,
-        context,
-        messages,
-    });
-
+    result.consumeStream(); 
     return result.toUIMessageStreamResponse({
         sendReasoning: true,
         sendSources: true,
         originalMessages: context.messages,
+        generateMessageId: createIdGenerator({
+            prefix: 'msg-assistant',
+            size: 16,
+        }),
+        onEnd: async({messages, responseMessage})=>{
+            console.log("[CHAT STREAM] Stream finished! Saving chat to DB!")
+            console.log("assistant message:", responseMessage);
+            messages
+            responseMessage.parts.filter((part)=> part.type.startsWith("tool")).map((toolPart)=>{
+                console.log("Tool part:", JSON.stringify(toolPart, null, 2));
+            })
+            await saveToChat(context.chatId, { messages });
+        },
         messageMetadata: ({part})=>{
-            if (part.type == "start-step"){
-                return {
-                    model: model.name
+            if (part.type == "finish-step"){
+                try {
+                    console.log("Extracting model from provider metadata");
+                    const finalModel = (part.providerMetadata as {gateway: {routing: {modelAttempts: Array<{canonicalSlug: string}>}}}).gateway.routing.modelAttempts.at(-1)!.canonicalSlug
+                    console.log("Final model used:", finalModel);
+                    return {
+                        model: finalModel
+                    }
+                } catch {
+                    console.log("Failed to extract model from provider metadata. Default to selected.");
+                    return {
+                        model: context.selectedModel || chatModels[0].name
+                    };
                 }
             }
         }
