@@ -26,6 +26,6 @@ export default async function saveNotebookBlocks(noteId: string, {markdown, bloc
         finalBlocks = await editor.tryParseMarkdownToBlocks(markdown) || [];
     }
     const finalMarkdown = markdown || await editor.blocksToMarkdownLossy(finalBlocks) || "";
-    await db.update(notebook).set({blocks: finalBlocks, content: finalMarkdown}).where(and(eq(notebook.id, noteId), eq(notebook.userId, session.user.id)));
+    await db.update(notebook).set({blocks: finalBlocks, content: finalMarkdown, dateModified: new Date()}).where(and(eq(notebook.id, noteId), eq(notebook.userId, session.user.id)));
     return {blocks: finalBlocks, markdown: finalMarkdown};
 }

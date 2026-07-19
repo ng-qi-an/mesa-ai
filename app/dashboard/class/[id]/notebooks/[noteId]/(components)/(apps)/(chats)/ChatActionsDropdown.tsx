@@ -10,7 +10,7 @@ import { cn } from "@/lib/utils";
 import { MoreVertical, Pencil, Trash } from "lucide-react";
 import { useState } from "react";
 
-export default function ChatActionsDropdown({chat, triggerClassName, disabled, onRename, onDelete}:{chat?: ChatSelect |null, triggerClassName?: string, disabled?: boolean, onRename: (newName: string) => void, onDelete: () => void}) {
+export default function ChatActionsDropdown({chat, disabled, onRename, onDelete}:{chat?: ChatSelect |null, triggerClassName?: string, disabled?: boolean, onRename: (newName: string) => void, onDelete: () => void}) {
     const [showRenameDialog, setShowRenameDialog] = useState(false);
     const [showDeleteDialog, setShowDeleteDialog] = useState(false);
     return <div onClick={(e) => e.stopPropagation()} onPointerDown={(e) => e.stopPropagation()} className="ml-auto h-full flex items-center justify-center">

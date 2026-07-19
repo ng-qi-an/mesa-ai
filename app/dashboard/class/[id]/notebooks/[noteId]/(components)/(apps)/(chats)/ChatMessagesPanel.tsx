@@ -102,6 +102,13 @@ export default function ChatMessagesPanel({chatId: initialChatId, chatName: init
         if (!chat) return;
         updateTab(chat.id, {label: chatName});
     }, [chatName])
+    useEffect(()=>{
+        if (isMainChat && !noteCtx.mainChatId){
+            setChat(null);
+            setChatName("New Chat");
+            setMessages([]);
+        }
+    }, [noteCtx.mainChatId])
 
     return <>
         <motion.div initial={{ opacity: 1 }} animate={{ opacity: 1 }} className={`bg-card h-full flex flex-col pb-3`}>
@@ -119,9 +126,6 @@ export default function ChatMessagesPanel({chatId: initialChatId, chatName: init
                     </Tooltip>
                     <ChatListDrawer show={showChatList} setShow={setShowChatList} onChange={(chatId)=>{
                         if (!chatId){
-                            setChat(null);
-                            setChatName("New Chat");
-                            setMessages([]);
                             noteCtx.setMainChatId(null);
                         } else {
                             fetchChat(chatId);
@@ -134,9 +138,6 @@ export default function ChatMessagesPanel({chatId: initialChatId, chatName: init
                         }
                     }} onDelete={(chatId)=>{
                         if (noteCtx.mainChatId == chatId){
-                            setChat(null);
-                            setChatName("New Chat");
-                            setMessages([]);
                             noteCtx.setMainChatId(null);
                         } else {
                             closeTab(chatId);
@@ -151,9 +152,6 @@ export default function ChatMessagesPanel({chatId: initialChatId, chatName: init
                     <Tooltip> 
                         <TooltipTrigger asChild>
                             <Button disabled={messages.length == 0} variant="ghost" size="icon-sm" className={"text-muted-foreground shrink-0"} onClick={()=>{
-                                setChat(null);
-                                setChatName("New Chat");
-                                setMessages([]);
                                 noteCtx.setMainChatId(null);
                             }}>
                                 <Plus/>
@@ -174,9 +172,6 @@ export default function ChatMessagesPanel({chatId: initialChatId, chatName: init
                     }
                 }} onDelete={()=>{
                     if (isMainChat){
-                        setChat(null);
-                        setChatName("New Chat");
-                        setMessages([]);
                         noteCtx.setMainChatId(null);
                     } else {
                         chat && closeTab(chat.id);

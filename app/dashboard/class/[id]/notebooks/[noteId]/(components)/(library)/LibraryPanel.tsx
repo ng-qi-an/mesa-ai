@@ -28,10 +28,10 @@ export default function LibraryPanel(){
     const [loadingItems, setLoadingItems] = useState<boolean>(true);
     const [items, setItems] = useState<Record<string, any[]>>({});
     const [sortedItems, setSortedItems] = useState<Record<string, any[]>>({});
-    const {files, noteId, setFiles} = useNotebook();
+    const {files, noteId, setFiles, setMainChatId} = useNotebook();
     const [showFileSelector, setShowFileSelector] = useState(false);
     const [showCreateQuizDialog, setShowCreateQuizDialog] = useState(false);
-    const { selectedSideTab, addOrGoToTab } = useTabs();
+    const { selectedSideTab, setSelectedSideTab, addOrGoToTab } = useTabs();
     useEffect(()=>{
         if (selectedSideTab == "library") {
             (async()=>{
@@ -207,12 +207,12 @@ export default function LibraryPanel(){
             <div className="flex flex-col gap-3 pt-2 pr-4 pb-32 h-full overflow-auto">
                 {files.length > 0 ? <>
                 {(selectedType == "sources" || selectedType == "all") && <>
-                    <LibraryItemGroup label="Sources" items={files.map((file) => ({ id: file.id, label: file.name, description: relativeTime(file.dateModified, {capitalize: true}), type: "sources" }))} />
+                    <LibraryItemGroup setItems={setItems} label="Sources" items={files.map((file) => ({ id: file.id, label: file.name, description: relativeTime(file.dateModified, {capitalize: true}), type: "sources" }))} />
                     <Separator className="mb-0 mt-1"/>
                 </>}
                 {Object.values(sortedItems).flat().length > 0 ? Object.keys(sortedItems).filter((key)=> sortedItems[key].length > 0).map((key, index) => {
                     return <Fragment key={index}>
-                        <LibraryItemGroup label={key} items={sortedItems[key].map((item) => ({ id: item.id, label: item.name, description: relativeTime(item.dateModified, {capitalize: true}), type: item.type}))} onLabelClick={(selectedGroup == "item" && selectedType == "all") ? ((key) => {setSelectedType(key); setSelectedGroup("modified")}) : undefined} limit={selectedType === "all" ? 3 : undefined} />
+                        <LibraryItemGroup setItems={setItems} label={key} items={sortedItems[key].map((item) => ({ id: item.id, label: item.name, description: relativeTime(item.dateModified, {capitalize: true}), type: item.type}))} onLabelClick={(selectedGroup == "item" && selectedType == "all") ? ((key) => {setSelectedType(key); setSelectedGroup("modified")}) : undefined} limit={selectedType === "all" ? 3 : undefined} />
                         {index < Object.keys(sortedItems).filter((key)=> sortedItems[key].length > 0).length - 1 && <Separator className="mb-0 mt-1"/>}
                     </Fragment>
                 }) : <Empty>
@@ -250,7 +250,10 @@ export default function LibraryPanel(){
                     </DropdownMenuGroup>
                     <DropdownMenuSeparator/>
                     <DropdownMenuGroup>
-                        <DropdownMenuItem><MessageSquare/> New Chat</DropdownMenuItem>
+                        <DropdownMenuItem onClick={()=> {
+                            setMainChatId(null);
+                            setSelectedSideTab("chat");
+                        }}><MessageSquare/> New Chat</DropdownMenuItem>
                         <DropdownMenuItem><WalletCards/> New Flashcards</DropdownMenuItem>
                         <DropdownMenuItem onClick={()=> setShowCreateQuizDialog(true)}><ListTodo/> New Quiz</DropdownMenuItem>
                     </DropdownMenuGroup>
