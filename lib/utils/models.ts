@@ -56,16 +56,16 @@ export const chatModels: Model[] = [
         provider: "gateway",
     },
     {
-        name: "google/gemini-3.1-flash-lite",
-        label: "Gemini 3.1 Flash Lite",
+        name: "google/gemini-3.5-flash-lite",
+        label: "Gemini 3.5 Flash Lite",
         noThinking: false,
         priceMultiplier: 0.5,
         provider: "gateway",
     },
     {
-        name: "google/gemini-3.5-flash",
-        label: "Gemini 3.5 Flash",
-        priceMultiplier: 3,
+        name: "google/gemini-3.6-flash",
+        label: "Gemini 3.6 Flash",
+        priceMultiplier: 2,
         provider: "gateway",
     },
     {

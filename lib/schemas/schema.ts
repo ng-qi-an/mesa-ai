@@ -8,6 +8,7 @@ export const userMeta = pgTable("user_meta", {
     userId: text("user_id").primaryKey().references(() => user.id, { onDelete: "cascade" }),
     updateVersion: text("update_version").notNull().default("unknown"),
     onboarded: boolean("onboarded").notNull().default(false),
+    planId: text("plan_id").default("default").references(() => plans.id, { onDelete: "set null" }),
 })
 
 export type UserMetaInsert = typeof userMeta.$inferInsert
@@ -156,3 +157,42 @@ export const quizResponses = pgTable("quiz_responses", {
 
 export type QuizResponseInsert = typeof quizResponses.$inferInsert
 export type QuizResponseSelect = typeof quizResponses.$inferSelect
+
+export const plans = pgTable("plans", {
+    id: text("id").primaryKey().default("default"),
+    name: text("name").notNull(),
+    publicName: text("public_name").notNull(),
+    description: text("description"),
+    creditLimit: integer("credit_limit").notNull(),
+    baseCreditTokenMultiplier: integer("base_credit_token_multiplier").notNull(),
+    status: text("status").notNull().default("active"),
+    dateCreated: timestamp("date_created").notNull().defaultNow(),
+    dateModified: timestamp("date_modified").notNull().defaultNow(),
+})
+
+export type PlanSelect = typeof plans.$inferSelect
+
+export const billingCycles = pgTable("billing_cycles", {
+    id: text("id").primaryKey(),
+    userId: text("user_id").notNull().references(() => user.id, { onDelete: "cascade" }),
+    planId: text("plan_id").notNull().references(() => plans.id, { onDelete: "cascade" }),
+    creditLimit: integer("credit_limit").notNull().default(0),
+    dateStarted: timestamp("date_started").notNull().defaultNow(),
+    dateEnded: timestamp("date_ended").notNull(),
+    isActive: boolean("is_active").notNull().default(true),
+})
+
+export type BillingCycleSelect = typeof billingCycles.$inferSelect
+
+export const usageEvents = pgTable("usage_events", {
+    id: text("id").primaryKey(),
+    userId: text("user_id").notNull().references(() => user.id, { onDelete: "cascade" }),
+    eventType: text("event_type").notNull(),
+    eventSourceId: text("event_source_id"),
+    eventData: jsonb("event_data").notNull().default({}),
+    dateCreated: timestamp("date_created").notNull().defaultNow(),
+    totalCredits: integer("total_credits").notNull().default(0),
+    billingCycleId: text("billing_cycle_id").notNull().references(() => billingCycles.id, { onDelete: "cascade" }),
+})
+
+export type UsageEventSelect = typeof usageEvents.$inferSelect

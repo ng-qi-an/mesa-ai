@@ -73,6 +73,9 @@ export async function POST(req: Request) {
         `,
         stopWhen: isStepCount(5), // lets the model use tools and continue
         reasoning: context.thinkingLevel,
+        onEnd: async({usage})=>{
+            console.log("[CHAT STREAM] Stream finished with total tokens:", usage.totalTokens);
+        }
     });
     return createUIMessageStreamResponse({
         stream: toUIMessageStream({

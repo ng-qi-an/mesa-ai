@@ -1,6 +1,6 @@
 import { relations } from "drizzle-orm";
 import { account, passkey, session, user } from "./auth-schema";
-import { chatFiles, chats, classes, fileChunks, files, notebook, notebookFiles, quizzes, topics, userMeta } from "./schema";
+import { billingCycles, chatFiles, chats, classes, fileChunks, files, notebook, notebookFiles, plans, quizzes, topics, usageEvents, userMeta } from "./schema";
 
 export const userRelations = relations(user, ({ many, one }) => ({
     sessions: many(session),
@@ -10,13 +10,18 @@ export const userRelations = relations(user, ({ many, one }) => ({
     files: many(files),
     notebooks: many(notebook),
     chats: many(chats),
-    meta: one(userMeta)
+    meta: one(userMeta),
+    usageEvents: many(usageEvents),
 }));
 
 export const userMetaRelations = relations(userMeta, ({ one }) => ({
     user: one(user, {
         fields: [userMeta.userId],
         references: [user.id],
+    }),
+    plan: one(billingCycles, {
+        fields: [userMeta.userId],
+        references: [billingCycles.userId],
     }),
 }))
 
@@ -78,7 +83,6 @@ export const filesRelations = relations(files, ({ one, many }) => ({
         fields: [files.classId],
         references: [classes.id],
     }),
-    children: many(files),
     notebooks: many(notebookFiles),
     chunks: many(fileChunks)
 }))
@@ -147,4 +151,28 @@ export const quizzesRelations = relations(quizzes, ({ one }) => ({
         fields: [quizzes.notebookId],
         references: [notebook.id],
     }),
+}))
+
+export const billingCyclesRelations = relations(billingCycles, ({ one, many }) => ({
+    user: one(user, {
+        fields: [billingCycles.userId],
+        references: [user.id],
+    }),
+    usageEvents: many(usageEvents),
+}))
+
+export const usageEventsRelations = relations(usageEvents, ({ one }) => ({
+    user: one(user, {
+        fields: [usageEvents.userId],
+        references: [user.id],
+    }),
+    billingCycle: one(billingCycles, {
+        fields: [usageEvents.billingCycleId],
+        references: [billingCycles.id],
+    }),
+}))
+
+export const planRelations = relations(plans, ({ many }) => ({
+    billingCycles: many(billingCycles),
+    userMetas: many(userMeta),
 }))
