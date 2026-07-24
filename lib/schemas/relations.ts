@@ -19,9 +19,9 @@ export const userMetaRelations = relations(userMeta, ({ one }) => ({
         fields: [userMeta.userId],
         references: [user.id],
     }),
-    plan: one(billingCycles, {
-        fields: [userMeta.userId],
-        references: [billingCycles.userId],
+    plan: one(plans, {
+        fields: [userMeta.planId],
+        references: [plans.id],
     }),
 }))
 
@@ -157,6 +157,10 @@ export const billingCyclesRelations = relations(billingCycles, ({ one, many }) =
     user: one(user, {
         fields: [billingCycles.userId],
         references: [user.id],
+    }),
+    plan: one(plans, {
+        fields: [billingCycles.planId],
+        references: [plans.id],
     }),
     usageEvents: many(usageEvents),
 }))

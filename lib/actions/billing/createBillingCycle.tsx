@@ -1,4 +1,4 @@
-'use client';
+'use server';
 
 import { db } from "@/lib/db";
 import resolveOldCycles from "./resolveOldCycles";
@@ -6,6 +6,7 @@ import { billingCycles } from "@/lib/schemas/schema";
 import { generateId } from "better-auth";
 
 export default async function createBillingCycle({userId}:{userId:string}){
+    console.log("Creating new billing cycle for user:", userId);
     const latestCycle = await db.query.billingCycles.findFirst({
         where: (billingCycle, {eq, and})=> and(eq(billingCycle.userId, userId), eq(billingCycle.isActive, true)),
         orderBy: (billingCycle, {desc})=> desc(billingCycle.dateStarted),
@@ -27,7 +28,7 @@ export default async function createBillingCycle({userId}:{userId:string}){
             plan: true,
         }
     });
-    if (!userMeta || !userMeta.planId){
+    if (!userMeta || !userMeta.planId || !userMeta.plan) {
         throw new Error("User plan not found");
     }
     const newCycle = await db.insert(billingCycles).values({
@@ -39,5 +40,6 @@ export default async function createBillingCycle({userId}:{userId:string}){
         dateEnded: endDate,
         isActive: true,
     }).returning();
+    console.log("New billing cycle created. Starting:", startDate, "Ending:", endDate, "User ID:", userId);
     return newCycle[0];
 }

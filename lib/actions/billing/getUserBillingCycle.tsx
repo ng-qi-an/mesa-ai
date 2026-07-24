@@ -6,7 +6,7 @@ import { headers } from "next/headers";
 import resolveOldCycles from "./resolveOldCycles";
 import createBillingCycle from "./createBillingCycle";
 
-export default async function getUserBillingCycle({userId: initialUserId, fromServer}:{userId:string|null, fromServer:boolean}){
+export default async function getUserBillingCycle({userId: initialUserId, fromServer}:{userId?:string|null, fromServer?:boolean}){
     let userId = initialUserId;
     if (!fromServer){
         const session = await auth.api.getSession({
@@ -20,18 +20,22 @@ export default async function getUserBillingCycle({userId: initialUserId, fromSe
     if (!userId){
         throw new Error("User ID is required");
     }
+    console.log("Fetching user billing cycle for User ID:", userId);
     await resolveOldCycles({userId});
     let activeCycle = await db.query.billingCycles.findFirst({
         with: {
-            usageEvents: true,
+            usageEvents: true,     
+            plan: true,
         },
         where: (billingCycle, {eq, and})=> and(eq(billingCycle.userId, userId)),
     });
     if (!activeCycle){
+        console.log("Invoking createBillingCycle for User ID:", userId);
         const rawActiveCycle = await createBillingCycle({userId});
         activeCycle = await db.query.billingCycles.findFirst({
             with: {
                 usageEvents: true,
+                plan: true,
             },
             where: (billingCycle, {eq, and})=> and(eq(billingCycle.userId, userId), eq(billingCycle.id, rawActiveCycle.id)),
         });

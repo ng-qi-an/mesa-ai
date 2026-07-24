@@ -1,4 +1,4 @@
-import { text, pgTable, serial, timestamp, AnyPgColumn, jsonb, boolean, integer, vector } from "drizzle-orm/pg-core";
+import { text, pgTable, serial, timestamp, AnyPgColumn, jsonb, boolean, integer, vector, numeric } from "drizzle-orm/pg-core";
 import { user } from "./auth-schema";
 import { ChatUIMessage } from "../utils/models";
 import { QuizQuestionItemType, QuizTextAnswerExplanationType } from "../actions/quiz/quizSchema";
@@ -164,7 +164,7 @@ export const plans = pgTable("plans", {
     publicName: text("public_name").notNull(),
     description: text("description"),
     creditLimit: integer("credit_limit").notNull(),
-    baseCreditTokenMultiplier: integer("base_credit_token_multiplier").notNull(),
+    baseTokenCreditMultiplier: numeric("base_token_credit_multiplier").default("1").notNull(),
     status: text("status").notNull().default("active"),
     dateCreated: timestamp("date_created").notNull().defaultNow(),
     dateModified: timestamp("date_modified").notNull().defaultNow(),
@@ -191,7 +191,7 @@ export const usageEvents = pgTable("usage_events", {
     eventSourceId: text("event_source_id"),
     eventData: jsonb("event_data").notNull().default({}),
     dateCreated: timestamp("date_created").notNull().defaultNow(),
-    totalCredits: integer("total_credits").notNull().default(0),
+    totalCredits: numeric("total_credits").notNull().default("0"),
     billingCycleId: text("billing_cycle_id").notNull().references(() => billingCycles.id, { onDelete: "cascade" }),
 })
 

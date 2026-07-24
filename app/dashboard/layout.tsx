@@ -14,8 +14,13 @@ import getUserMeta from "@/lib/actions/user/getUserMeta";
 import BetaNoticeDialog from "./(components)/BetaNoticeDialog";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { usePathname } from "next/navigation";
+import getUserBillingCycle from "@/lib/actions/billing/getUserBillingCycle";
+import { BillingCycleSelect, PlanSelect, UsageEventSelect } from "@/lib/schemas/schema";
+import { toast } from "sonner";
+import { UsageProvider } from "@/components/providers/usage-provider";
 export default function DashboardLayout({children}: {children: React.ReactNode}) {
     const {data, isPending} = authClient.useSession();
+    const [billingCycle, setBillingCycle] = useState<BillingCycleSelect & {plan: PlanSelect, usageEvents: UsageEventSelect[]} | null>(null);
     const [loaded, setLoaded] = useState(false);
     const [showbeta, setShowBeta] = useState(false);
     const { resolvedTheme } = useTheme();
@@ -37,6 +42,12 @@ export default function DashboardLayout({children}: {children: React.ReactNode})
             (async()=>{
                 const meta = await getUserMeta();
                 console.log("Fetched user meta");
+                const billingCycle = await getUserBillingCycle({});
+                if (!billingCycle){
+                    console.error("No billing cycle found for user");
+                    return toast.error("No billing cycle found for user");
+                }
+                setBillingCycle(billingCycle);
                 const newestVersion = "beta";
                 let currentVersion = window.localStorage.getItem("updateVersion");
                 if (!currentVersion || currentVersion !== newestVersion) {
@@ -75,19 +86,21 @@ export default function DashboardLayout({children}: {children: React.ReactNode})
     return <AnimatePresence mode="wait">
         <NextStepProvider>
             {loaded ? 
-            <NextStep 
-                steps={tours} 
-                cardComponent={TourCard}
-                shadowRgb={resolvedTheme == "dark" ? "0, 0, 0" : "0, 0, 0"}
-                shadowOpacity={resolvedTheme == "dark" ? "0.8" : "0.2"}
-                onComplete={()=> finishOnboarding()}
-                onSkip={()=> {router.push("/dashboard"); finishOnboarding()}}
-            >
-                <BetaNoticeDialog showBeta={showbeta} setShowBeta={()=> setShowBeta(false)} />
-                <motion.div key={'content'} className="w-full h-full" initial={{opacity: 0}} animate={{opacity: 1}} exit={{opacity: 0}}>
-                    {children}
-                </motion.div>
-            </NextStep> 
+            <UsageProvider billingCycle={billingCycle!} setBillingCycle={setBillingCycle}>
+                <NextStep 
+                    steps={tours} 
+                    cardComponent={TourCard}
+                    shadowRgb={resolvedTheme == "dark" ? "0, 0, 0" : "0, 0, 0"}
+                    shadowOpacity={resolvedTheme == "dark" ? "0.8" : "0.2"}
+                    onComplete={()=> finishOnboarding()}
+                    onSkip={()=> {router.push("/dashboard"); finishOnboarding()}}
+                >
+                    <BetaNoticeDialog showBeta={showbeta} setShowBeta={()=> setShowBeta(false)} />
+                    <motion.div key={'content'} className="w-full h-full" initial={{opacity: 0}} animate={{opacity: 1}} exit={{opacity: 0}}>
+                        {children}
+                    </motion.div>
+                </NextStep> 
+            </UsageProvider>
             : 
             <motion.div key={'loading'} transition={{delay: 1}} className="w-full h-screen bg-background flex flex-col items-center justify-center" animate={{opacity: 1}} exit={{opacity: 0}}>
                 <Logo type="theme" className="size-15 animate-pulse"/>

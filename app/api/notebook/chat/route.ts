@@ -1,12 +1,13 @@
 import { streamText, convertToModelMessages, isStepCount, createIdGenerator, toUIMessageStream, createUIMessageStreamResponse, gateway } from 'ai';
 import { auth } from '@/lib/auth';
 import { headers } from 'next/headers';
-import { chatModels, ChatUIMessage, convertEffortLevel, fileSearchMetaQuery, ThinkingLevels } from '@/lib/utils/models';
+import { chatModels, ChatUIMessage, ThinkingLevels } from '@/lib/utils/models';
 import { availableSubjects } from '@/lib/subjects/subjectsList';
 import { searchDocumentsTool } from '@/lib/rag-actions/searchDocumentsTool';
 import { db } from '@/lib/db';
 import { listDocumentsTool } from '@/lib/rag-actions/listDocumentsTool';
 import saveToChat from '@/lib/actions/chat/saveToChat';
+import createChatUsageEvent from '@/lib/actions/billing/createChatUsageEvent';
 
 // Allow streaming responses up to 5 minutes
 export const maxDuration = 300;
@@ -75,6 +76,13 @@ export async function POST(req: Request) {
         reasoning: context.thinkingLevel,
         onEnd: async({usage})=>{
             console.log("[CHAT STREAM] Stream finished with total tokens:", usage.totalTokens);
+            if (usage.totalTokens && usage.totalTokens > 0) {
+                console.log("[CHAT STREAM] Creating usage event");
+                const result = await createChatUsageEvent({totalTokens: usage.totalTokens, userId: session.user.id, chatId: context.chatId, noteId: context.noteId});
+                console.log("[CHAT STREAM] Usage event created!");
+            } else {
+                console.log("[CHAT STREAM] No tokens used, skipping usage event logging.");
+            }
         }
     });
     return createUIMessageStreamResponse({
@@ -89,23 +97,25 @@ export async function POST(req: Request) {
         }),
         onEnd: async({messages, responseMessage}:{messages: ChatUIMessage[], responseMessage: ChatUIMessage})=>{
             console.log("[CHAT STREAM] Stream finished! Saving chat to DB!")
-            console.log("assistant message:", responseMessage);
             await saveToChat(context.chatId, { messages });
         },
         messageMetadata: ({part})=>{
             if (part.type == "finish-step"){
+                
                 try {
-                    console.log("Extracting model from provider metadata");
+                    // console.log("Extracting model from provider metadata");
                     const finalModel = (part.providerMetadata as {gateway: {routing: {modelAttempts: Array<{canonicalSlug: string}>}}}).gateway.routing.modelAttempts.at(-1)!.canonicalSlug
                     const modelAttempts = (part.providerMetadata as {gateway: {routing: {modelAttempts: Array<{canonicalSlug: string}>}}}).gateway.routing.modelAttempts
-                    console.log("Final model used:", finalModel, "attempts:", modelAttempts.map((attempt)=> JSON.stringify(attempt)));
+                    // console.log("Final model used:", finalModel, "attempts:", modelAttempts.map((attempt)=> JSON.stringify(attempt)));
                     return {
-                        model: finalModel
+                        model: finalModel,
+                        totalTokens: part.usage.totalTokens
                     }
                 } catch {
                     console.log("Failed to extract model from provider metadata. Default to selected.");
                     return {
-                        model: context.selectedModel || chatModels[0].name
+                        model: context.selectedModel || chatModels[0].name,
+                        totalTokens: part.usage.totalTokens
                     };
                 }
             }

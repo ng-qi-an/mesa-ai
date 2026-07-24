@@ -4,6 +4,7 @@ import z from "zod";
 
 export const chatMessageMetadataSchema = z.object({
   model: z.string().optional(),
+  totalTokens: z.number().optional(),
 });
 
 export type ChatMessageMetadata = z.infer<typeof chatMessageMetadataSchema>;
@@ -133,11 +134,6 @@ export const embeddingModel: Model = {
 }
 
 export const summaryModels: Model[] = [
-    {
-        name: "google/gemma-4-31b-it:free",
-        label: "Gemma 4.31B IT",
-        provider: "openrouter",
-    },
     {
         name: "google/gemma-4-31b-it",
         label: "Gemma 4.31B IT",

@@ -3,7 +3,7 @@ import { Reasoning, ReasoningContent, ReasoningTrigger } from "@/components/ai-e
 import { generateId, TextUIPart, ToolUIPart } from "ai";
 import ChatAttachments from "./ChatAttachments";
 import { Source, Sources, SourcesContent, SourcesTrigger } from "../ai-elements/sources";
-import { CopyIcon, File, FileSearch, FileText, Globe, RefreshCcwIcon, Scroll, SearchIcon, TextSearch } from "lucide-react";
+import { ChartNoAxesColumn, CopyIcon, File, FileSearch, FileText, Globe, RefreshCcwIcon, Scroll, SearchIcon, TextSearch } from "lucide-react";
 import { chatModels, ChatUIMessage } from "@/lib/utils/models";
 import { ModelSelectorLogo } from "../ai-elements/model-selector";
 import { Shimmer } from "../ai-elements/shimmer";
@@ -12,6 +12,8 @@ import { Spinner } from "../ui/spinner";
 import React from "react";
 import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
 import { cn } from "@/lib/utils";
+import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip";
+import { useUsage } from "../providers/usage-provider";
 
 export default function ChatMessageContent({message, isLastMessage, isStreaming}: {message: ChatUIMessage, isLastMessage: boolean, isStreaming: boolean}){
   const reasoningParts = message.parts.filter((part) => part.type === "reasoning");
@@ -34,6 +36,7 @@ export default function ChatMessageContent({message, isLastMessage, isStreaming}
       }
     }
   });
+  const {plan} = useUsage();
   return <>
     {fileParts.length > 0 && <ChatAttachments files={fileParts.map((f)=> ({...f, id: generateId()}))}/>}
     <MessageContent className={cn("group", message.role== "assistant" && "w-full")}>
@@ -107,8 +110,15 @@ export default function ChatMessageContent({message, isLastMessage, isStreaming}
         })}
       </div>
       {message.role == "assistant" && !isStreaming && <MessageToolbar className={`mt-0 ${isLastMessage ? "opacity-100" : "opacity-0"} ${!isStreaming && "group-hover:opacity-100"} transition-opacity`}>
-        {modelObject && <p className="text-xs text-muted-foreground flex items-center gap-2 cursor-default"><ModelSelectorLogo provider={modelObject.name.split("/")[0]} /> {modelObject.label}</p>}
+      {modelObject && <p className="text-xs text-muted-foreground flex items-center gap-2 cursor-default"><ModelSelectorLogo provider={modelObject.name.split("/")[0]} /> {modelObject.label}</p>}
       <MessageActions>
+        <MessageAction
+          tooltip={`Credits used: ${message.metadata?.totalTokens ? "~" + Math.floor(message.metadata?.totalTokens * parseFloat(plan.baseTokenCreditMultiplier)) : 0}`}
+          onClick={() => {}}
+          label="Usage"
+        >
+          <ChartNoAxesColumn className="size-3" />
+        </MessageAction>
         <MessageAction
           tooltip="Retry message"
           onClick={() => {}}

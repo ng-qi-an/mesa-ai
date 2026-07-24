@@ -42,6 +42,9 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import generateChatName from "@/lib/actions/chat/generateChatName";
 import { Skeleton } from "@/components/ui/skeleton";
 import ChatListDrawer from "./ChatListDrawer";
+import generateChatUsageEvent from "@/lib/actions/billing/generateChatUsageEvent";
+import { authClient } from "@/lib/auth-client";
+import { useUsage } from "@/components/providers/usage-provider";
 
 export default function ChatMessagesPanel({chatId: initialChatId, chatName: initialChatName, isMainChat}: {chatId?: string, chatName: string, isMainChat?: boolean}){
     const noteCtx = useNotebook();
@@ -58,13 +61,20 @@ export default function ChatMessagesPanel({chatId: initialChatId, chatName: init
     const [selectedModel, setSelectedModel] = useState<string>(chatModels[0].name);
     const [showChatList, setShowChatList] = useState<boolean>(false);
     const { closeTab, updateTab } = useTabs();
+    const { addUsageEvent } = useUsage();
     const { messages, sendMessage, setMessages, status, stop } = useChat({
         transport: new DefaultChatTransport({
             api: '/api/notebook/chat',
         }),
         messages: [] as ChatUIMessage[],
         throttle: 100,
-        onFinish: async ({messages}) => {
+        onFinish: async ({messages, message}) => {
+            if (message.metadata?.totalTokens){
+                const usageEvent = await generateChatUsageEvent({totalTokens: message.metadata?.totalTokens, chatId: chat?.id!, noteId: noteCtx.noteId});
+                addUsageEvent(usageEvent)
+            } else {
+                console.log("No totalTokens or user found. Skipping usage event creation.");
+            }
             setMessages(messages);
         }
     }); 
@@ -275,13 +285,15 @@ export default function ChatMessagesPanel({chatId: initialChatId, chatName: init
                         if (r == "success"){
                             console.log("Current messages length", messages.length);
                             if (messages.length == 0){
-                                setLoadingChatName(true);
-                                const name = await generateChatName({chatId, message: message.text});
-                                if (name) {
-                                    setChatName(name);
-                                    setChat((c)=> c ? {...c, name} : c);
-                                }
-                                setLoadingChatName(false);
+                                (async()=>{
+                                    setLoadingChatName(true);
+                                    const name = await generateChatName({chatId, message: message.text});
+                                    if (name) {
+                                        setChatName(name);
+                                        setChat((c)=> c ? {...c, name} : c);
+                                    }
+                                    setLoadingChatName(false);
+                                })();
                             }
                         }  else if (r === "failed_uploads") {
                             toast.warning("Some files failed to upload.");

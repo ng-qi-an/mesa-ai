@@ -1,4 +1,4 @@
-import { GraduationCap, Info, Lock, MessageSquare, Settings, type LucideIcon } from "lucide-react";
+import { ChartNoAxesColumn, GraduationCap, Info, Lock, MessageSquare, Settings, type LucideIcon } from "lucide-react";
 import UserGeneral from "./UserGeneral";
 import { User } from "better-auth";
 import { authClient } from "@/lib/auth-client";
@@ -6,6 +6,7 @@ import UserSecurity from "./UserSecurity";
 import UserAbout from "./UserAbout";
 import UserTutorial from "./UserTutorial";
 import UserChats from "./UserChats";
+import UserUsage from "./UserUsage";
 
 export type settingsPageType = {
     name: string,
@@ -36,6 +37,13 @@ export const settingsPages: Record<string, settingsPageType> = {
         description: "Control your login options and privacy settings.",
         icon: Lock,
         page: UserSecurity,
+    },
+    usage: {
+        name: "Usage",
+        title: "Usage & Billing",
+        description: "View your usage statistics and billing information.",
+        icon: ChartNoAxesColumn,
+        page: UserUsage,
     },
     chats: {
         name: "Chats",
