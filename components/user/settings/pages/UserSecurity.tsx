@@ -53,8 +53,6 @@ export default function UserSecurity({user, pageConfiguredChanges, setPageConfig
             }
         }}/>
         <FieldSet className="w-full">
-            <FieldLegend>Password & Authentication</FieldLegend>
-            <FieldDescription>Change passwords or setup multi-factor authentication.</FieldDescription>
             <FieldGroup className="w-full gap-4">
                 <Field className="gap-2">
                     <FieldTitle>Password</FieldTitle>

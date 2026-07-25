@@ -7,19 +7,16 @@ const testimonials = [
     quote:
       "Mesa AI completely changed how I study. I went from spending hours on notes to actually understanding concepts in minutes.",
     author: "Joel G.",
-    role: "Pre-Med Student, Stanford",
   },
   {
     quote:
       "The quiz feature is incredible. It finds exactly where I need to focus and helps me retain information so much better.",
     author: "Marcus T.",
-    role: "Engineering Major, MIT",
   },
   {
     quote:
       "I uploaded my lecture notes and Mesa AI organized everything beautifully. It's like having a personal study assistant.",
     author: "Emily R.",
-    role: "Law Student, Harvard",
   },
 ]
 
