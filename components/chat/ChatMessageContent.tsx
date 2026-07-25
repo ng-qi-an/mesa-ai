@@ -14,6 +14,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
 import { cn } from "@/lib/utils";
 import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip";
 import { useUsage } from "../providers/usage-provider";
+import { convertToCredits } from "@/lib/actions/billing/convertToCredits";
 
 export default function ChatMessageContent({message, isLastMessage, isStreaming}: {message: ChatUIMessage, isLastMessage: boolean, isStreaming: boolean}){
   const reasoningParts = message.parts.filter((part) => part.type === "reasoning");
@@ -112,13 +113,13 @@ export default function ChatMessageContent({message, isLastMessage, isStreaming}
       {message.role == "assistant" && !isStreaming && <MessageToolbar className={`mt-0 ${isLastMessage ? "opacity-100" : "opacity-0"} ${!isStreaming && "group-hover:opacity-100"} transition-opacity`}>
       {modelObject && <p className="text-xs text-muted-foreground flex items-center gap-2 cursor-default"><ModelSelectorLogo provider={modelObject.name.split("/")[0]} /> {modelObject.label}</p>}
       <MessageActions>
-        <MessageAction
-          tooltip={`Credits used: ${message.metadata?.totalTokens ? "~" + Math.floor(message.metadata?.totalTokens * parseFloat(plan.baseTokenCreditMultiplier)) : 0}`}
+        {modelObject &&<MessageAction
+          tooltip={`Credits used: ~${Math.floor(convertToCredits({totalTokens: message.metadata?.totalTokens || 0, plan, modelName: modelObject.name}))} credits`}
           onClick={() => {}}
           label="Usage"
         >
           <ChartNoAxesColumn className="size-3" />
-        </MessageAction>
+        </MessageAction>}
         <MessageAction
           tooltip="Retry message"
           onClick={() => {}}

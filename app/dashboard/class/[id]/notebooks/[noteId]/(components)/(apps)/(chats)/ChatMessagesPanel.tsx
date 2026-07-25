@@ -1,5 +1,5 @@
 'use client';
-import { Maximize, Maximize2, Menu, Minimize2, Plus } from "lucide-react";
+import { ChartNoAxesColumn, Maximize, Maximize2, Menu, Minimize2, Plus } from "lucide-react";
 import { useEffect, useState } from "react";
 import Logo from "@/components/logo";
 import {
@@ -45,6 +45,7 @@ import ChatListDrawer from "./ChatListDrawer";
 import generateChatUsageEvent from "@/lib/actions/billing/generateChatUsageEvent";
 import { authClient } from "@/lib/auth-client";
 import { useUsage } from "@/components/providers/usage-provider";
+import { Progress } from "@/components/ui/progress";
 
 export default function ChatMessagesPanel({chatId: initialChatId, chatName: initialChatName, isMainChat}: {chatId?: string, chatName: string, isMainChat?: boolean}){
     const noteCtx = useNotebook();
@@ -61,7 +62,7 @@ export default function ChatMessagesPanel({chatId: initialChatId, chatName: init
     const [selectedModel, setSelectedModel] = useState<string>(chatModels[0].name);
     const [showChatList, setShowChatList] = useState<boolean>(false);
     const { closeTab, updateTab } = useTabs();
-    const { addUsageEvent } = useUsage();
+    const { addUsageEvent, usageEvents, billingCycle, getCurrentCreditUsage } = useUsage();
     const { messages, sendMessage, setMessages, status, stop } = useChat({
         transport: new DefaultChatTransport({
             api: '/api/notebook/chat',
@@ -70,8 +71,10 @@ export default function ChatMessagesPanel({chatId: initialChatId, chatName: init
         throttle: 100,
         onFinish: async ({messages, message}) => {
             if (message.metadata?.totalTokens){
-                const usageEvent = await generateChatUsageEvent({totalTokens: message.metadata?.totalTokens, chatId: chat?.id!, noteId: noteCtx.noteId});
+                const usageEvent = await generateChatUsageEvent({totalTokens: message.metadata?.totalTokens, model: message.metadata?.model || selectedModel, chatId: chat?.id!, noteId: noteCtx.noteId});
+                console.log("[CHAT STREAM] Usage event generated, totalCredits:", usageEvent.totalCredits);
                 addUsageEvent(usageEvent)
+
             } else {
                 console.log("No totalTokens or user found. Skipping usage event creation.");
             }
@@ -158,23 +161,43 @@ export default function ChatMessagesPanel({chatId: initialChatId, chatName: init
                     <p className={`text-sm w-full ${!isMainChat && "pl-2"} line-clamp-1`}>
                         {chatName}
                     </p>}
-                    {isMainChat ? <> 
-                    <Tooltip> 
-                        <TooltipTrigger asChild>
-                            <Button disabled={messages.length == 0} variant="ghost" size="icon-sm" className={"text-muted-foreground shrink-0"} onClick={()=>{
-                                noteCtx.setMainChatId(null);
-                            }}>
-                                <Plus/>
-                            </Button>
-                        </TooltipTrigger>
-                        <TooltipContent side="bottom" align="end">
-                            <p>Start a new chat. Your chats are still saved.</p>
-                        </TooltipContent>
-                    </Tooltip>
-                    </>
-                    :
-                    <ExpandMinimiseButton tabId={chat?.id}/>}
                 </div>
+                <Tooltip>
+                    <TooltipTrigger asChild>
+                        <Button disabled={!chat} variant="ghost" size="icon-sm" className="text-muted-foreground shrink-0">
+                            <ChartNoAxesColumn className="size-4"/>
+                        </Button>
+                    </TooltipTrigger>
+                    <TooltipContent side="bottom">
+                        <div className="flex mt-1">
+                            <div className="flex flex-col items-start gap-1">
+                                <p className="w-max">This chat:</p>
+                                <p className="w-max">Total:</p>
+                            </div>
+                            <div className="flex flex-col items-end gap-1">
+                                <p className="w-max">~{Math.floor(usageEvents.reduce((acc, event) => acc + (event.eventSourceId === chat?.id ? parseFloat(event.totalCredits) : 0), 0))} credits</p>
+                                <p className="w-max">{Math.floor(getCurrentCreditUsage())} of {billingCycle.creditLimit || 0} credits</p>
+                            </div>
+                        </div>
+                        <Progress value={((getCurrentCreditUsage()/billingCycle.creditLimit) * 100) || 0} className="w-full bg-zinc-700 *:invert *:dark:invert-0 dark:bg-muted dark:invert mt-2"/>
+                    </TooltipContent>
+                </Tooltip>
+                {isMainChat ? <> 
+                <Tooltip> 
+                    <TooltipTrigger asChild>
+                        <Button disabled={messages.length == 0} variant="ghost" size="icon-sm" className={"text-muted-foreground shrink-0"} onClick={()=>{
+                            noteCtx.setMainChatId(null);
+                        }}>
+                            <Plus/>
+                        </Button>
+                    </TooltipTrigger>
+                    <TooltipContent side="bottom" align="end">
+                        <p>Start a new chat. Your chats are still saved.</p>
+                    </TooltipContent>
+                </Tooltip>
+                </>
+                :
+                <ExpandMinimiseButton tabId={chat?.id}/>}
                 <ChatActionsDropdown disabled={!chat} triggerClassName="" chat={chat} onRename={(newName) => {
                     if (chat){
                         setChat({...chat, name: newName});

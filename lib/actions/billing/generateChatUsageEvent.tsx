@@ -4,8 +4,9 @@ import { generateId } from "better-auth";
 import getUserBillingCycle from "./getUserBillingCycle";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
+import { convertToCredits } from "./convertToCredits";
 
-export default async function generateChatUsageEvent({totalTokens, userId:initialUserId, chatId, noteId}:{totalTokens:number, userId?:string, chatId:string, noteId?:string}){
+export default async function generateChatUsageEvent({totalTokens, userId:initialUserId, model: modelName, chatId, noteId}:{totalTokens:number, userId?:string, model:string, chatId:string, noteId?:string}){
     let userId = initialUserId;
     if (!userId){
         const session = await auth.api.getSession({
@@ -20,6 +21,7 @@ export default async function generateChatUsageEvent({totalTokens, userId:initia
     if (!billingCycle){
         throw new Error("No active billing cycle found for user");
     }
+    const totalCredits = convertToCredits({totalTokens, plan: billingCycle.plan, modelName});
     return {
         id: generateId(24),
         userId: userId,
@@ -30,6 +32,6 @@ export default async function generateChatUsageEvent({totalTokens, userId:initia
             noteId: noteId,
         },
         billingCycleId: billingCycle.id,
-        totalCredits: (totalTokens * parseFloat(billingCycle.plan.baseTokenCreditMultiplier)).toString(),
+        totalCredits: totalCredits.toString(),
     } as UsageEventSelect;
 }

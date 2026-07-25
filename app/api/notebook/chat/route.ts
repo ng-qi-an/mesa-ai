@@ -51,6 +51,7 @@ export async function POST(req: Request) {
     })
     const files = raw ? raw.files.map(f => f.file) : [];
     console.log("model selected:", context.selectedModel);
+    let finalModel = context.selectedModel || chatModels[0].name;
     const result = streamText({
         model: context.selectedModel,
         messages: await convertToModelMessages(context.messages),
@@ -77,11 +78,14 @@ export async function POST(req: Request) {
         onEnd: async({usage})=>{
             console.log("[CHAT STREAM] Stream finished with total tokens:", usage.totalTokens);
             if (usage.totalTokens && usage.totalTokens > 0) {
-                console.log("[CHAT STREAM] Creating usage event");
-                const result = await createChatUsageEvent({totalTokens: usage.totalTokens, userId: session.user.id, chatId: context.chatId, noteId: context.noteId});
-                console.log("[CHAT STREAM] Usage event created!");
-            } else {
-                console.log("[CHAT STREAM] No tokens used, skipping usage event logging.");
+                const usageEvent = await createChatUsageEvent({
+                    totalTokens: usage.totalTokens,
+                    userId: session.user.id,
+                    model: finalModel,
+                    chatId: context.chatId,
+                    noteId: context.noteId,
+                });
+                console.log("[CHAT STREAM] Usage event created, totalCredits", usageEvent.totalCredits);
             }
         }
     });
@@ -101,22 +105,19 @@ export async function POST(req: Request) {
         },
         messageMetadata: ({part})=>{
             if (part.type == "finish-step"){
-                
                 try {
                     // console.log("Extracting model from provider metadata");
-                    const finalModel = (part.providerMetadata as {gateway: {routing: {modelAttempts: Array<{canonicalSlug: string}>}}}).gateway.routing.modelAttempts.at(-1)!.canonicalSlug
-                    const modelAttempts = (part.providerMetadata as {gateway: {routing: {modelAttempts: Array<{canonicalSlug: string}>}}}).gateway.routing.modelAttempts
+                    finalModel = (part.providerMetadata as {gateway: {routing: {modelAttempts: Array<{canonicalSlug: string}>}}}).gateway.routing.modelAttempts.at(-1)!.canonicalSlug
+                    // const modelAttempts = (part.providerMetadata as {gateway: {routing: {modelAttempts: Array<{canonicalSlug: string}>}}}).gateway.routing.modelAttempts
                     // console.log("Final model used:", finalModel, "attempts:", modelAttempts.map((attempt)=> JSON.stringify(attempt)));
-                    return {
-                        model: finalModel,
-                        totalTokens: part.usage.totalTokens
-                    }
                 } catch {
                     console.log("Failed to extract model from provider metadata. Default to selected.");
-                    return {
-                        model: context.selectedModel || chatModels[0].name,
-                        totalTokens: part.usage.totalTokens
-                    };
+                }
+            }
+            if (part.type == "finish"){
+                return {
+                    model: finalModel,
+                    totalTokens: part.totalUsage.totalTokens,
                 }
             }
         }})
