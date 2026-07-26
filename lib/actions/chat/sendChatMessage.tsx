@@ -4,6 +4,7 @@ import getAddUserFileURL from "@/lib/r2actions/files/getAddUserFileUrl";
 import { FileUIPart } from "ai";
 import addFileToChatFilesDb from "../../../components/chat/addFileToChatFilesDb";
 import saveToChat from "./saveToChat";
+import { ChatRequestOptions } from "@/app/api/chat/route";
 
 const fileHost = `http://mesa-ai.vercel.app`
 export type ChatAttachmentType = FileUIPart & {
@@ -11,7 +12,7 @@ export type ChatAttachmentType = FileUIPart & {
     drive: boolean;
 }
 
-export default async function SendChatMessage({message, files, sendMessage, thinkingLevel, selectedModel, chatId, bodyOptions}:{message: PromptInputMessage, files: ChatAttachmentType[], sendMessage: any, thinkingLevel: string, selectedModel: string, chatId: string, bodyOptions?: Record<string, any>}){
+export default async function SendChatMessage({message, files, sendMessage, thinkingLevel, selectedModel, chatId, classId, bodyOptions}:{message: PromptInputMessage, files: ChatAttachmentType[], sendMessage: any, thinkingLevel: string, selectedModel: string, chatId: string, classId: string, bodyOptions?: Partial<ChatRequestOptions>}) {
     try {
         let fileUploads;
         let finalFiles: (FileUIPart & { id: string })[] | undefined;
@@ -57,8 +58,9 @@ export default async function SendChatMessage({message, files, sendMessage, thin
                 chatId,
                 thinkingLevel,
                 selectedModel,
+                classId: classId,
                 ...bodyOptions,
-            },
+            } as ChatRequestOptions,
         });
         
         if (fileUploads && fileUploads.find((f) => f.id === 'failed')) {

@@ -6,9 +6,9 @@ import { headers } from "next/headers";
 import resolveOldCycles from "./resolveOldCycles";
 import createBillingCycle from "./createBillingCycle";
 
-export default async function getUserBillingCycle({userId: initialUserId, fromServer}:{userId?:string|null, fromServer?:boolean}){
+export default async function getUserBillingCycle(initialUserId?: string) {
     let userId = initialUserId;
-    if (!fromServer){
+    if (!userId){
         const session = await auth.api.getSession({
             headers: await headers()
         })
@@ -16,9 +16,6 @@ export default async function getUserBillingCycle({userId: initialUserId, fromSe
             throw new Error("Not authenticated");
         }
         userId = session.user.id;
-    }
-    if (!userId){
-        throw new Error("User ID is required");
     }
     console.log("Fetching user billing cycle for User ID:", userId);
     await resolveOldCycles({userId});

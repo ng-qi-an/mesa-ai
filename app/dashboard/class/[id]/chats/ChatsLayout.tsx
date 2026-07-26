@@ -1,9 +1,9 @@
 'use client';
 import PageHeader from "../(components)/PageHeader";
 import { Button } from "@/components/ui/button";
-import { ChevronsLeft, MessageSquare, MessageSquarePlus } from "lucide-react";
+import { ChartNoAxesColumn, ChevronsLeft, MessageSquare, MessageSquarePlus } from "lucide-react";
 import { Fragment, useEffect, useState } from "react";
-import { useParams } from "next/navigation";
+import { useParams, usePathname } from "next/navigation";
 import { useRouter } from "nextjs-toploader/app";
 import { ChatSelect } from "@/lib/schemas/schema";
 import { Empty, EmptyDescription, EmptyHeader, EmptyMedia } from "@/components/ui/empty";
@@ -14,6 +14,11 @@ import { ChatProvider } from "@/components/providers/chat-provider";
 import { groupedTime } from "@/lib/utils/groupedTime";
 import { motion } from "motion/react";
 import { chatModels, ThinkingLevels } from "@/lib/utils/models";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { Progress } from "@/components/ui/progress";
+import { useUsage } from "@/components/providers/usage-provider";
+import ChatActionsDropdown from "../notebooks/[noteId]/(components)/(apps)/(chats)/ChatActionsDropdown";
+import revalidateData from "@/lib/actions/revalidateData";
 export default function ChatsLayout({children, chats}: {chats: ChatSelect[], children: React.ReactNode}){
     const {id, chatId} = useParams();
     const router = useRouter();
@@ -25,8 +30,10 @@ export default function ChatsLayout({children, chats}: {chats: ChatSelect[], chi
     const [newSelectedModel, setNewSelectedModel] = useState(chatModels[0].name);
     const [showChatList, setShowChatList] = useState(!isMobile);
     const [loadingChatName, setLoadingChatName] = useState<boolean>(false);
-
+    
+    const { usageEvents, billingCycle, getCurrentCreditUsage } = useUsage();
     const groupedChats = groupedTime(chats, chats.map((chat) => chat.dateModified));
+    const pathname = usePathname();
 
     useEffect(()=>{
         if (chatId){
@@ -99,6 +106,31 @@ export default function ChatsLayout({children, chats}: {chats: ChatSelect[], chi
             <PageHeader sidebarButton={<Button onClick={()=> setShowChatList(!showChatList)} variant={"ghost"} size={"icon-sm"} className={`-ml-1 mr-1 ${showChatList ? "" : "rotate-180"} transition-all`}>
                 <ChevronsLeft/>
             </Button>} pages={[{name: chatId ? chats.find(c => c.id === chatId)?.name || "New Chat" : "New Chat"}]} actionsClassName="ml-auto">
+                <Tooltip>
+                    <TooltipTrigger asChild>
+                        <Button disabled={!chatId} variant="ghost" size="icon-sm" className="text-muted-foreground shrink-0">
+                            <ChartNoAxesColumn className="size-4"/>
+                        </Button>
+                    </TooltipTrigger>
+                    <TooltipContent side="bottom">
+                        <div className="flex mt-1">
+                            <div className="flex flex-col items-start gap-1">
+                                <p className="w-max">This chat:</p>
+                                <p className="w-max">Total:</p>
+                            </div>
+                            <div className="flex flex-col items-end gap-1">
+                                <p className="w-max">~{Math.floor(usageEvents.reduce((acc, event) => acc + (event.eventSourceId === chatId ? parseFloat(event.totalCredits) : 0), 0))} credits</p>
+                                <p className="w-max">{Math.floor(getCurrentCreditUsage())} of {billingCycle.creditLimit || 0} credits</p>
+                            </div>
+                        </div>
+                        <Progress value={((getCurrentCreditUsage()/billingCycle.creditLimit) * 100) || 0} className="w-full bg-zinc-700 *:invert *:dark:invert-0 dark:bg-muted dark:invert mt-2"/>
+                    </TooltipContent>
+                </Tooltip>
+                <ChatActionsDropdown disabled={!chatId} triggerClassName="" chat={chats.find(c => c.id === chatId)} onRename={async () => {
+                    await revalidateData(pathname);
+                }} onDelete={async () => {
+                    await revalidateData(pathname);
+                }}/>
                 <Button variant={isMobile ? "ghost" : "secondary"} size={isMobile ? "icon" : "default"} className="mr-2" onClick={async()=>{
                     router.push(`/dashboard/class/${id}/chats`);
                 }}>{!isMobile && "Create new"}<MessageSquarePlus/></Button>

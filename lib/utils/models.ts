@@ -127,6 +127,8 @@ export const chatModels: Model[] = [
     }
 ];
 
+export const freeChatModels: Model[] = chatModels.filter(model => model.priceMultiplier === 0);
+
 export const embeddingModel: Model = {
     name: "openai/text-embedding-3-small",
     label: "OpenAI Text Embedding 3 Small",
@@ -145,5 +147,13 @@ export const summaryModels: Model[] = [
         provider: "openrouter",
     },
 ];
+
+export const usagePercentageWarnings = [0.5, 0.75, 0.9, 1];
+
+export function getLowerUsageWarningBoundary(usagePercentage: number) {
+  return usagePercentageWarnings
+    .filter((warning) => warning <= usagePercentage)
+    .sort((a, b) => b - a)[0];
+}
 
 export const fileSearchMetaQuery = (fileIds: string[]) => fileIds.map(id => `file_id="${id}"`).join(" OR ");

@@ -42,7 +42,7 @@ export default function DashboardLayout({children}: {children: React.ReactNode})
             (async()=>{
                 const meta = await getUserMeta();
                 console.log("Fetched user meta");
-                const billingCycle = await getUserBillingCycle({});
+                const billingCycle = await getUserBillingCycle();
                 if (!billingCycle){
                     console.error("No billing cycle found for user");
                     return toast.error("No billing cycle found for user");

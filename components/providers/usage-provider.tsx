@@ -4,10 +4,11 @@ import { BillingCycleSelect, ClassSelect, PlanSelect, TopicSelect, UsageEventSel
 import { createContext, useContext, useEffect, useState } from "react";
 
 export type UsageContextType = {
-    billingCycle: BillingCycleSelect,
+    billingCycle: BillingCycleSelect & {plan: PlanSelect, usageEvents: UsageEventSelect[]},
     plan: PlanSelect,
     usageEvents: UsageEventSelect[],
     getCurrentCreditUsage: () => number,
+    creditUsagePercentage: number,
     setBillingCycle: (newBillingCycle: BillingCycleSelect & {plan: PlanSelect, usageEvents: UsageEventSelect[]}) => void,
     addUsageEvent: (event: UsageEventSelect) => void,
 }
@@ -34,7 +35,7 @@ export function UsageProvider({children, billingCycle, setBillingCycle}: {childr
             usageEvents: [...billingCycle.usageEvents, event],
         })
     }
-    return <UsageContext.Provider value={{billingCycle: billingCycle, plan: billingCycle.plan, usageEvents: billingCycle.usageEvents, getCurrentCreditUsage, setBillingCycle, addUsageEvent}}>
+    return <UsageContext.Provider value={{billingCycle: billingCycle, plan: billingCycle.plan, usageEvents: billingCycle.usageEvents, getCurrentCreditUsage, setBillingCycle, addUsageEvent, creditUsagePercentage: (getCurrentCreditUsage() / billingCycle.creditLimit)}}>
         {children}
      </UsageContext.Provider>
 }

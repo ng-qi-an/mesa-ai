@@ -1,97 +1,138 @@
-import { streamText, convertToModelMessages, createIdGenerator, gateway } from 'ai';
-import { chatModels, ChatUIMessage, convertEffortLevel, ThinkingLevels } from '@/lib/utils/models';
+import { streamText, convertToModelMessages, createIdGenerator, gateway, isStepCount, createUIMessageStreamResponse, toUIMessageStream } from 'ai';
+import { chatModels, ChatUIMessage, ThinkingLevels } from '@/lib/utils/models';
 import { availableSubjects } from '@/lib/subjects/subjectsList';
-import saveToChat from '@/lib/actions/quiz/saveToChat';
+import saveToChat from '@/lib/actions/chat/saveToChat';
+import { files, notebook, notebookFiles } from '@/lib/schemas/schema';
+import { db } from '@/lib/db';
+import { and, eq } from 'drizzle-orm';
+import { auth } from '@/lib/auth';
+import { headers } from 'next/headers';
+import { searchDocumentsTool } from '@/lib/actions/chat/tools/searchDocumentsTool';
+import createChatUsageEvent from '@/lib/actions/billing/createChatUsageEvent';
+import checkCreditSufficient from '@/lib/actions/billing/checkCreditSufficient';
 
-type ChatRequestType = {
+export type ChatRequestOptions = {
     chatId: string;
+    noteId?: string;
+    classId: string;
     thinkingLevel: ThinkingLevels;
-    forceSearch: boolean;
-    messages: ChatUIMessage[];
     subject: keyof typeof availableSubjects;
     selectedModel: string;
 }
+type ChatRequestType = {
+    messages: ChatUIMessage[];
+}
+
+export const maxDuration = 300
 
 export async function POST(req: Request) {
-    const context: ChatRequestType = await req.json();
+    const session = await auth.api.getSession({
+        headers: await headers()
+    })
+    if (!session || !session.user) {
+        throw new Error("Unauthorized");
+    }
+    const context: ChatRequestType & ChatRequestOptions = await req.json();
     if (!context.subject) {
         throw new Error("Subject is required");
     }
     if (!context.chatId) {
         throw new Error("Chat ID is required");
     }
+    if (!context.classId) {
+        throw new Error("Class ID is required");
+    }
+    if (!(await checkCreditSufficient({userId: session.user.id, modelName: context.selectedModel}))) {
+        return new Response("Insufficient credits", { status: 402 });
+    }
+    const messages = context.messages.filter((message) => message.role !== "assistant" || message.parts.length > 0);
+    
+    let availableFiles: { id: string; name: string; summary: string | null }[] = [];
+    if (context.noteId){
+        availableFiles = await db.select({id: files.id, name: files.name, summary: files.summary}).from(files)
+            .innerJoin(notebookFiles, eq(notebookFiles.fileId, files.id))
+            .innerJoin(notebook, eq(notebook.id, notebookFiles.notebookId))
+            .where(and(eq(notebook.id, context.noteId), eq(notebook.userId, session.user.id), eq(files.status, "processed")));
+    } else {
+        availableFiles = await db.select({id: files.id, name: files.name, summary: files.summary}).from(files).where(and(eq(files.userId, session.user.id), eq(files.classId, context.classId), eq(files.status, "processed")));
+    }
     const result = streamText({
         instructions: `
         ${availableSubjects[context.subject].instructions.chat}
+        # Custom tools
+        ## File search
+        Aside from the web and your own knowledge, you have access to the user's files.
+        - You will be given a list of files each with IDs, names and a short summary. Use the summary as context for search queries.
+        - You can use the "searchDocuments" tool to search the user's files using short queries (3-5 words) based on the summary.
+        - Only search the user's files to answer questions when relevant. Your answers should be based on the content of the files, and you should cite the file name when referencing information from the files.
+        ### File list
+        ${availableFiles.map((file) => `- ${file.name} (ID: ${file.id}) - ${file.summary || "No summary available"}`).join("\n")}
         `,
+        providerOptions: {
+            gateway: {
+                models: chatModels.filter((model) => model.name !== context.selectedModel).map((model) => model.name),
+            },
+        },
         model: context.selectedModel || chatModels[0].name,
-        messages: await convertToModelMessages(context.messages),
+        messages: await convertToModelMessages(messages),
         tools: {
             perplexity_search: gateway.tools.perplexitySearch({
                 maxResults: 5,
                 country: "SG",
-
             }),
+            searchDocuments: searchDocumentsTool(availableFiles.map(f => f.id)),
         },
-        providerOptions: {
-            gateway: {
-                sort: 'cost',
-                models: chatModels.filter((model)=> model.name != context.selectedModel).map((model) => model.name),
-            },
-        },
+        stopWhen: isStepCount(5), // lets the model use tools and continue
         reasoning: context.thinkingLevel,
-        onEnd: async({totalUsage})=>{
-            console.log("[CHAT STREAM] Stream finished with total tokens:", totalUsage.totalTokens);
-            // The user usage limit thing should go here
+        onEnd: async({usage})=>{
+            if (usage.totalTokens && usage.totalTokens > 0) {
+                const usageEvent = await createChatUsageEvent({
+                    totalTokens: usage.totalTokens,
+                    userId: session.user.id,
+                    model: finalModel,
+                    chatId: context.chatId,
+                    noteId: context.noteId,
+                });
+                console.log("[CHAT STREAM] Usage event created, totalCredits", usageEvent.totalCredits);
+            }
         }
-        // tools: model.provider === "google" ? {
-        //     google_search: google.tools.googleSearch({}),
-        // } : undefined,
-        // toolChoice: "auto",
-        // providerOptions: model.name.startsWith("gemini-3") ? {
-        //     google: {
-        //         thinkingConfig: {
-        //             thinkingLevel: context.thinkingLevel,
-        //             includeThoughts: true,
-        //         },
-        //     },
-        // } : undefined,
-        // timeout: {stepMs: model.timeoutMs, totalMs: maxDuration * 1000},
     });
-    result.consumeStream(); 
-    return result.toUIMessageStreamResponse({
-        sendReasoning: true,
-        sendSources: true,
-        originalMessages: context.messages,
+
+    let finalModel = context.selectedModel || chatModels[0].name;
+    return createUIMessageStreamResponse({
+        stream: toUIMessageStream({
+            stream: result.stream,
+            sendReasoning: true,
+            sendSources: true,
+        originalMessages: messages,
         generateMessageId: createIdGenerator({
             prefix: 'msg-assistant',
             size: 16,
         }),
-        onEnd: async({messages, responseMessage})=>{
+        onEnd: async({messages, responseMessage}:{messages: ChatUIMessage[], responseMessage: ChatUIMessage})=>{
             console.log("[CHAT STREAM] Stream finished! Saving chat to DB!")
-            console.log("assistant message:", responseMessage);
-            messages
-            responseMessage.parts.filter((part)=> part.type.startsWith("tool")).map((toolPart)=>{
-                console.log("Tool part:", JSON.stringify(toolPart, null, 2));
-            })
+            if (responseMessage.parts.length === 0) {
+                return;
+            }
             await saveToChat(context.chatId, { messages });
         },
         messageMetadata: ({part})=>{
             if (part.type == "finish-step"){
                 try {
-                    console.log("Extracting model from provider metadata");
-                    const finalModel = (part.providerMetadata as {gateway: {routing: {modelAttempts: Array<{canonicalSlug: string}>}}}).gateway.routing.modelAttempts.at(-1)!.canonicalSlug
-                    console.log("Final model used:", finalModel);
-                    return {
-                        model: finalModel
-                    }
+                    // console.log("Extracting model from provider metadata");
+                    finalModel = (part.providerMetadata as {gateway: {routing: {modelAttempts: Array<{canonicalSlug: string}>}}}).gateway.routing.modelAttempts.at(-1)!.canonicalSlug
+                    // const modelAttempts = (part.providerMetadata as {gateway: {routing: {modelAttempts: Array<{canonicalSlug: string}>}}}).gateway.routing.modelAttempts
+                    // console.log("Final model used:", finalModel, "attempts:", modelAttempts.map((attempt)=> JSON.stringify(attempt)));
                 } catch {
                     console.log("Failed to extract model from provider metadata. Default to selected.");
-                    return {
-                        model: context.selectedModel || chatModels[0].name
-                    };
                 }
             }
-        }
-    });
+            if (part.type == "finish"){
+                return {
+                    model: finalModel,
+                    totalTokens: part.totalUsage.totalTokens,
+                }
+            }
+        }})
+    })
 }

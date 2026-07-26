@@ -1,5 +1,5 @@
 'use client';
-import { ChartNoAxesColumn, Maximize, Maximize2, Menu, Minimize2, Plus } from "lucide-react";
+import { AlertCircleIcon, ChartNoAxesColumn, Maximize, Maximize2, Menu, Minimize2, Plus, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import Logo from "@/components/logo";
 import {
@@ -30,7 +30,7 @@ import ChatMessageContent from "@/components/chat/ChatMessageContent";
 import ChatActionsDropdown from "./ChatActionsDropdown";
 import { allowedMimeTypes } from "@/lib/utils";
 import { useClass } from "@/components/providers/class-provider";
-import { chatModels, ChatUIMessage, ThinkingLevels } from "@/lib/utils/models";
+import { chatModels, ChatUIMessage, freeChatModels, getLowerUsageWarningBoundary, ThinkingLevels, usagePercentageWarnings } from "@/lib/utils/models";
 import { Button } from "@/components/ui/button";
 import { motion } from "motion/react";
 import getChat from "@/lib/actions/chat/getChat";
@@ -46,6 +46,8 @@ import generateChatUsageEvent from "@/lib/actions/billing/generateChatUsageEvent
 import { authClient } from "@/lib/auth-client";
 import { useUsage } from "@/components/providers/usage-provider";
 import { Progress } from "@/components/ui/progress";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import checkCreditSufficient from "@/lib/actions/billing/checkCreditSufficient";
 
 export default function ChatMessagesPanel({chatId: initialChatId, chatName: initialChatName, isMainChat}: {chatId?: string, chatName: string, isMainChat?: boolean}){
     const noteCtx = useNotebook();
@@ -62,23 +64,43 @@ export default function ChatMessagesPanel({chatId: initialChatId, chatName: init
     const [selectedModel, setSelectedModel] = useState<string>(chatModels[0].name);
     const [showChatList, setShowChatList] = useState<boolean>(false);
     const { closeTab, updateTab } = useTabs();
-    const { addUsageEvent, usageEvents, billingCycle, getCurrentCreditUsage } = useUsage();
-    const { messages, sendMessage, setMessages, status, stop } = useChat({
+    const { addUsageEvent, usageEvents, billingCycle, getCurrentCreditUsage, creditUsagePercentage } = useUsage();
+    const [insufficentWarning, setInsufficentWarning] = useState<boolean>(false);
+    const { messages, sendMessage, setMessages, status, stop, error, clearError } = useChat({
         transport: new DefaultChatTransport({
-            api: '/api/notebook/chat',
+            api: '/api/chat',
         }),
         messages: [] as ChatUIMessage[],
         throttle: 100,
-        onFinish: async ({messages, message}) => {
+        onFinish: async ({message, isError}) => {
+            if (isError) {
+                return;
+            }
             if (message.metadata?.totalTokens){
                 const usageEvent = await generateChatUsageEvent({totalTokens: message.metadata?.totalTokens, model: message.metadata?.model || selectedModel, chatId: chat?.id!, noteId: noteCtx.noteId});
                 console.log("[CHAT STREAM] Usage event generated, totalCredits:", usageEvent.totalCredits);
+                if (!freeChatModels.find((model) => model.name === message.metadata?.model)){
+                    const usagePercentage = [...usageEvents, usageEvent].reduce((acc, event) => acc + parseFloat(event.totalCredits), 0) / billingCycle.creditLimit;
+                    console.log("[CHAT STREAM] Usage percentage after this event:", usagePercentage);
+                    if (usagePercentage < usagePercentageWarnings[0]){
+                        window.localStorage.removeItem("dismissedUsagePercentage");
+                    } else {
+                        if (typeof window.localStorage.getItem("dismissedUsagePercentage") == "string"){
+                            const lastDismissedPercentage = parseFloat(window.localStorage.getItem("dismissedUsagePercentage") as string);
+                            const lowerUsageWarningBoundary = getLowerUsageWarningBoundary(usagePercentage);
+                            console.log("[CHAT STREAM] Last dismissed usage percentage:", lastDismissedPercentage, "Lower usage warning boundary:", lowerUsageWarningBoundary);
+                            if (lowerUsageWarningBoundary > lastDismissedPercentage){
+                                setInsufficentWarning(true);
+                            }
+                        } else {
+                            setInsufficentWarning(true);
+                        }
+                    }
+                }
                 addUsageEvent(usageEvent)
-
             } else {
                 console.log("No totalTokens or user found. Skipping usage event creation.");
             }
-            setMessages(messages);
         }
     }); 
     async function fetchChat(chatId: string){
@@ -90,6 +112,7 @@ export default function ChatMessagesPanel({chatId: initialChatId, chatName: init
             return;
         } else {
             console.log("Loaded chat!")
+            clearError();
             setChat(result);
             setMessages(result.messages as ChatUIMessage[]);
             setChatName(result.name);
@@ -97,13 +120,33 @@ export default function ChatMessagesPanel({chatId: initialChatId, chatName: init
         }
     }
     useEffect(()=>{
-        if (!initialChatId) {
-            setLoadingChat(false);
-            return;
-        } else {
-            fetchChat(initialChatId);
-        }
+        (async()=>{
+            if (!initialChatId) {
+                setLoadingChat(false);
+                return;
+            } else {
+                await fetchChat(initialChatId);
+            }
+        })();
     }, [])
+    useEffect(()=>{
+        if (creditUsagePercentage >= 1){
+            setSelectedModel(freeChatModels[0].name);
+        }
+        if (creditUsagePercentage < usagePercentageWarnings[0]){
+            window.localStorage.removeItem("dismissedUsagePercentage");
+        } else {
+            if (typeof window.localStorage.getItem("dismissedUsagePercentage") == "string"){
+                const lastDismissedPercentage = parseFloat(window.localStorage.getItem("dismissedUsagePercentage") as string);
+                const lowerUsageWarningBoundary = getLowerUsageWarningBoundary(creditUsagePercentage);
+                if (lowerUsageWarningBoundary > lastDismissedPercentage){
+                    setInsufficentWarning(true);
+                }
+            } else {
+                setInsufficentWarning(true);
+            }
+        }
+    }, [creditUsagePercentage])
     useEffect(()=>{
         if (!chat) return;
         setChatName(chat.name);
@@ -120,6 +163,7 @@ export default function ChatMessagesPanel({chatId: initialChatId, chatName: init
             setChat(null);
             setChatName("New Chat");
             setMessages([]);
+            clearError();
         }
     }, [noteCtx.mainChatId])
 
@@ -244,109 +288,110 @@ export default function ChatMessagesPanel({chatId: initialChatId, chatName: init
                                         </Shimmer>
                                     </MessageContent>
                                 </Message>}
+                                {status == "error" && <Message from="assistant">
+                                    <Alert variant="destructive" className="w-full">
+                                        <AlertCircleIcon />
+                                        <AlertTitle>{error?.message == "Insufficient credits" ? "Insufficient credits" : "An error occurred"}</AlertTitle>
+                                        <AlertDescription className="w-full">
+                                            <p>{error?.message == "Insufficient credits" ? "Use a free model, or upgrade your plan." : "An unknown error occurred. Please try again."}</p>
+                                        </AlertDescription>
+                                    </Alert>
+                                </Message>}
                             </ConversationContent>
                             <ConversationScrollButton />
                         </Conversation>
                         }
                    </motion.div>
                 }
-                <PromptInput
-                    globalDrop
-                    multiple
-                    accept={allowedMimeTypes.join(",")}
-                    onSubmit={async(message: PromptInputMessage) => {
-                        if (!message.text.trim() || status == "submitted" || status == "streaming"){
-                            return;
-                        }
-                        let chatId = chat?.id;
-                        if (!chat) {
-                            const newChat = await createChat(_class.id, noteCtx.noteId);
-                            if (!newChat) {
-                                toast.error("Failed to create chat. Please try again.");
+                <div className="relative mt-2 px-2">
+                    <div className="w-full mb-2">
+                        {insufficentWarning && <div className="w-full h-full rounded-lg bg-neutral-900 border flex items-center px-3 py-2 gap-2">
+                            <ChartNoAxesColumn className="size-4 shrink-0 text-muted-foreground"/>
+                            <p className="text-sm text-muted-foreground">You've used <span className="text-foreground/80 font-medium">{creditUsagePercentage >= 1 ? "100%" : Math.floor(creditUsagePercentage * 100) + "%"}</span> of your credits. {creditUsagePercentage >= 1 ? "Use free models or upgrade your plan." : creditUsagePercentage >= 0.9 ? "Consider using cheaper models." : creditUsagePercentage >= 0.75 ? "Consider using cheaper models." : creditUsagePercentage >= 0.5 && "Consider using less reasoning."}</p>
+                            <X className="size-4 shrink-0 text-muted-foreground hover:text-foreground ml-auto cursor-pointer" onClick={()=> {
+                                setInsufficentWarning(false)
+                                const lowerUsageWarningBoundary = getLowerUsageWarningBoundary(creditUsagePercentage);
+                                window.localStorage.setItem("dismissedUsagePercentage", lowerUsageWarningBoundary.toString())
+                            }}/>
+                        </div>}
+                    </div>
+                    <PromptInput
+                        globalDrop
+                        multiple
+                        accept={allowedMimeTypes.join(",")}
+                        onSubmit={async(message: PromptInputMessage) => {
+                            if (!message.text.trim() || status == "submitted" || status == "streaming"){
+                                return;
+                            }
+                            let chatId = chat?.id;
+                            if (!chat) {
+                                const newChat = await createChat(_class.id, noteCtx.noteId);
+                                if (!newChat) {
+                                    toast.error("Failed to create chat. Please try again.");
+                                    setMessages([]);
+                                    return;
+                                }
+                                setChat(newChat[0]);
+                                chatId = newChat[0].id;
+                            };
+                            if (!chatId) {
+                                toast.error("Failed to send message. Please try again.");
                                 setMessages([]);
                                 return;
                             }
-                            setChat(newChat[0]);
-                            chatId = newChat[0].id;
-                        };
-                        if (!chatId) {
-                            toast.error("Failed to send message. Please try again.");
-                            setMessages([]);
-                            return;
-                        }
 
-                        setMessages((x)=> x.filter((m, i)=> !(m.role == "user" && i == x.length - 1)))
-                        const oldText = text;
-                        const oldFiles = files;
-                        setPreviousFiles(files);
-                        setPreviousText(text);
-                        setFiles([]);
-                        setText("");
-                        // setCacheLoading(true);
-                        // let newCache;
-                        // console.log(noteCtx.files)
-                        // try {
-                        //     if (!noteCtx.cache || !checkCacheMatch(noteCtx.cache.fileIds, noteCtx.files.map(f=>f.id))){
-                        //         console.log("[CHAT] Cache files differ from provided files or no cache. Creating cache...");
-                        //         newCache = await createCache(noteCtx.files.map(f=>f.id), 600)
-                        //     } else {
-                        //         console.log("[CHAT] Cache files match provided files. Extending cache...");
-                        //         newCache = await createOrExtendCache(noteCtx.cache.name, noteCtx.files.map(f=>f.id), 600)
-                        //     }
-                        // } catch (err) {
-                        //     console.error("Error creating/extending cache:", err);
-                        //     setCacheLoading(false);
-                        //     setText(oldText);
-                        //     return;
-                        // }
-                        // console.log("Using cache:", newCache.name, "Expire time:", newCache.expireTime, "Total tokens:", newCache.usageMetadata?.totalTokenCount);
-                        // noteCtx.setCache(newCache.name!, noteCtx.files.map(f=>f.id));
-                        // await SaveToNotebook(noteCtx.noteId, {cache: {name: newCache.name!, fileIds: noteCtx.files.map(f=>f.id)}});
-
-                        const r = await SendChatMessage({message, files, sendMessage, thinkingLevel, selectedModel, chatId: chatId, bodyOptions: {noteId: noteCtx.noteId, subject: _class.subject}});
-                        console.log("SendChatMessage result:", r);
-                        if (r == "success"){
-                            console.log("Current messages length", messages.length);
-                            if (messages.length == 0){
-                                (async()=>{
-                                    setLoadingChatName(true);
-                                    const name = await generateChatName({chatId, message: message.text});
-                                    if (name) {
-                                        setChatName(name);
-                                        setChat((c)=> c ? {...c, name} : c);
-                                    }
-                                    setLoadingChatName(false);
-                                })();
+                            setMessages((x)=> x.filter((m, i)=> !(m.role == "user" && i == x.length - 1)))
+                            const oldText = text;
+                            const oldFiles = files;
+                            setPreviousFiles(files);
+                            setPreviousText(text);
+                            setFiles([]);
+                            setText("");
+                            clearError();
+                            const r = await SendChatMessage({message, files, sendMessage, thinkingLevel, selectedModel, classId: _class.id, chatId: chatId, bodyOptions: {noteId: noteCtx.noteId, subject: _class.subject}});
+                            console.log("SendChatMessage result:", r);
+                            if (r == "success"){
+                                console.log("Current messages length", messages.length);
+                                if (messages.length == 0){
+                                    (async()=>{
+                                        setLoadingChatName(true);
+                                        const name = await generateChatName({chatId, message: message.text});
+                                        if (name) {
+                                            setChatName(name);
+                                            setChat((c)=> c ? {...c, name} : c);
+                                        }
+                                        setLoadingChatName(false);
+                                    })();
+                                }
+                            }  else if (r === "failed_uploads") {
+                                toast.warning("Some files failed to upload.");
+                            } else if (r === "error") {
+                                setText(oldText);
+                                setFiles(oldFiles);
+                                toast.error("Error sending message. Please try again.");
                             }
-                        }  else if (r === "failed_uploads") {
-                            toast.warning("Some files failed to upload.");
-                        } else if (r === "error") {
-                            setText(oldText);
-                            setFiles(oldFiles);
-                            toast.error("Error sending message. Please try again.");
-                        }
-                        // setCacheLoading(false);
-                    }}
-                    className="mt-4 px-2"
-                >
-                    {files.length > 0 && <ChatInputHeader files={files} setFiles={setFiles} />}
-                    <PromptInputBody>
-                        <PromptInputTextarea
-                        placeholder="What would you like to do today?"
-                        onChange={(e) => setText(e.target.value)}
-                        value={text}
-                        />
-                    </PromptInputBody>
-                    <ChatInputFooter selectedModel={selectedModel} setSelectedModel={setSelectedModel} files={files} setFiles={setFiles} text={text} thinkingLevel={thinkingLevel} setThinkingLevel={setThinkingLevel} 
-                        onStop={()=>{
-                            stop();
-                            setText(previousText);
-                            setFiles(previousFiles);
+                            // setCacheLoading(false);
                         }}
-                        disableSend={status === "submitted" || status == "streaming"}
-                        disableStop={false}
-                    />
-                </PromptInput>
+                    >
+                        {files.length > 0 && <ChatInputHeader files={files} setFiles={setFiles} />}
+                        <PromptInputBody>
+                            <PromptInputTextarea
+                            placeholder="What would you like to do today?"
+                            onChange={(e) => setText(e.target.value)}
+                            value={text}
+                            />
+                        </PromptInputBody>
+                        <ChatInputFooter selectedModel={selectedModel} setSelectedModel={setSelectedModel} files={files} setFiles={setFiles} text={text} thinkingLevel={thinkingLevel} setThinkingLevel={setThinkingLevel} 
+                            onStop={()=>{
+                                stop();
+                                setText(previousText);
+                                setFiles(previousFiles);
+                            }}
+                            disableSend={status === "submitted" || status == "streaming"}
+                            disableStop={false}
+                        />
+                    </PromptInput>
+                </div>
             </div>
         </motion.div>
     </>

@@ -3,11 +3,14 @@ import { auth } from '@/lib/auth';
 import { headers } from 'next/headers';
 import { chatModels, ChatUIMessage, ThinkingLevels } from '@/lib/utils/models';
 import { availableSubjects } from '@/lib/subjects/subjectsList';
-import { searchDocumentsTool } from '@/lib/rag-actions/searchDocumentsTool';
+import { searchDocumentsTool } from '@/lib/actions/chat/tools/searchDocumentsTool';
 import { db } from '@/lib/db';
 import { listDocumentsTool } from '@/lib/rag-actions/listDocumentsTool';
 import saveToChat from '@/lib/actions/chat/saveToChat';
 import createChatUsageEvent from '@/lib/actions/billing/createChatUsageEvent';
+import checkCreditSufficient from '@/lib/actions/billing/checkCreditSufficient';
+import { files as filesTable, notebook, notebookFiles } from '@/lib/schemas/schema';
+import { and, eq } from 'drizzle-orm';
 
 // Allow streaming responses up to 5 minutes
 export const maxDuration = 300;
@@ -23,6 +26,9 @@ type NotebookRequestType = {
 
 export async function POST(req: Request) {
     const context: NotebookRequestType = await req.json();
+    // Failed UI streams can leave an empty assistant placeholder in persisted history.
+    // It contains no model context and must not be sent back on the next request.
+    const messages = context.messages.filter((message) => message.role !== "assistant" || message.parts.length > 0);
     
     const session = await auth.api.getSession({
         headers: await headers()
@@ -36,25 +42,25 @@ export async function POST(req: Request) {
     if (!context.subject) {
         throw new Error("Subject is required");
     }
-    const raw = await db.query.notebook.findFirst({
-        columns: {},
-        where: (notebook, {eq, and})=> and(eq(notebook.id, context.noteId), eq(notebook.userId, session.user.id)),
-        with: {
-            files: {
-                with: {
-                    file: {
-                        columns: {id: true}
-                    }
-                }
-            }
-        }
-    })
-    const files = raw ? raw.files.map(f => f.file) : [];
-    console.log("model selected:", context.selectedModel);
+    if (!(await checkCreditSufficient({userId: session.user.id, modelName: context.selectedModel}))) {
+        return new Response("Insufficient credits", { status: 402 });
+    }
+    const files = await db.select({
+        id: filesTable.id,
+        name: filesTable.name,
+        summary: filesTable.summary,
+    }).from(filesTable)
+        .innerJoin(notebookFiles, eq(notebookFiles.fileId, filesTable.id))
+        .innerJoin(notebook, eq(notebook.id, notebookFiles.notebookId))
+        .where(and(
+            eq(notebook.id, context.noteId),
+            eq(notebook.userId, session.user.id),
+            eq(filesTable.status, "processed"),
+        ));
     let finalModel = context.selectedModel || chatModels[0].name;
     const result = streamText({
         model: context.selectedModel,
-        messages: await convertToModelMessages(context.messages),
+        messages: await convertToModelMessages(messages),
         tools: {
             listDocuments: listDocumentsTool(files.map(f => f.id)),
             searchDocuments: searchDocumentsTool(files.map(f => f.id)),
@@ -76,7 +82,6 @@ export async function POST(req: Request) {
         stopWhen: isStepCount(5), // lets the model use tools and continue
         reasoning: context.thinkingLevel,
         onEnd: async({usage})=>{
-            console.log("[CHAT STREAM] Stream finished with total tokens:", usage.totalTokens);
             if (usage.totalTokens && usage.totalTokens > 0) {
                 const usageEvent = await createChatUsageEvent({
                     totalTokens: usage.totalTokens,
@@ -91,16 +96,19 @@ export async function POST(req: Request) {
     });
     return createUIMessageStreamResponse({
         stream: toUIMessageStream({
-            stream: result.stream, 
+            stream: result.stream,
             sendReasoning: true,
             sendSources: true,
-        originalMessages: context.messages,
+        originalMessages: messages,
         generateMessageId: createIdGenerator({
             prefix: 'msg-assistant',
             size: 16,
         }),
         onEnd: async({messages, responseMessage}:{messages: ChatUIMessage[], responseMessage: ChatUIMessage})=>{
             console.log("[CHAT STREAM] Stream finished! Saving chat to DB!")
+            if (responseMessage.parts.length === 0) {
+                return;
+            }
             await saveToChat(context.chatId, { messages });
         },
         messageMetadata: ({part})=>{

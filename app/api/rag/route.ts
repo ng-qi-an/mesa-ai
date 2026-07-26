@@ -1,6 +1,6 @@
 // app/api/chat/route.ts
 import { convertToModelMessages, isStepCount, streamText, UIMessage } from "ai";
-import { searchDocumentsTool } from "@/lib/rag-actions/searchDocumentsTool";
+import { searchDocumentsTool } from "@/lib/actions/chat/tools/searchDocumentsTool";
 import { listDocumentsTool } from "@/lib/rag-actions/listDocumentsTool";
 
 export async function POST(req: Request) {

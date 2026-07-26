@@ -4,10 +4,12 @@ import ChatInputFooter from "@/components/chat/ChatInputFooter";
 import ChatInputHeader from "@/components/chat/ChatInputHeader";
 import { useChatContext } from "@/components/providers/chat-provider";
 import { useClass } from "@/components/providers/class-provider";
+import { useUsage } from "@/components/providers/usage-provider";
 import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty";
 import createChat from "@/lib/actions/chat/createChat";
 import revalidateData from "@/lib/actions/revalidateData";
 import { allowedMimeTypes } from "@/lib/utils";
+import { freeChatModels } from "@/lib/utils/models";
 import { Sparkle } from "lucide-react";
 import { useRouter } from "nextjs-toploader/app";
 import { useEffect, useRef, useState } from "react";
@@ -19,12 +21,17 @@ export default function NewChat(){
     const router = useRouter();
     const [creating, setCreating] = useState(false);
     const promptInputRef = useRef<HTMLTextAreaElement>(null);
+    const { creditUsagePercentage } = useUsage();
 
     useEffect(()=>{
         if (promptInputRef.current) {
             promptInputRef.current.focus();
         }
+        if (creditUsagePercentage >= 1){
+            chatCtx.setNewSelectedModel(freeChatModels[0].name);
+        }
     }, [])
+    
 
     return <div className="flex flex-col h-full overflow-auto items-center justify-center">
         <Empty className="w-full p-0 px-4 h-max flex-0 mb-5">

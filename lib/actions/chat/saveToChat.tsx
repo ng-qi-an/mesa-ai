@@ -19,6 +19,5 @@ export default async function saveToChat(chatId: string, props: Partial<ChatInse
     delete copyProps.userId;
     delete copyProps.id;
     copyProps.dateModified = new Date();
-    console.log("Saving to chat with ID:", chatId, "and props:", copyProps);
     return await db.update(chats).set(copyProps).where(and(eq(chats.id, chatId), eq(chats.userId, session.user.id))).returning();
 }

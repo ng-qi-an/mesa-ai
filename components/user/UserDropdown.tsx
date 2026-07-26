@@ -7,14 +7,14 @@ import { useTheme } from "next-themes";
 import { User } from "better-auth";
 import AccountSettingsDialog from "./settings/AccountSettingsDialog";
 import { useState } from "react";
-
 export default function UserDropdown({user: _user, children, isMobile, sidebarState}: {user: User, children: React.ReactNode, isMobile?: boolean, sidebarState?: any}) {
     const router = useRouter();
     const {theme, setTheme} = useTheme();
     const user = _user || authClient.useSession().data?.user;
-    const [isAccountSettingsOpen, setIsAccountSettingsOpen] = useState(false);
+    const [isAccountSettingsOpen, setIsAccountSettingsOpen] = useState(false);  
     return <>
         <AccountSettingsDialog user={user} open={isAccountSettingsOpen} onOpenChange={setIsAccountSettingsOpen}/>
+
         <DropdownMenu>
             <DropdownMenuTrigger asChild>
                 {children}

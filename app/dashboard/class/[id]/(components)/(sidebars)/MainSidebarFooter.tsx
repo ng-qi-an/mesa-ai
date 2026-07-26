@@ -2,11 +2,17 @@ import { User } from "better-auth";
 import { SidebarFooter, SidebarMenu, SidebarMenuButton, SidebarMenuItem, useSidebar } from "@/components/ui/sidebar";
 import { ChevronsUpDown } from "lucide-react";
 import UserDropdown from "@/components/user/UserDropdown";
+import UsageButton from "@/components/usage/UsageButton";
+import { useUsage } from "@/components/providers/usage-provider";
 
 export default function MainSidebarFooter({user}: {user: User}) {
     const {isMobile, state} = useSidebar();
-    return user &&  <SidebarFooter className="pb-3">
+    const { getCurrentCreditUsage, billingCycle } = useUsage();
+    return user && <SidebarFooter className="pb-3">
         <SidebarMenu>
+            {state == "collapsed" && <SidebarMenuItem>
+                <UsageButton/>
+            </SidebarMenuItem>}
             <SidebarMenuItem>
                 <UserDropdown user={user} isMobile={isMobile} sidebarState={state}>
                     <SidebarMenuButton                             
@@ -18,6 +24,9 @@ export default function MainSidebarFooter({user}: {user: User}) {
                         </div>
                         <div className="flex flex-col gap-0.5 leading-none group-data-[collapsible=icon]:hidden">
                             <span className="font-medium">{user.name}</span>
+                            <span className="text-xs text-muted-foreground">
+                                {Math.floor(getCurrentCreditUsage())} of {billingCycle.creditLimit} credits
+                            </span>
                         </div>
                         <ChevronsUpDown className="ml-auto group-data-[collapsible=icon]:hidden" />
                     </SidebarMenuButton>

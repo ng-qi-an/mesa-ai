@@ -1,8 +1,8 @@
 import { tool } from "ai";
 import { z } from "zod";
-import { retrieveChunks } from "./retireveChunks";
-import { db } from "../db";
-import { files } from "../schemas/schema";
+import { retrieveChunks } from "../../../rag-actions/retireveChunks";
+import { db } from "../../../db";
+import { files } from "../../../schemas/schema";
 import { inArray } from "drizzle-orm";
 
 export const searchDocumentsTool = (fileIds: string[]) => (tool({

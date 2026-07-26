@@ -17,7 +17,7 @@ export default async function generateChatUsageEvent({totalTokens, userId:initia
         }
         userId = session.user.id;
     }
-    const billingCycle = await getUserBillingCycle({userId, fromServer: true});
+    const billingCycle = await getUserBillingCycle(userId);
     if (!billingCycle){
         throw new Error("No active billing cycle found for user");
     }
