@@ -1,6 +1,6 @@
 'use client';
 import { AlertCircleIcon, ChartNoAxesColumn, Maximize, Maximize2, Menu, Minimize2, Plus, X } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Logo from "@/components/logo";
 import {
   Conversation,
@@ -17,8 +17,8 @@ import {
 
 import { Message, MessageContent } from "@/components/ai-elements/message";
 import { MessageSquareIcon } from "lucide-react";
-import { useChat } from "@ai-sdk/react";
-import { DefaultChatTransport } from "ai";
+import { Chat, useChat } from "@ai-sdk/react";
+import { DefaultChatTransport, UIMessage } from "ai";
 import { useNotebook } from "@/components/providers/notebook-provider";
 import { Shimmer } from "@/components/ai-elements/shimmer";
 import ChatInputFooter from "@/components/chat/ChatInputFooter";
@@ -47,10 +47,21 @@ import { authClient } from "@/lib/auth-client";
 import { useUsage } from "@/components/providers/usage-provider";
 import { Progress } from "@/components/ui/progress";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import checkCreditSufficient from "@/lib/actions/billing/checkCreditSufficient";
+import { AIExtension, buildAIRequest, sendMessageWithAIRequest } from "@blocknote/xl-ai";
+import { ShowSelectionExtension } from "@blocknote/core/extensions";
+import { useExtension, useExtensionState } from "@blocknote/react";
+import saveNotebookBlocks from "@/lib/actions/notebook/saveNotebookBlocks";
+
+
 
 export default function ChatMessagesPanel({chatId: initialChatId, chatName: initialChatName, isMainChat}: {chatId?: string, chatName: string, isMainChat?: boolean}){
     const noteCtx = useNotebook();
+    const aiExtension = useExtension(AIExtension, {
+        editor: noteCtx.editor,
+    });
+
+
+    const [hasPendingAIChanges, setHasPendingAIChanges] = useState(false);
     const {_class} = useClass();
     const [text, setText] = useState<string>("");
     const [chat, setChat] = useState<ChatSelect | null>(null);
@@ -66,43 +77,174 @@ export default function ChatMessagesPanel({chatId: initialChatId, chatName: init
     const { closeTab, updateTab } = useTabs();
     const { addUsageEvent, usageEvents, billingCycle, getCurrentCreditUsage, creditUsagePercentage } = useUsage();
     const [insufficentWarning, setInsufficentWarning] = useState<boolean>(false);
-    const { messages, sendMessage, setMessages, status, stop, error, clearError } = useChat({
-        transport: new DefaultChatTransport({
-            api: '/api/chat',
-        }),
-        messages: [] as ChatUIMessage[],
-        throttle: 100,
-        onFinish: async ({message, isError}) => {
-            if (isError) {
-                return;
-            }
-            if (message.metadata?.totalTokens){
-                const usageEvent = await generateChatUsageEvent({totalTokens: message.metadata?.totalTokens, model: message.metadata?.model || selectedModel, chatId: chat?.id!, noteId: noteCtx.noteId});
-                console.log("[CHAT STREAM] Usage event generated, totalCredits:", usageEvent.totalCredits);
-                if (!freeChatModels.find((model) => model.name === message.metadata?.model)){
-                    const usagePercentage = [...usageEvents, usageEvent].reduce((acc, event) => acc + parseFloat(event.totalCredits), 0) / billingCycle.creditLimit;
-                    console.log("[CHAT STREAM] Usage percentage after this event:", usagePercentage);
-                    if (usagePercentage < usagePercentageWarnings[0]){
-                        window.localStorage.removeItem("dismissedUsagePercentage");
-                    } else {
-                        if (typeof window.localStorage.getItem("dismissedUsagePercentage") == "string"){
-                            const lastDismissedPercentage = parseFloat(window.localStorage.getItem("dismissedUsagePercentage") as string);
-                            const lowerUsageWarningBoundary = getLowerUsageWarningBoundary(usagePercentage);
-                            console.log("[CHAT STREAM] Last dismissed usage percentage:", lastDismissedPercentage, "Lower usage warning boundary:", lowerUsageWarningBoundary);
-                            if (lowerUsageWarningBoundary > lastDismissedPercentage){
-                                setInsufficentWarning(true);
-                            }
-                        } else {
+    const onChatFinishRef = useRef< (event: {message: ChatUIMessage; isError: boolean;}) => Promise<void>>(() => Promise.resolve());
+    const selectedNotebookRequestRef = useRef<Awaited<ReturnType<typeof buildAIRequest>> | null>(null);
+    const didEditNotebookRef = useRef(false);
+    
+    
+    onChatFinishRef.current = async({message, isError})=>{
+        if (isError) {
+            return;
+        }
+        if (message.metadata?.totalTokens){
+            const usageEvent = await generateChatUsageEvent({totalTokens: message.metadata?.totalTokens, model: message.metadata?.model || selectedModel, chatId: chat?.id!, noteId: noteCtx.noteId});
+            console.log("[CHAT STREAM] Usage event generated, totalCredits:", usageEvent.totalCredits);
+            if (!freeChatModels.find((model) => model.name === message.metadata?.model)){
+                const usagePercentage = [...usageEvents, usageEvent].reduce((acc, event) => acc + parseFloat(event.totalCredits), 0) / billingCycle.creditLimit;
+                console.log("[CHAT STREAM] Usage percentage after this event:", usagePercentage);
+                if (usagePercentage < usagePercentageWarnings[0]){
+                    window.localStorage.removeItem("dismissedUsagePercentage");
+                } else {
+                    if (typeof window.localStorage.getItem("dismissedUsagePercentage") == "string"){
+                        const lastDismissedPercentage = parseFloat(window.localStorage.getItem("dismissedUsagePercentage") as string);
+                        const lowerUsageWarningBoundary = getLowerUsageWarningBoundary(usagePercentage);
+                        console.log("[CHAT STREAM] Last dismissed usage percentage:", lastDismissedPercentage, "Lower usage warning boundary:", lowerUsageWarningBoundary);
+                        if (lowerUsageWarningBoundary > lastDismissedPercentage){
                             setInsufficentWarning(true);
                         }
+                    } else {
+                        setInsufficentWarning(true);
                     }
                 }
-                addUsageEvent(usageEvent)
-            } else {
-                console.log("No totalTokens or user found. Skipping usage event creation.");
             }
+            addUsageEvent(usageEvent)
+        } else {
+            console.log("No totalTokens or user found. Skipping usage event creation.");
         }
-    }); 
+    }
+    const notebookChat = useMemo(() =>
+        new Chat<ChatUIMessage>({
+        messages: [],
+        transport: new DefaultChatTransport({
+            api: "/api/notebook/chat",
+        }),
+        onFinish: (event) => onChatFinishRef.current(event),
+    }), []);
+    const { messages, sendMessage, setMessages, status, stop, error, clearError } = useChat<ChatUIMessage>({
+        chat: notebookChat,
+        experimental_throttle: 100,
+    });
+    useEffect(() => {
+        const aiExtension = noteCtx.editor.getExtension(AIExtension);
+
+        if (!aiExtension) {
+            throw new Error("BlockNote AI extension is not registered.");
+        }
+
+        aiExtension.options.setState({
+            chatProvider: () => notebookChat as unknown as Chat<UIMessage>,
+        });
+    }, [noteCtx.editor, notebookChat]);
+
+
+    async function captureSelectedNotebookContext() {
+        if (!noteCtx.editor.getSelection()) {
+            selectedNotebookRequestRef.current = null;
+            return;
+        }
+
+        selectedNotebookRequestRef.current = await buildNotebookAIRequest();
+
+        noteCtx.editor
+            .getExtension(ShowSelectionExtension)
+            ?.showSelection(true, "notebook-chat");
+    }
+
+    function onNotebookAIStart() {
+        didEditNotebookRef.current = true;
+
+        const extension = noteCtx.editor.getExtension(AIExtension);
+
+        if (!extension) {
+            return;
+        }
+
+        extension.openAIMenuAtBlock(
+            noteCtx.editor.getTextCursorPosition().block.id,
+        );
+
+        extension.setAIResponseStatus("ai-writing");
+    }
+
+    function onNotebookAIBlockUpdated(blockId: string) {
+        const extension = noteCtx.editor.getExtension(AIExtension);
+
+        if (!extension) {
+            return;
+        }
+
+        extension.setAIResponseStatus("ai-writing");
+
+        const aiState = extension.store.state.aiMenuState;
+
+        if (aiState !== "closed") {
+            extension.store.setState({
+            aiMenuState: {
+                blockId,
+                status: "ai-writing",
+            },
+            });
+        }
+    }
+
+    function buildNotebookAIRequest() {
+        return buildAIRequest({
+            editor: noteCtx.editor,
+            useSelection: true,
+            deleteEmptyCursorBlock: false,
+            onStart: onNotebookAIStart,
+            onBlockUpdated: onNotebookAIBlockUpdated,
+        });
+    }
+
+    async function sendNotebookMessageWithTools(
+    message: PromptInputMessage,
+    chatId: string,
+    ) {
+        const aiExtension = noteCtx.editor.getExtension(AIExtension);
+
+        if (!aiExtension) {
+            throw new Error("BlockNote AI extension is not registered.");
+        }
+
+        didEditNotebookRef.current = false;
+
+        const aiRequest =
+        selectedNotebookRequestRef.current ??
+        (await buildNotebookAIRequest());
+
+        const result = await sendMessageWithAIRequest(
+            notebookChat as unknown as Chat<UIMessage>,
+            aiRequest,
+            {
+            text: message.text,
+            },
+            {
+            body: {
+                chatId,
+                classId: _class.id,
+                noteId: noteCtx.noteId,
+                subject: _class.subject,
+                thinkingLevel,
+                selectedModel,
+            },
+            },
+        );
+
+        selectedNotebookRequestRef.current = null;
+
+        if (!result.ok) {
+            throw result.error;
+        }
+
+        if (didEditNotebookRef.current) {
+            setHasPendingAIChanges(true);
+            // Keep BlockNote's internal state in sync when it remains open.
+            aiExtension.setAIResponseStatus("user-reviewing");
+        }
+    }
+
+
     async function fetchChat(chatId: string){
         setLoadingChat(true);
         const result = await getChat(chatId);
@@ -314,13 +456,54 @@ export default function ChatMessagesPanel({chatId: initialChatId, chatName: init
                                 window.localStorage.setItem("dismissedUsagePercentage", lowerUsageWarningBoundary.toString())
                             }}/>
                         </div>}
+                        {hasPendingAIChanges && (
+                            <div className="mb-2 flex items-center gap-2 rounded-lg border bg-muted/40 px-3 py-2">
+                                <p className="mr-auto text-sm text-muted-foreground">
+                                Review the proposed notebook changes.
+                                </p>
+
+                                <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={()=>{
+                                    setHasPendingAIChanges(false);
+                                    aiExtension.rejectChanges();
+                                    toast("Notebook changes rejected.");
+                                }}
+                                >
+                                Reject
+                                </Button>
+
+                                <Button
+                                size="sm"
+                                variant="raised"
+                                onClick={async()=>{
+                                    setHasPendingAIChanges(false);
+                                    aiExtension.acceptChanges();
+                                    try {
+                                        const newBlocks = await saveNotebookBlocks(noteCtx.noteId, {
+                                        blocks: noteCtx.editor.document,
+                                        });
+
+                                        noteCtx.setBlocks(newBlocks.blocks);
+                                        toast.success("Notebook changes applied.");
+                                    } catch (error) {
+                                        console.error("Failed to save accepted notebook AI changes:", error);
+                                        toast.error("Changes were applied locally but could not be saved.");
+                                    }
+                                }}
+                                >
+                                Apply changes
+                                </Button>
+                            </div>
+                        )}
                     </div>
                     <PromptInput
                         globalDrop
                         multiple
                         accept={allowedMimeTypes.join(",")}
                         onSubmit={async(message: PromptInputMessage) => {
-                            if (!message.text.trim() || status == "submitted" || status == "streaming"){
+                            if (!message.text.trim() || status == "submitted" || status == "streaming" || hasPendingAIChanges) {
                                 return;
                             }
                             let chatId = chat?.id;
@@ -348,28 +531,54 @@ export default function ChatMessagesPanel({chatId: initialChatId, chatName: init
                             setFiles([]);
                             setText("");
                             clearError();
-                            const r = await SendChatMessage({message, files, sendMessage, thinkingLevel, selectedModel, classId: _class.id, chatId: chatId, bodyOptions: {noteId: noteCtx.noteId, subject: _class.subject}});
-                            console.log("SendChatMessage result:", r);
-                            if (r == "success"){
-                                console.log("Current messages length", messages.length);
-                                if (messages.length == 0){
-                                    (async()=>{
-                                        setLoadingChatName(true);
-                                        const name = await generateChatName({chatId, message: message.text});
-                                        if (name) {
-                                            setChatName(name);
-                                            setChat((c)=> c ? {...c, name} : c);
-                                        }
-                                        setLoadingChatName(false);
-                                    })();
+                            let r: "success" | "failed_uploads" | "error";
+                            if (files.length > 0) {
+                                // Keep the existing upload path until notebook tool requests support
+                                // forwarding newly uploaded file parts through the BlockNote wrapper.
+                                r = await SendChatMessage({
+                                    message,
+                                    files,
+                                    sendMessage,
+                                    thinkingLevel,
+                                    selectedModel,
+                                    classId: _class.id,
+                                    chatId,
+                                    bodyOptions: {
+                                        noteId: noteCtx.noteId,
+                                        subject: _class.subject,
+                                    },
+                                });
+                            } else {
+                                try {
+                                    await sendNotebookMessageWithTools(message, chatId);
+                                    r = "success";
+                                } catch (error) {
+                                    console.error("Failed to send notebook message with tools:", error);
+                                    r = "error";
                                 }
-                            }  else if (r === "failed_uploads") {
-                                toast.warning("Some files failed to upload.");
-                            } else if (r === "error") {
-                                setText(oldText);
-                                setFiles(oldFiles);
-                                toast.error("Error sending message. Please try again.");
                             }
+                            // const r = await SendChatMessage({message, files, sendMessage, thinkingLevel, selectedModel, classId: _class.id, chatId: chatId, bodyOptions: {noteId: noteCtx.noteId, subject: _class.subject}});
+                            // console.log("SendChatMessage result:", r);
+                            // if (r == "success"){
+                            //     console.log("Current messages length", messages.length);
+                            //     if (messages.length == 0){
+                            //         (async()=>{
+                            //             setLoadingChatName(true);
+                            //             const name = await generateChatName({chatId, message: message.text});
+                            //             if (name) {
+                            //                 setChatName(name);
+                            //                 setChat((c)=> c ? {...c, name} : c);
+                            //             }
+                            //             setLoadingChatName(false);
+                            //         })();
+                            //     }
+                            // }  else if (r === "failed_uploads") {
+                            //     toast.warning("Some files failed to upload.");
+                            // } else if (r === "error") {
+                            //     setText(oldText);
+                            //     setFiles(oldFiles);
+                            //     toast.error("Error sending message. Please try again.");
+                            // }
                             // setCacheLoading(false);
                         }}
                     >
@@ -378,6 +587,9 @@ export default function ChatMessagesPanel({chatId: initialChatId, chatName: init
                             <PromptInputTextarea
                             placeholder="What would you like to do today?"
                             onChange={(e) => setText(e.target.value)}
+                            onMouseDownCapture={() => {
+                                void captureSelectedNotebookContext();
+                            }}
                             value={text}
                             />
                         </PromptInputBody>
@@ -387,7 +599,7 @@ export default function ChatMessagesPanel({chatId: initialChatId, chatName: init
                                 setText(previousText);
                                 setFiles(previousFiles);
                             }}
-                            disableSend={status === "submitted" || status == "streaming"}
+                            disableSend={status === "submitted" || status == "streaming" || hasPendingAIChanges}
                             disableStop={false}
                         />
                     </PromptInput>

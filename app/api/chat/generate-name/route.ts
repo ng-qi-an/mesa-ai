@@ -27,7 +27,7 @@ export async function POST(req: Request) {
     const summary = await generateText({
         model: constructProvider(summaryModels[0]).chat(summaryModels[0].name),
         prompt: `Generate a concise name for a chat based on the first message sent by the user. The name should be 3-8 words long, and be grounded in relevance. The name should be a title case, and you can use numbers. You should not include any special characters, punctuation or emojis.\n\n# User message\n${message}`,
-        reasoning: "none",
+        //reasoning: "none",
         providerOptions: {
             openrouter: {
                 models: summaryModelNames,
