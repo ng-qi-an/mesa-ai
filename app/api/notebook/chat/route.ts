@@ -109,6 +109,9 @@ export async function POST(req: Request) {
         stopWhen: stepCountIs(5), // lets the model use tools and continue
         // reasoning: context.thinkingLevel,
         onFinish: async({totalUsage: usage})=>{
+            console.log("[CHAT STREAM] Total input:", usage.inputTokenDetails)
+            console.log("[CHAT STREAM] Total output:", usage.outputTokenDetails)
+            console.log("[CHAT STREAM] Raw usage:", usage.raw)
             if (usage.totalTokens && usage.totalTokens > 0) {
                 const usageEvent = await createChatUsageEvent({
                     totalTokens: usage.totalTokens,
