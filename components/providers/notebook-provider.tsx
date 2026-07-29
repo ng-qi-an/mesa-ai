@@ -20,7 +20,6 @@ import { BlockNoteEditor } from "@blocknote/core";
 import { AIExtension } from "@blocknote/xl-ai";
 import { en } from "@blocknote/core/locales";
 import { en as aiEn } from "@blocknote/xl-ai/locales";
-import "@blocknote/xl-ai/style.css";
 
 export type NotebookContextType = {
     // Ui States

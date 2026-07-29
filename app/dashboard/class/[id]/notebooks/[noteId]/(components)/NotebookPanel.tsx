@@ -28,30 +28,7 @@ import 'katex/dist/katex.min.css'
 import saveNotebookBlocks from "@/lib/actions/notebook/saveNotebookBlocks";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { migrateDollarMathToInlineMath } from "./(notebook)/mathExtensionUtils";
-import {
-    AIExtension,
-  AIMenuController,
-  AIToolbarButton,
-  getAISlashMenuItems,
-} from "@blocknote/xl-ai";
-import { FormattingToolbar, getDefaultReactSlashMenuItems, getFormattingToolbarItems, SuggestionMenuController } from "@blocknote/react";
-import { BlockNoteEditor, filterSuggestionItems } from "@blocknote/core";
-
-const FormattingToolbarWithAI = () => (
-  <FormattingToolbar>
-    {...getFormattingToolbarItems()}
-    {/* Add the AI button */}
-    <AIToolbarButton />
-  </FormattingToolbar>
-);
-
-// Slash menu items with the AI option added
-const getSlashMenuItemsWithAI = (editor: BlockNoteEditor<any, any, any>) => [
-  ...getDefaultReactSlashMenuItems(editor),
-  // add the default AI slash menu items, or define your own
-  ...getAISlashMenuItems(editor),
-];
-
+import {AIExtension} from "@blocknote/xl-ai";
 
 export default function NotebookPanel(){
     const noteCtx = useNotebook()

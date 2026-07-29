@@ -329,3 +329,39 @@ a
     height: 120px;
   }
 }
+
+/* Custom styles for the ai cursor */
+[data-node-type="blockContainer"][data-mesa-ai-writing="true"] {
+  position: relative;
+}
+
+[data-node-type="blockContainer"][data-mesa-ai-writing="true"]::before {
+  content: "Mesa AI";
+  position: absolute;
+  top: -1.35rem;
+  left: 0;
+  z-index: 20;
+  border-radius: 999px;
+  background: #8bc6ff;
+  color: #0a1220;
+  padding: 0.125rem 0.45rem;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  line-height: 1.15;
+  pointer-events: none;
+  height: 20px;
+}
+
+[data-node-type="blockContainer"][data-mesa-ai-writing="true"]::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: -0.5rem;
+  z-index: 19;
+  width: 2px;
+  border-radius: 999px;
+  background: #8bc6ff;
+  box-shadow: 0 0 10px rgb(139 198 255 / 70%);
+  pointer-events: none;
+}
