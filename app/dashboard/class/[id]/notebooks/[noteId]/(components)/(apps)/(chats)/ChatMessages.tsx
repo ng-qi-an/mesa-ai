@@ -1,6 +1,6 @@
 'use client';
 import { AlertCircleIcon, ChartNoAxesColumn, X } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { RefObject, useEffect, useRef, useState } from "react";
 import Logo from "@/components/logo";
 import {
   Conversation,
@@ -17,7 +17,7 @@ import {
 import { Message, MessageContent } from "@/components/ai-elements/message";
 import { MessageSquareIcon } from "lucide-react";
 import { Chat } from "@ai-sdk/react";
-import { UIMessage } from "ai";
+import { FileUIPart, UIMessage } from "ai";
 import { useNotebook } from "@/components/providers/notebook-provider";
 import { Shimmer } from "@/components/ai-elements/shimmer";
 import ChatInputFooter from "@/components/chat/ChatInputFooter";
@@ -26,7 +26,7 @@ import { toast } from "sonner";
 import { ChatSelect } from "@/lib/schemas/schema";
 import ChatInputHeader from "@/components/chat/ChatInputHeader";
 import ChatMessageContent from "@/components/chat/ChatMessageContent";
-import { allowedMimeTypes } from "@/lib/utils";
+import { allowedFileTypesList, allowedMimeTypes } from "@/lib/utils";
 import { useClass } from "@/components/providers/class-provider";
 import { ChatUIMessage, freeChatModels, getLowerUsageWarningBoundary, ThinkingLevels, usagePercentageWarnings } from "@/lib/utils/models";
 import { Button } from "@/components/ui/button";
@@ -42,8 +42,10 @@ import saveNotebookBlocks from "@/lib/actions/notebook/saveNotebookBlocks";
 import { buildNotebookAIRequest } from "./buildNotebookAIRequest";
 import { sendNotebookMessage } from "./sendNotebookMessage";
 import { clearNotebookAICursor } from "./notebookAICursor";
+import generateChatName from "@/lib/actions/chat/generateChatName";
+import uploadChatFiles from "@/lib/actions/chat/uploadChatFiles";
 
-export default function ChatMessages({messages, setMessages, sendMessage, error, clearError, status, notebookChat, insufficientWarning, setInsufficientWarning, loadingChat, chat, setChat, selectedModel, setSelectedModel}: {messages: ChatUIMessage[], setMessages: React.Dispatch<React.SetStateAction<ChatUIMessage[]>>, sendMessage: any, error: Error | undefined, clearError: () => void, status: "ready" | "submitted" | "streaming" | "error", notebookChat: Chat<UIMessage<any, any, any>>, insufficientWarning: boolean, setInsufficientWarning: (value: boolean) => void, loadingChat: boolean, chat: ChatSelect | null, setChat: (chat: ChatSelect | null) => void, selectedModel: string, setSelectedModel: (model: string) => void}){
+export default function ChatMessages({messages, setMessages, sendMessage, error, clearError, status, notebookChat, insufficientWarning, setInsufficientWarning, loadingChat, chat, setChat, loadingChatName, setLoadingChatName, chatName, setChatName, selectedModel, setSelectedModel}: {messages: ChatUIMessage[], setMessages: React.Dispatch<React.SetStateAction<ChatUIMessage[]>>, sendMessage: any, error: Error | undefined, clearError: () => void, status: "ready" | "submitted" | "streaming" | "error", notebookChat: Chat<UIMessage<any, any, any>>, insufficientWarning: boolean, setInsufficientWarning: (value: boolean) => void, loadingChat: boolean, chat: ChatSelect | null, setChat: any, loadingChatName: boolean, setLoadingChatName: (loading: boolean) => void, chatName: string, setChatName: (name: string) => void, selectedModel: string, setSelectedModel: (model: string) => void}){
     const [hasPendingAIChanges, setHasPendingAIChanges] = useState(false);
     const {_class} = useClass();
     const noteCtx = useNotebook();
@@ -58,7 +60,8 @@ export default function ChatMessages({messages, setMessages, sendMessage, error,
     const { creditUsagePercentage } = useUsage();
     const [activeAIRequest, setActiveAIRequest] = useState<AIRequest | null>(null);
     const notebookEditedRef = useRef(false);
-    
+    const beforeNotebookEditRef = useRef<any[] | null>(null);
+    const wasStoppedRef = useRef(false);
     
     useEffect(() => {
         const aiExtension = noteCtx.editor.getExtension(AIExtension);
@@ -90,8 +93,36 @@ export default function ChatMessages({messages, setMessages, sendMessage, error,
             }
         }
     }, [creditUsagePercentage])
-    
+    function recoverNotebookDocument(editor: any, beforeNotebookEditRef: RefObject<any[] | null>) {
+        const aiExtension = editor.getExtension(AIExtension);
+        try {
+            aiExtension?.rejectChanges();
+        } catch (rejectError) {
+            console.error("BlockNote rejectChanges failed; restoring pre-edit document:", rejectError);
 
+            const oldBlocks = beforeNotebookEditRef.current;
+
+            if (oldBlocks) {
+                try {
+                    editor.replaceBlocks(editor.document, oldBlocks);
+                } catch (restoreError) {
+                    console.error("Failed to restore the pre-edit document:", restoreError);
+                }
+            }
+        } finally {
+            try {
+            aiExtension?.closeAIMenu();
+            } catch (closeError) {
+            console.error("Failed to close BlockNote AI session:", closeError);
+
+            // Never leave the user locked out of the editor.
+            editor.isEditable = true;
+            editor.focus();
+            }
+
+            beforeNotebookEditRef.current = null;
+        }
+    }
     return <div className="flex-1 min-h-0 flex flex-col px-1">
     {loadingChat ? <>
         <div className="flex-1"/></>
@@ -161,10 +192,17 @@ export default function ChatMessages({messages, setMessages, sendMessage, error,
                         size="sm"
                         variant="outline"
                         onClick={()=>{
+                            try {
+                                aiExtension.rejectChanges();
+                                toast("Notebook changes rejected.");
+                            } catch (error) {
+                                console.error("Failed to reject notebook AI changes:", error);
+                                toast.error("Failed to reject notebook AI changes.");
+                                recoverNotebookDocument(noteCtx.editor, beforeNotebookEditRef);
+                            }
                             setHasPendingAIChanges(false);
-                            aiExtension.rejectChanges();
                             clearNotebookAICursor(noteCtx.editor);
-                            toast("Notebook changes rejected.");
+                            notebookEditedRef.current = false;
                         }}
                         >
                         Reject
@@ -174,18 +212,20 @@ export default function ChatMessages({messages, setMessages, sendMessage, error,
                         size="sm"
                         variant="raised"
                         onClick={async()=>{
-                            setHasPendingAIChanges(false);
-                            aiExtension.acceptChanges();
                             try {
+                                aiExtension.acceptChanges();
                                 const newBlocks = await saveNotebookBlocks(noteCtx.noteId, {
                                 blocks: noteCtx.editor.document,
                                 });
-                                clearNotebookAICursor(noteCtx.editor);
                                 noteCtx.setBlocks(newBlocks.blocks);
                             } catch (error) {
-                                console.error("Failed to save accepted notebook AI changes:", error);
-                                toast.error("Changes were applied locally but could not be saved.");
+                                recoverNotebookDocument(noteCtx.editor, beforeNotebookEditRef);
+                                console.error("Failed to apply notebook AI changes:", error);
+                                toast.error("An error occured when applying changes. Try changing your prompt, or select something else.");
                             }
+                            setHasPendingAIChanges(false);
+                            clearNotebookAICursor(noteCtx.editor);
+                            notebookEditedRef.current = false;
                         }}
                         >
                         Apply changes
@@ -196,11 +236,12 @@ export default function ChatMessages({messages, setMessages, sendMessage, error,
             <PromptInput
                 globalDrop
                 multiple
-                accept={allowedMimeTypes.join(",")}
+                accept={allowedFileTypesList.join(",")}
                 onSubmit={async(message: PromptInputMessage) => {
                     if (!message.text.trim() || status == "submitted" || status == "streaming" || hasPendingAIChanges) {
                         return;
                     }
+                    wasStoppedRef.current = false;
                     let chatId = chat?.id;
                     if (!chat) {
                         const newChat = await createChat(_class.id, noteCtx.noteId);
@@ -226,53 +267,45 @@ export default function ChatMessages({messages, setMessages, sendMessage, error,
                     setFiles([]);
                     setText("");
                     clearError();
-                    let r: "success" | "failed_uploads" | "error";
-                    if (files.length > 0) {
-                        r = await SendChatMessage({
-                            message,
-                            files,
-                            sendMessage,
-                            thinkingLevel,
-                            selectedModel,
-                            classId: _class.id,
-                            chatId,
-                            bodyOptions: {
-                                noteId: noteCtx.noteId,
-                                subject: _class.subject,
-                            },
-                        });
-                    } else {
-                        try {
-                            await sendNotebookMessage({message, editor: noteCtx.editor, notebookChat, activeAIRequest, setActiveAIRequest, setHasPendingAIChanges, notebookEditedRef, chatId, _class, thinkingLevel, noteId: noteCtx.noteId, selectedModel});
-                            r = "success";
-                        } catch (error) {
-                            console.error("Failed to send notebook message with tools:", error);
-                            r = "error";
-                        }
+                    let chatFiles: (FileUIPart & { id: string })[];
+                    try {
+                        chatFiles = await uploadChatFiles({message, files, chatId});
+                    } catch (error) {
+                        toast.warning("Some files failed to upload.");
+                        return;
                     }
-                    // const r = await SendChatMessage({message, files, sendMessage, thinkingLevel, selectedModel, classId: _class.id, chatId: chatId, bodyOptions: {noteId: noteCtx.noteId, subject: _class.subject}});
-                    // console.log("SendChatMessage result:", r);
-                    // if (r == "success"){
-                    //     console.log("Current messages length", messages.length);
-                    //     if (messages.length == 0){
-                    //         (async()=>{
-                    //             setLoadingChatName(true);
-                    //             const name = await generateChatName({chatId, message: message.text});
-                    //             if (name) {
-                    //                 setChatName(name);
-                    //                 setChat((c)=> c ? {...c, name} : c);
-                    //             }
-                    //             setLoadingChatName(false);
-                    //         })();
-                    //     }
-                    // }  else if (r === "failed_uploads") {
-                    //     toast.warning("Some files failed to upload.");
-                    // } else if (r === "error") {
-                    //     setText(oldText);
-                    //     setFiles(oldFiles);
-                    //     toast.error("Error sending message. Please try again.");
-                    // }
-                    // setCacheLoading(false);
+                    try {
+                        await sendNotebookMessage({message, files: chatFiles, editor: noteCtx.editor, notebookChat, activeAIRequest, setActiveAIRequest, setHasPendingAIChanges, notebookEditedRef, beforeNotebookEditRef, chatId, _class, thinkingLevel, noteId: noteCtx.noteId, selectedModel});
+                        if (wasStoppedRef.current) {
+                            throw new Error("Request stopped by user.");
+                        }
+                        console.log("Current messages length", messages.length);
+                        if (messages.length == 0){
+                            (async()=>{
+                                setLoadingChatName(true);
+                                const name = await generateChatName({chatId, message: message.text});
+                                if (name) {
+                                    setChatName(name);
+                                    setChat((c: ChatSelect) => c ? {...c, name} : c);
+                                }
+                                setLoadingChatName(false);
+                            })();
+                        }
+                    } catch (error) {
+                        console.error("Failed to send notebook message with tools:", error);
+                        setText(oldText);
+                        setFiles(oldFiles);
+                        if (wasStoppedRef.current) {
+                            toast("AI response stopped.");
+                        } else {
+                            toast.error("Error sending message. Please try again.");
+                        }
+                        if (notebookEditedRef.current) {
+                            clearNotebookAICursor(noteCtx.editor);
+                            recoverNotebookDocument(noteCtx.editor, beforeNotebookEditRef);
+                        }
+                        throw error;
+                    }
                 }}
             >
                 {files.length > 0 && <ChatInputHeader files={files} setFiles={setFiles} />}
@@ -285,8 +318,11 @@ export default function ChatMessages({messages, setMessages, sendMessage, error,
                             setActiveAIRequest(null);
                             return;
                         }
-                        setActiveAIRequest(await buildNotebookAIRequest(noteCtx.editor, notebookEditedRef));
+                        setActiveAIRequest(await buildNotebookAIRequest(noteCtx.editor, notebookEditedRef, beforeNotebookEditRef));
                         noteCtx.editor.getExtension(ShowSelectionExtension)?.showSelection(true, "notebook-chat");
+                    }}
+                    onBlurCapture={()=>{
+                        noteCtx.editor.getExtension(ShowSelectionExtension)?.showSelection(false, "notebook-chat");
                     }}
                     value={text}
                     />
@@ -296,8 +332,9 @@ export default function ChatMessages({messages, setMessages, sendMessage, error,
                         stop();
                         setText(previousText);
                         setFiles(previousFiles);
+                        wasStoppedRef.current = true;
                     }}
-                    disableSend={status === "submitted" || status == "streaming" || hasPendingAIChanges}
+                    disableSend={status === "submitted" || status == "streaming" || hasPendingAIChanges || notebookEditedRef.current == true}
                     disableStop={false}
                 />
             </PromptInput>

@@ -70,6 +70,42 @@ export default function ChatMessagesPanel({chatId: initialChatId, chatName: init
         messages: [],
         transport: new DefaultChatTransport({
             api: "/api/notebook/chat",
+            prepareSendMessagesRequest: ({
+                id,
+                messages,
+                body,
+                trigger,
+                messageId,
+            }) => {
+                let latestDocumentState: unknown;
+                const sanitizedMessages = messages.map((message) => {
+                    const metadata = message.metadata as | Record<string, unknown> | undefined;
+
+                    if (!metadata?.documentState) {
+                        return message;
+                    }
+                    latestDocumentState = metadata.documentState;
+                    const { documentState: _documentState, ...remainingMetadata } =
+                        metadata;
+                    return {
+                        ...message,
+                        metadata:
+                        Object.keys(remainingMetadata).length > 0
+                            ? remainingMetadata
+                            : undefined,
+                    };
+                });
+                return {
+                    body: {
+                        ...body,
+                        id,
+                        trigger,
+                        messageId,
+                        messages: sanitizedMessages,
+                        documentState: latestDocumentState,
+                    },
+                };
+            },
         }),
         onFinish: (event) => onChatFinishRef.current(event),
     }), []);
@@ -213,7 +249,7 @@ export default function ChatMessagesPanel({chatId: initialChatId, chatName: init
                     }
                 }}/>
             </div>
-            <ChatMessages messages={messages} setMessages={setMessages} sendMessage={sendMessage} error={error} clearError={clearError} status={status} notebookChat={notebookChat} insufficientWarning={insufficientWarning} setInsufficientWarning={setInsufficientWarning} loadingChat={loadingChat} chat={chat} setChat={setChat} selectedModel={selectedModel} setSelectedModel={setSelectedModel}/>
+            <ChatMessages messages={messages} setMessages={setMessages} sendMessage={sendMessage} error={error} clearError={clearError} status={status} chatName={chatName} setChatName={setChatName} setLoadingChatName={setLoadingChatName} loadingChatName={loadingChatName} notebookChat={notebookChat} insufficientWarning={insufficientWarning} setInsufficientWarning={setInsufficientWarning} loadingChat={loadingChat} chat={chat} setChat={setChat} selectedModel={selectedModel} setSelectedModel={setSelectedModel}/>
         </motion.div>
     </>
 }

@@ -124,6 +124,18 @@ export const chatModels: Model[] = [
         label: "DeepSeek V4 Pro",
         priceMultiplier: 1.5,
         provider: "openrouter",
+    },
+    {
+        name: "x-ai/grok-4.5",
+        label: "Grok 4.5",
+        priceMultiplier: 3,
+        provider: "openrouter",
+    },
+    {
+        name: "qwen/qwen3.7-plus",
+        label: "Qwen 3.7 Plus",
+        priceMultiplier: 1,
+        provider: "openrouter",
     }
 ];
 

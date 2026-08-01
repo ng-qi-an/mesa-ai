@@ -1,4 +1,4 @@
-import { streamText, convertToModelMessages, createIdGenerator, gateway, stepCountIs } from 'ai';
+import { streamText, convertToModelMessages, createIdGenerator, gateway, stepCountIs, ToolSet, tool } from 'ai';
 import { chatModels, ChatUIMessage, ThinkingLevels } from '@/lib/utils/models';
 import { availableSubjects } from '@/lib/subjects/subjectsList';
 import saveToChat from '@/lib/actions/chat/saveToChat';
@@ -12,10 +12,14 @@ import createChatUsageEvent from '@/lib/actions/billing/createChatUsageEvent';
 import checkCreditSufficient from '@/lib/actions/billing/checkCreditSufficient';
 import {
   aiDocumentFormats,
+  DocumentState,
   injectDocumentStateMessages,
   toolDefinitionsToToolSet,
 } from "@blocknote/xl-ai/server";
 import constructProvider from '@/lib/utils/constructProvider';
+import { openrouter } from '@openrouter/ai-sdk-provider';
+import z from 'zod';
+import { getDocumentStateTool } from '@/lib/actions/chat/tools/getDocumentState';
 
 
 export type ChatRequestOptions = {
@@ -25,6 +29,7 @@ export type ChatRequestOptions = {
     thinkingLevel: ThinkingLevels;
     subject: keyof typeof availableSubjects;
     selectedModel: string;
+    documentState?: DocumentState<any>;
 }
 type ChatRequestType = {
     messages: ChatUIMessage[];
@@ -53,10 +58,21 @@ export async function POST(req: Request) {
     if (!(await checkCreditSufficient({userId: session.user.id, modelName: context.selectedModel}))) {
         return new Response("Insufficient credits", { status: 402 });
     }
-    const messages = context.messages.filter((message) => message.role !== "assistant" || message.parts.length > 0);
-    const modelMessages = context.toolDefinitions
-    ? injectDocumentStateMessages(messages)
-    : messages;
+    const messages = context.messages.map((message) => {
+      if (message.role !== "assistant") {
+        return message;
+      }
+      return {
+        ...message,
+        parts: message.parts.filter((part) => {
+            return (
+                part.type !== "tool-getDocumentState"
+            );
+        }).map((part)=>{
+            return ((part.type == "tool-applyDocumentOperations" && part.state == "output-available") ? {...part, input: {operations: []}, output: {status: "success", summary: "Notebook changes were applied successfully."}} : part)
+        }),
+      };
+    }).filter((message) => message.role !== "assistant" || message.parts.length > 0);
     let availableFiles: { id: string; name: string; summary: string | null }[] = [];
     if (context.noteId){
         availableFiles = await db.select({id: files.id, name: files.name, summary: files.summary}).from(files)
@@ -70,8 +86,42 @@ export async function POST(req: Request) {
     const result = streamText({
         system: `
         ${availableSubjects[context.subject].instructions.chat}
-        ${context.toolDefinitions ? aiDocumentFormats._experimental_markdown.systemPrompt : ""}
-        # Custom tools
+        ${context.toolDefinitions ? `
+        # Notebook Editing
+        You're editing a Markdown block document. Follow the provided JSON schema.
+        
+        
+        Before using applyDocumentOperations, call "getNotebookState" in the
+        current request. Use only its returned content and IDs; IDs must match
+        exactly, including the trailing "$".
+
+        Use getDocumentState only when the user explicitly asks to modify the notebook.
+        If applyDocumentOperations was called in the previous message, and the user did not
+        explicitly ask to modify the notebook, assume the notebook has been modified and answer 
+        normally without editing. The only exception is when the user asks to retry.
+
+        For list items, use one item per block:
+        - Valid: "- item1"
+        - Invalid: "- item1
+        - item2"
+
+        When selection: true, only edit IDs from selectedBlocks. The blocks
+        field is context only. Do not modify outside the selection.
+
+        When selection: false, use IDs from blocks. The block with
+        cursor: true indicates the user's current location.
+                
+        Use applyDocumentOperations only when the user explicitly asks to modify
+        the notebook. Otherwise, answer normally without editing.
+
+        When you decide to edit the notebook:
+        1. First write one short, user-facing acknowledgement describing the intended
+        change, such as “I'll rewrite the selected text for clarity.”
+        2. Then call applyDocumentOperations in the same response.
+        3. Do not wait for the tool result and do not provide a second follow-up
+        message after the edit completes.
+        ` : ""}
+        # Other tools
         ## File search
         Aside from the web and your own knowledge, you have access to the user's files.
         - You will be given a list of files each with IDs, names and a short summary. Use the summary as context for search queries.
@@ -79,19 +129,6 @@ export async function POST(req: Request) {
         - Only search the user's files to answer questions when relevant. Your answers should be based on the content of the files, and you should cite the file name when referencing information from the files.
         ### File list
         ${availableFiles.map((file) => `- ${file.name} (ID: ${file.id}) - ${file.summary || "No summary available"}`).join("\n")}
-        ${context.toolDefinitions ? `
-        # Notebook editing
-        You can also edit the current notebook with BlockNote editing tools.
-        - Use an editing tool only when the user explicitly requests a change to the
-        notebook, such as rewriting, adding, deleting, restructuring, or formatting
-        content.
-        - Do not modify the notebook merely because the user asks a question.
-        - When editing selected text, preserve its facts, intent, formatting, and
-        mathematical notation unless the user explicitly asks to change them.
-        - The document state, selection, cursor position, and block IDs attached to
-        the request are authoritative.
-        - Use the available BlockNote tools to make changes. Do not describe edits
-        instead of performing them.` : ""}
         `,
         providerOptions: {
             gateway: {
@@ -104,13 +141,23 @@ export async function POST(req: Request) {
             }
         },
         model: constructProvider(selectedModelObject).chat(selectedModelObject.name),
-        messages: await convertToModelMessages(modelMessages),
+        messages: await convertToModelMessages(messages),
         tools: {
-            perplexity_search: gateway.tools.perplexitySearch({
-                maxResults: 5,
-                country: "SG",
-            }),
-            searchDocuments: searchDocumentsTool(availableFiles.map(f => f.id)),
+            ...(selectedModelObject.provider == "gateway" ? { 
+                perplexity_search: gateway.tools.perplexitySearch({
+                    maxResults: 5,
+                    country: "SG",
+                })
+            } : selectedModelObject.provider == "openrouter" ? {
+                webSearch: openrouter.tools.webSearch({
+                    engine: 'exa',
+                    maxResults: 5,
+                }),
+            } as ToolSet : {}),
+            ...(context.toolDefinitions && context.documentState ? {
+                getDocumentState: getDocumentStateTool(context.documentState),
+            } : {}),
+                searchDocuments: searchDocumentsTool(availableFiles.map(f => f.id)),
             ...(context.toolDefinitions && toolDefinitionsToToolSet(context.toolDefinitions)),
         },
         stopWhen: stepCountIs(5), // lets the model use tools and continue
@@ -162,9 +209,9 @@ export async function POST(req: Request) {
                 finalModel = (
                 part.providerMetadata as {
                     gateway: {
-                    routing: {
-                        modelAttempts: Array<{ canonicalSlug: string }>;
-                    };
+                        routing: {
+                            modelAttempts: Array<{ canonicalSlug: string }>;
+                        };
                     };
                 }
                 ).gateway.routing.modelAttempts.at(-1)!.canonicalSlug;

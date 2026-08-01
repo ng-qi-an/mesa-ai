@@ -3,20 +3,20 @@ import { AIExtension, AIRequest, sendMessageWithAIRequest } from "@blocknote/xl-
 import { buildNotebookAIRequest } from "./buildNotebookAIRequest";
 import { Chat, UIMessage } from "@ai-sdk/react";
 import { RefObject } from "react";
-import { clearNotebookAICursor } from "./notebookAICursor";
+import { FileUIPart } from "ai";
 
-export async function sendNotebookMessage({message, editor, notebookChat, activeAIRequest, setActiveAIRequest, setHasPendingAIChanges, notebookEditedRef, chatId, _class, thinkingLevel, noteId, selectedModel}:{message: PromptInputMessage, editor: any, notebookChat: any, activeAIRequest: AIRequest | null, setActiveAIRequest: (request: AIRequest | null) => void, setHasPendingAIChanges: (value: boolean) => void, notebookEditedRef: RefObject<boolean>, chatId: string, _class: any, thinkingLevel: string, noteId: string, selectedModel: string}) {
+export async function sendNotebookMessage({message, files, editor, notebookChat, activeAIRequest, setActiveAIRequest, setHasPendingAIChanges, notebookEditedRef, beforeNotebookEditRef, chatId, _class, thinkingLevel, noteId, selectedModel}:{message: PromptInputMessage, files: (FileUIPart & { id: string })[] | undefined, editor: any, notebookChat: any, activeAIRequest: AIRequest | null, setActiveAIRequest: (request: AIRequest | null) => void, setHasPendingAIChanges: (value: boolean) => void, notebookEditedRef: RefObject<boolean>, beforeNotebookEditRef: RefObject<any[] | null>, chatId: string, _class: any, thinkingLevel: string, noteId: string, selectedModel: string}) {
     const aiExtension = editor.getExtension(AIExtension);
-
+    console.log("Preparing to send message")
     if (!aiExtension) {
         throw new Error("BlockNote AI extension is not registered.");
     }
     notebookEditedRef.current = false
-    const aiRequest = activeAIRequest ?? (await buildNotebookAIRequest(editor, notebookEditedRef));
+    const aiRequest = activeAIRequest ?? (await buildNotebookAIRequest(editor, notebookEditedRef, beforeNotebookEditRef));
     const result = await sendMessageWithAIRequest(
         notebookChat as unknown as Chat<UIMessage>, 
         aiRequest,
-        {text: message.text},
+        {text: message.text, files},
         {body: {
             chatId,
             classId: _class.id,
@@ -33,6 +33,7 @@ export async function sendNotebookMessage({message, editor, notebookChat, active
         throw result.error;
     }
     if (notebookEditedRef.current) {
+        console.log("Notebook was edited by AI, setting hasPendingAIChanges to true");
         setHasPendingAIChanges(true);
 
         // Keep BlockNote in review mode so autosave remains blocked until the

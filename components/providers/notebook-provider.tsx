@@ -99,6 +99,12 @@ export default function NotebookProvider({children, data}: {children: React.Reac
     const {_class} = useClass();
     const editor = useCreateBlockNote({
         schema: notebookSchema,
+        tables: {
+            splitCells: true,
+            cellBackgroundColor: true,
+            cellTextColor: true,
+            headers: true,
+        },
         dictionary: {
             ...en,
             ai: aiEn, // add default translations for the AI extension

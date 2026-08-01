@@ -33,7 +33,7 @@ export default async function createQuiz(classId: string, {noteId, fileIds, name
         model: constructProvider(chatModels[0]).chat(chatModels[0].name),
         output: Output.object({ schema: quizQuestionsSchema }),
         toolChoice: "required",
-        instructions: `
+        system: `
         # Subject-specific guidelines
         ${availableSubjects[subject].instructions.quiz}
         
