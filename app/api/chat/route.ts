@@ -72,6 +72,12 @@ export async function POST(req: Request) {
             gateway: {
                 models: chatModels.filter((model) => model.name !== context.selectedModel).map((model) => model.name),
             },
+            openrouter: {
+                models: chatModels.filter((model) => model.name !== context.selectedModel).map((model) => model.name),
+                reasoning: {
+                    effort: context.thinkingLevel,
+                }
+            }
         },
         model: context.selectedModel || chatModels[0].name,
         messages: await convertToModelMessages(messages),

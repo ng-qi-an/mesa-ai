@@ -15,6 +15,7 @@ import {
   injectDocumentStateMessages,
   toolDefinitionsToToolSet,
 } from "@blocknote/xl-ai/server";
+import constructProvider from '@/lib/utils/constructProvider';
 
 
 export type ChatRequestOptions = {
@@ -65,10 +66,11 @@ export async function POST(req: Request) {
     } else {
         availableFiles = await db.select({id: files.id, name: files.name, summary: files.summary}).from(files).where(and(eq(files.userId, session.user.id), eq(files.classId, context.classId), eq(files.status, "processed")));
     }
+    const selectedModelObject = chatModels.find((model) => model.name === context.selectedModel) || chatModels[0];
     const result = streamText({
         system: `
         ${availableSubjects[context.subject].instructions.chat}
-        ${context.toolDefinitions ? aiDocumentFormats.html.systemPrompt : ""}
+        ${context.toolDefinitions ? aiDocumentFormats._experimental_markdown.systemPrompt : ""}
         # Custom tools
         ## File search
         Aside from the web and your own knowledge, you have access to the user's files.
@@ -95,8 +97,13 @@ export async function POST(req: Request) {
             gateway: {
                 models: chatModels.filter((model) => model.name !== context.selectedModel).map((model) => model.name),
             },
+            openrouter: {
+                reasoning: {
+                    effort: context.thinkingLevel,
+                }
+            }
         },
-        model: context.selectedModel || chatModels[0].name,
+        model: constructProvider(selectedModelObject).chat(selectedModelObject.name),
         messages: await convertToModelMessages(modelMessages),
         tools: {
             perplexity_search: gateway.tools.perplexitySearch({
