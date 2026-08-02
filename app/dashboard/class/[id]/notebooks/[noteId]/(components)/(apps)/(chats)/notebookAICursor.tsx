@@ -6,7 +6,6 @@ export function showNotebookAICursor(
   editor: BlockNoteEditor<any, any, any>,
   blockId: string,
 ) {
-    console.log("showing cursor for block", blockId);
   const editorElement = editor.domElement;
 
   if (!editorElement) {
@@ -14,6 +13,7 @@ export function showNotebookAICursor(
   }
 
   clearNotebookAICursor(editor);
+    console.log("showing cursor for block", blockId);
 
   const blockElement = editorElement.querySelector<HTMLElement>(
     `[data-node-type="blockContainer"][data-id="${CSS.escape(blockId)}"]`,

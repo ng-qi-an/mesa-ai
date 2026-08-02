@@ -21,6 +21,7 @@ import generateChatUsageEvent from "@/lib/actions/billing/generateChatUsageEvent
 import { useUsage } from "@/components/providers/usage-provider";
 import { Progress } from "@/components/ui/progress";
 import ChatMessages from "./ChatMessages";
+import { compactChatHistory } from "@/lib/actions/chat/compactChatHistory";
 
 export default function ChatMessagesPanel({chatId: initialChatId, chatName: initialChatName, isMainChat}: {chatId?: string, chatName: string, isMainChat?: boolean}){
     const noteCtx = useNotebook();
@@ -126,7 +127,7 @@ export default function ChatMessagesPanel({chatId: initialChatId, chatName: init
             console.log("Loaded chat!")
             clearError();
             setChat(result);
-            setMessages(result.messages as ChatUIMessage[]);
+            setMessages(compactChatHistory(result.messages as ChatUIMessage[]));
             setChatName(result.name);
             setLoadingChat(false);
         }

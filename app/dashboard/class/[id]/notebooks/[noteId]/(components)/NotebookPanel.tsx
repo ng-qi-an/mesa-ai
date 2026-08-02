@@ -113,13 +113,6 @@ export default function NotebookPanel(){
             cleanupOnChange();
         }
     }, [editor, noteCtx.isGenerating])
-    useEffect(()=>{
-        console.log("Editor is event is set");
-        console.log("Editor is mounted and ready");
-        editor.replaceBlocks(editor.document, noteCtx.blocks);
-        console.log("Set initial blocks!")
-    }, [editor])
-
     useEffect(() => {
         try {
             localStorage.setItem("notebook-force-light", forceLightNotebook ? "1" : "0");

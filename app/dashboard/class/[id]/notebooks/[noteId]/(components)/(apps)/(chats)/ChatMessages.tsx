@@ -1,5 +1,5 @@
 'use client';
-import { AlertCircleIcon, ChartNoAxesColumn, X } from "lucide-react";
+import { AlertCircleIcon, ChartNoAxesColumn, CircleAlert, X } from "lucide-react";
 import { RefObject, useEffect, useRef, useState } from "react";
 import Logo from "@/components/logo";
 import {
@@ -17,7 +17,7 @@ import {
 import { Message, MessageContent } from "@/components/ai-elements/message";
 import { MessageSquareIcon } from "lucide-react";
 import { Chat } from "@ai-sdk/react";
-import { FileUIPart, UIMessage } from "ai";
+import { FileUIPart, ToolUIPart, UIMessage } from "ai";
 import { useNotebook } from "@/components/providers/notebook-provider";
 import { Shimmer } from "@/components/ai-elements/shimmer";
 import ChatInputFooter from "@/components/chat/ChatInputFooter";
@@ -44,6 +44,11 @@ import { sendNotebookMessage } from "./sendNotebookMessage";
 import { clearNotebookAICursor } from "./notebookAICursor";
 import generateChatName from "@/lib/actions/chat/generateChatName";
 import uploadChatFiles from "@/lib/actions/chat/uploadChatFiles";
+import saveToChat from "@/lib/actions/quiz/saveToChat";
+import { compactChatHistory } from "@/lib/actions/chat/compactChatHistory";
+import ChatInputWarning from "@/components/chat/ChatInputWarning";
+import { Spinner } from "@/components/ui/spinner";
+import { clearNotebookAIUpdatedBlocks } from "./notebookAIUpdatedBlock";
 
 export default function ChatMessages({messages, setMessages, sendMessage, error, clearError, status, notebookChat, insufficientWarning, setInsufficientWarning, loadingChat, chat, setChat, loadingChatName, setLoadingChatName, chatName, setChatName, selectedModel, setSelectedModel}: {messages: ChatUIMessage[], setMessages: React.Dispatch<React.SetStateAction<ChatUIMessage[]>>, sendMessage: any, error: Error | undefined, clearError: () => void, status: "ready" | "submitted" | "streaming" | "error", notebookChat: Chat<UIMessage<any, any, any>>, insufficientWarning: boolean, setInsufficientWarning: (value: boolean) => void, loadingChat: boolean, chat: ChatSelect | null, setChat: any, loadingChatName: boolean, setLoadingChatName: (loading: boolean) => void, chatName: string, setChatName: (name: string) => void, selectedModel: string, setSelectedModel: (model: string) => void}){
     const [hasPendingAIChanges, setHasPendingAIChanges] = useState(false);
@@ -59,9 +64,12 @@ export default function ChatMessages({messages, setMessages, sendMessage, error,
     const [thinkingLevel, setThinkingLevel] = useState<ThinkingLevels>("low");
     const { creditUsagePercentage } = useUsage();
     const [activeAIRequest, setActiveAIRequest] = useState<AIRequest | null>(null);
+    const [showNotebookSendError, setShowNotebookSendError] = useState<boolean>(false);
+    const [applyingChanges, setApplyingChanges] = useState<boolean>(false);
     const notebookEditedRef = useRef(false);
     const beforeNotebookEditRef = useRef<any[] | null>(null);
     const wasStoppedRef = useRef(false);
+    const persistedDocumentOperationIdsRef = useRef(new Set<string>());
     
     useEffect(() => {
         const aiExtension = noteCtx.editor.getExtension(AIExtension);
@@ -93,15 +101,36 @@ export default function ChatMessages({messages, setMessages, sendMessage, error,
             }
         }
     }, [creditUsagePercentage])
+    useEffect(() => {
+  if (!chat?.id) {
+    return;
+  }
+  const completedOperation: ToolUIPart<any> = [...messages].reverse().flatMap((message) => message.parts).find((part) => "type" in part && part.type === "tool-applyDocumentOperations" && "state" in part && part.state === "output-available") as ToolUIPart<any>;
+  if (!completedOperation) {
+    return;
+  }
+  if (persistedDocumentOperationIdsRef.current.has(completedOperation.toolCallId,)) {
+    return;
+  }
+
+  (async () => {
+    try {
+        console.log("Saving after documentOperation tool completed. Persisting to chat:", chat.id, "with messages:", messages);
+      await saveToChat(chat.id, {messages: compactChatHistory(messages)});
+      persistedDocumentOperationIdsRef.current.add(completedOperation.toolCallId);
+    } catch (error) {
+      console.error("Failed to persist completed notebook document operation:", error);
+    }
+  })();
+}, [chat?.id, messages]);
     function recoverNotebookDocument(editor: any, beforeNotebookEditRef: RefObject<any[] | null>) {
+        console.log("Recovering notebook document from pre-edit state");
         const aiExtension = editor.getExtension(AIExtension);
         try {
             aiExtension?.rejectChanges();
         } catch (rejectError) {
             console.error("BlockNote rejectChanges failed; restoring pre-edit document:", rejectError);
-
             const oldBlocks = beforeNotebookEditRef.current;
-
             if (oldBlocks) {
                 try {
                     editor.replaceBlocks(editor.document, oldBlocks);
@@ -111,16 +140,16 @@ export default function ChatMessages({messages, setMessages, sendMessage, error,
             }
         } finally {
             try {
-            aiExtension?.closeAIMenu();
+                aiExtension?.closeAIMenu();
             } catch (closeError) {
-            console.error("Failed to close BlockNote AI session:", closeError);
+                console.error("Failed to close BlockNote AI session:", closeError);
 
-            // Never leave the user locked out of the editor.
-            editor.isEditable = true;
-            editor.focus();
+                // Never leave the user locked out of the editor.
+                editor.isEditable = true;
+                editor.focus();
             }
-
             beforeNotebookEditRef.current = null;
+            notebookEditedRef.current = false;
         }
     }
     return <div className="flex-1 min-h-0 flex flex-col px-1">
@@ -173,63 +202,56 @@ export default function ChatMessages({messages, setMessages, sendMessage, error,
         }
         <div className="relative mt-2 px-2">
             <div className="w-full mb-2">
-                {insufficientWarning && <div className="w-full h-full rounded-lg bg-neutral-900 border flex items-center px-3 py-2 gap-2">
+                {insufficientWarning && <ChatInputWarning onClose={()=> {
+                    setInsufficientWarning(false)
+                    const lowerUsageWarningBoundary = getLowerUsageWarningBoundary(creditUsagePercentage);
+                    window.localStorage.setItem("dismissedUsagePercentage", lowerUsageWarningBoundary.toString())
+                }}>
                     <ChartNoAxesColumn className="size-4 shrink-0 text-muted-foreground"/>
                     <p className="text-sm text-muted-foreground">You've used <span className="text-foreground/80 font-medium">{creditUsagePercentage >= 1 ? "100%" : Math.floor(creditUsagePercentage * 100) + "%"}</span> of your credits. {creditUsagePercentage >= 1 ? "Use free models or upgrade your plan." : creditUsagePercentage >= 0.9 ? "Consider using cheaper models." : creditUsagePercentage >= 0.75 ? "Consider using cheaper models." : creditUsagePercentage >= 0.5 && "Consider using less reasoning."}</p>
-                    <X className="size-4 shrink-0 text-muted-foreground hover:text-foreground ml-auto cursor-pointer" onClick={()=> {
-                        setInsufficientWarning(false)
-                        const lowerUsageWarningBoundary = getLowerUsageWarningBoundary(creditUsagePercentage);
-                        window.localStorage.setItem("dismissedUsagePercentage", lowerUsageWarningBoundary.toString())
-                    }}/>
-                </div>}
+                </ChatInputWarning>}
+                {showNotebookSendError && <ChatInputWarning onClose={()=> {setShowNotebookSendError(false)}}>
+                    <CircleAlert className="size-4 shrink-0 text-muted-foreground"/>
+                    <p className="text-sm text-muted-foreground">An error occurred while sending the message. Try making your message simpler.</p>
+                </ChatInputWarning>}
                 {hasPendingAIChanges && (
-                    <div className="mb-2 flex items-center gap-2 rounded-lg border bg-muted/40 px-3 py-2">
+                    <div className="mb-2 flex flex-col items-center gap-3 rounded-lg border bg-muted/40 px-3 py-3">
                         <p className="mr-auto text-sm text-muted-foreground">
-                        Review the proposed notebook changes.
+                            Review the proposed notebook changes.
                         </p>
+                        <div className="flex gap-2 w-full">
+                            <Button size="sm" disabled={applyingChanges} variant="outline" className="w-full" onClick={()=>{
+                                try {
+                                    aiExtension.rejectChanges();
+                                } catch (error) {
+                                    console.error("Failed to reject notebook AI changes:", error);
+                                    setShowNotebookSendError(true);                                
+                                    recoverNotebookDocument(noteCtx.editor, beforeNotebookEditRef);
+                                }
+                                setHasPendingAIChanges(false);
+                                clearNotebookAIUpdatedBlocks(noteCtx.editor);
+                                notebookEditedRef.current = false;
+                            }}>Reject</Button>
 
-                        <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={()=>{
-                            try {
-                                aiExtension.rejectChanges();
-                                toast("Notebook changes rejected.");
-                            } catch (error) {
-                                console.error("Failed to reject notebook AI changes:", error);
-                                toast.error("Failed to reject notebook AI changes.");
-                                recoverNotebookDocument(noteCtx.editor, beforeNotebookEditRef);
-                            }
-                            setHasPendingAIChanges(false);
-                            clearNotebookAICursor(noteCtx.editor);
-                            notebookEditedRef.current = false;
-                        }}
-                        >
-                        Reject
-                        </Button>
-
-                        <Button
-                        size="sm"
-                        variant="raised"
-                        onClick={async()=>{
-                            try {
-                                aiExtension.acceptChanges();
-                                const newBlocks = await saveNotebookBlocks(noteCtx.noteId, {
-                                blocks: noteCtx.editor.document,
-                                });
-                                noteCtx.setBlocks(newBlocks.blocks);
-                            } catch (error) {
-                                recoverNotebookDocument(noteCtx.editor, beforeNotebookEditRef);
-                                console.error("Failed to apply notebook AI changes:", error);
-                                toast.error("An error occured when applying changes. Try changing your prompt, or select something else.");
-                            }
-                            setHasPendingAIChanges(false);
-                            clearNotebookAICursor(noteCtx.editor);
-                            notebookEditedRef.current = false;
-                        }}
-                        >
-                        Apply changes
-                        </Button>
+                            <Button size="sm" variant="raised" className="w-full" disabled={applyingChanges} onClick={async()=>{
+                                setApplyingChanges(true);
+                                try {
+                                    aiExtension.acceptChanges();
+                                    const newBlocks = await saveNotebookBlocks(noteCtx.noteId, {
+                                    blocks: noteCtx.editor.document,
+                                    });
+                                    noteCtx.setBlocks(newBlocks.blocks);
+                                } catch (error) {
+                                    recoverNotebookDocument(noteCtx.editor, beforeNotebookEditRef);
+                                    console.error("Failed to apply notebook AI changes:", error);
+                                    setShowNotebookSendError(true);
+                                }
+                                setHasPendingAIChanges(false);
+                                clearNotebookAIUpdatedBlocks(noteCtx.editor);
+                                notebookEditedRef.current = false;
+                                setApplyingChanges(false);
+                            }}>{applyingChanges ? <Spinner/> : "Apply changes"}</Button>
+                        </div>
                     </div>
                 )}
             </div>
@@ -298,14 +320,15 @@ export default function ChatMessages({messages, setMessages, sendMessage, error,
                         if (wasStoppedRef.current) {
                             toast("AI response stopped.");
                         } else {
-                            toast.error("Error sending message. Please try again.");
+                            setShowNotebookSendError(true);
                         }
                         if (notebookEditedRef.current) {
-                            clearNotebookAICursor(noteCtx.editor);
+                            clearNotebookAIUpdatedBlocks(noteCtx.editor);
                             recoverNotebookDocument(noteCtx.editor, beforeNotebookEditRef);
                         }
                         throw error;
                     }
+                    clearNotebookAICursor(noteCtx.editor);
                 }}
             >
                 {files.length > 0 && <ChatInputHeader files={files} setFiles={setFiles} />}
@@ -335,7 +358,7 @@ export default function ChatMessages({messages, setMessages, sendMessage, error,
                         wasStoppedRef.current = true;
                     }}
                     disableSend={status === "submitted" || status == "streaming" || hasPendingAIChanges || notebookEditedRef.current == true}
-                    disableStop={false}
+                    disableStop={status != "streaming" && (hasPendingAIChanges || notebookEditedRef.current == true)}
                 />
             </PromptInput>
         </div>

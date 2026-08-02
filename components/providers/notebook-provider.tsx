@@ -99,6 +99,7 @@ export default function NotebookProvider({children, data}: {children: React.Reac
     const {_class} = useClass();
     const editor = useCreateBlockNote({
         schema: notebookSchema,
+        initialContent: data.blocks || [],
         tables: {
             splitCells: true,
             cellBackgroundColor: true,

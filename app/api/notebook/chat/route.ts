@@ -20,6 +20,7 @@ import constructProvider from '@/lib/utils/constructProvider';
 import { openrouter } from '@openrouter/ai-sdk-provider';
 import z from 'zod';
 import { getDocumentStateTool } from '@/lib/actions/chat/tools/getDocumentState';
+import { compactChatHistory } from '@/lib/actions/chat/compactChatHistory';
 
 
 export type ChatRequestOptions = {
@@ -58,21 +59,7 @@ export async function POST(req: Request) {
     if (!(await checkCreditSufficient({userId: session.user.id, modelName: context.selectedModel}))) {
         return new Response("Insufficient credits", { status: 402 });
     }
-    const messages = context.messages.map((message) => {
-      if (message.role !== "assistant") {
-        return message;
-      }
-      return {
-        ...message,
-        parts: message.parts.filter((part) => {
-            return (
-                part.type !== "tool-getDocumentState"
-            );
-        }).map((part)=>{
-            return ((part.type == "tool-applyDocumentOperations" && part.state == "output-available") ? {...part, input: {operations: []}, output: {status: "success", summary: "Notebook changes were applied successfully."}} : part)
-        }),
-      };
-    }).filter((message) => message.role !== "assistant" || message.parts.length > 0);
+    const messages = compactChatHistory(context.messages).filter((message) => message.role !== "assistant" || message.parts.length > 0);
     let availableFiles: { id: string; name: string; summary: string | null }[] = [];
     if (context.noteId){
         availableFiles = await db.select({id: files.id, name: files.name, summary: files.summary}).from(files)
@@ -88,38 +75,48 @@ export async function POST(req: Request) {
         ${availableSubjects[context.subject].instructions.chat}
         ${context.toolDefinitions ? `
         # Notebook Editing
-        You're editing a Markdown block document. Follow the provided JSON schema.
-        
-        
-        Before using applyDocumentOperations, call "getNotebookState" in the
-        current request. Use only its returned content and IDs; IDs must match
-        exactly, including the trailing "$".
+        You manipulate the notebook with HTML blocks. Follow the provided JSON schema
+        exactly and use every block ID exactly as returned, including its trailing $.
 
-        Use getDocumentState only when the user explicitly asks to modify the notebook.
-        If applyDocumentOperations was called in the previous message, and the user did not
-        explicitly ask to modify the notebook, assume the notebook has been modified and answer 
-        normally without editing. The only exception is when the user asks to retry.
+        - List items are one block per item:
+        <ul><li>item1</li></ul> is valid;
+        <ul><li>item1</li><li>item2</li></ul> is not.
+        - For code blocks, use <pre><code data-language="...">...</code></pre>.
+        - Tables must be standalone <table> blocks. Never wrap a table in <p>,
+        <div>, or a list item.
 
-        For list items, use one item per block:
-        - Valid: "- item1"
-        - Invalid: "- item1
-        - item2"
+        Only edit the notebook when the user explicitly asks to write, rewrite, add,
+        delete, move, reorganize, or format content. Otherwise answer normally.
 
-        When selection: true, only edit IDs from selectedBlocks. The blocks
-        field is context only. Do not modify outside the selection.
+        Before calling applyDocumentOperations, call getDocumentState in the
+        current request. Treat its result as the only authoritative source for content,
+        cursor context, selection, and editable IDs. Never reuse IDs from an earlier
+        message or tool result.
 
-        When selection: false, use IDs from blocks. The block with
-        cursor: true indicates the user's current location.
-                
-        Use applyDocumentOperations only when the user explicitly asks to modify
-        the notebook. Otherwise, answer normally without editing.
+        When selection is true:
+        - Only edit IDs in selectedBlocks.
+        - blocks is context only; do not edit or reference it.
+        - Do not modify content outside the selection.
 
-        When you decide to edit the notebook:
-        1. First write one short, user-facing acknowledgement describing the intended
-        change, such as “I'll rewrite the selected text for clarity.”
-        2. Then call applyDocumentOperations in the same response.
-        3. Do not wait for the tool result and do not provide a second follow-up
-        message after the edit completes.
+        When selection is false:
+        - Use IDs from blocks.
+        - The block marked cursor: true is the current insertion context.
+        - For “below” or “after”, add content after the current or named block.
+        - For “above” or “before”, add content before the relevant block.
+
+        For ordinary table text edits, update the existing table block.
+
+        For structural table changes, including adding/removing columns or rows,
+        merging/splitting cells, or changing layout:
+        1. Do not update the existing table directly.
+        2. Add a complete replacement <table> immediately after the original table.
+        3. Delete the original table in the same applyDocumentOperations call.
+        4. Always add the replacement before deleting the original table.
+
+        When editing:
+        1. Write one short acknowledgement of the intended change.
+        2. Call applyDocumentOperations in the same response.
+        3. Do not wait for the tool result or send a second follow-up afterward.
         ` : ""}
         # Other tools
         ## File search
