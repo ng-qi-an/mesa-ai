@@ -146,9 +146,12 @@ export async function POST(req: Request) {
                     country: "SG",
                 })
             } : selectedModelObject.provider == "openrouter" ? {
-                webSearch: openrouter.tools.webSearch({
-                    engine: 'exa',
+                perplexity_search: openrouter.tools.webSearch({
+                    engine: "perplexity",
                     maxResults: 5,
+                    execute: ()=>{
+                        console.log("using search")
+                    }
                 }),
             } as ToolSet : {}),
             ...(context.toolDefinitions && context.documentState ? {

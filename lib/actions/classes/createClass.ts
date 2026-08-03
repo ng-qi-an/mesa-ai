@@ -1,7 +1,6 @@
 'use server';
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
-import createFileStore from "@/lib/file-search-actions/createFileStore";
 import { classes } from "@/lib/schemas/schema";
 import { availableSubjects } from "@/lib/subjects/subjectsList";
 import { generateId } from "better-auth";
@@ -20,17 +19,12 @@ export default async function createClassServer( name: string, subject: keyof ty
         throw new Error("already_exists")
     }
     const classId = generateId(9);
-    const store = await createFileStore(classId);
-    if (!store || !store.name) {
-        throw new Error("Failed to create file store")
-    }
     return await db.insert(classes).values({
         id: classId,
         name: name,
         subject: subject,
         theme: theme,
         icon: icon,
-        userId: session.user.id,
-        fileStoreId: store.name
+        userId: session.user.id
     }).returning();
 }

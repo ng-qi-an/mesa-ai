@@ -6,7 +6,6 @@ import { DeleteObjectsCommand } from "@aws-sdk/client-s3";
 import { db } from "../../db";
 import { files } from "../../schemas/schema";
 import { eq, sql } from "drizzle-orm";
-import deleteStoreFiles from "@/lib/file-search-actions/deleteStoreFiles";
 
 
 
@@ -51,9 +50,6 @@ export default async function deleteUserFolder(folderId: string, confirmation: b
             }))
         }
     })
-    if (folderRecord.class.fileStoreId){
-        await deleteStoreFiles(folderRecord.class.fileStoreId, allItems.rows.map((row: any) => row.id));
-    }
     try {
         const res = await r2.send(command)
         if (!res.Deleted || res.Deleted.length !== allItems.rows.length) {

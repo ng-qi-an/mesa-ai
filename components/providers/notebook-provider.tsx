@@ -99,7 +99,7 @@ export default function NotebookProvider({children, data}: {children: React.Reac
     const {_class} = useClass();
     const editor = useCreateBlockNote({
         schema: notebookSchema,
-        initialContent: data.blocks || [],
+        initialContent: data.blocks || undefined,
         tables: {
             splitCells: true,
             cellBackgroundColor: true,
@@ -182,7 +182,7 @@ export default function NotebookProvider({children, data}: {children: React.Reac
                     payload.name = res.object.header;
                 }
                 await SaveToNotebook(noteId, payload);
-                generateNotes({noteId, instructions: `${defaultNotesInstructions(resolvedLength, _class.subject, resolvedInstructions, Object.keys((weights)))}`, length: resolvedLength, fileIds: files.map(f=>f.id), topicWeights: weights, setCollapseSections, sendNotesFollowup, fileStoreId: _class.fileStoreId!});
+                generateNotes({noteId, instructions: `${defaultNotesInstructions(resolvedLength, _class.subject, resolvedInstructions, Object.keys((weights)))}`, length: resolvedLength, fileIds: files.map(f=>f.id), topicWeights: weights, setCollapseSections, sendNotesFollowup});
             }
         },
         onError: (err)=>{

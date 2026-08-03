@@ -3,10 +3,9 @@ import { headers } from "next/headers";
 import { auth } from "../../auth";
 import { db } from "../../db";
 import { files } from "../../schemas/schema";
-import { and, eq, isNull } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { DeleteObjectCommand } from "@aws-sdk/client-s3";
 import { r2 } from "@/lib/r2";
-import deleteStoreFiles from "@/lib/file-search-actions/deleteStoreFiles";
 
 
 export default async function deleteUserFile(fileId: string){
@@ -38,10 +37,6 @@ export default async function deleteUserFile(fileId: string){
         const res = await r2.send(command)
         if (res.DeleteMarker){
             console.log("File deleted from R2:", fileId);
-        }
-        if (fileRecord.class.fileStoreId){
-            console.log("Deleting file from store with id:", fileRecord.class.fileStoreId);
-            await deleteStoreFiles(fileRecord.class.fileStoreId, [fileRecord.id]);
         }
     } catch (error) {
         console.error("Error deleting file:", error);
