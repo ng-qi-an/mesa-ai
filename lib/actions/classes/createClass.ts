@@ -20,10 +20,7 @@ export default async function createClassServer( name: string, subject: keyof ty
         throw new Error("already_exists")
     }
     const classId = generateId(9);
-    const store = await createFileStore(classId);
-    if (!store || !store.name) {
-        throw new Error("Failed to create file store")
-    }
+
     return await db.insert(classes).values({
         id: classId,
         name: name,
@@ -31,6 +28,6 @@ export default async function createClassServer( name: string, subject: keyof ty
         theme: theme,
         icon: icon,
         userId: session.user.id,
-        fileStoreId: store.name
+        fileStoreId: "nothing"
     }).returning();
 }
