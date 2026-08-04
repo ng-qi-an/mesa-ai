@@ -1,4 +1,4 @@
-import { streamText, convertToModelMessages, createIdGenerator, gateway, stepCountIs } from 'ai';
+import { streamText, convertToModelMessages, createIdGenerator, gateway, stepCountIs, ToolSet } from 'ai';
 import { chatModels, ChatUIMessage, ThinkingLevels } from '@/lib/utils/models';
 import { availableSubjects } from '@/lib/subjects/subjectsList';
 import saveToChat from '@/lib/actions/chat/saveToChat';
@@ -10,6 +10,7 @@ import { headers } from 'next/headers';
 import { searchDocumentsTool } from '@/lib/actions/chat/tools/searchDocumentsTool';
 import createChatUsageEvent from '@/lib/actions/billing/createChatUsageEvent';
 import checkCreditSufficient from '@/lib/actions/billing/checkCreditSufficient';
+import { openrouter } from '@openrouter/ai-sdk-provider';
 
 export type ChatRequestOptions = {
     chatId: string;
@@ -56,6 +57,8 @@ export async function POST(req: Request) {
     } else {
         availableFiles = await db.select({id: files.id, name: files.name, summary: files.summary}).from(files).where(and(eq(files.userId, session.user.id), eq(files.classId, context.classId), eq(files.status, "processed")));
     }
+
+    const selectedModelObject = chatModels.find((model) => model.name === context.selectedModel) || chatModels[0];
     const result = streamText({
         system: `
         ${availableSubjects[context.subject].instructions.chat}
@@ -82,10 +85,20 @@ export async function POST(req: Request) {
         model: context.selectedModel || chatModels[0].name,
         messages: await convertToModelMessages(messages),
         tools: {
-            perplexity_search: gateway.tools.perplexitySearch({
-                maxResults: 5,
-                country: "SG",
-            }),
+            ...(selectedModelObject.provider == "gateway" ? { 
+                perplexity_search: gateway.tools.perplexitySearch({
+                    maxResults: 5,
+                    country: "SG",
+                })
+            } : selectedModelObject.provider == "openrouter" ? {
+                perplexity_search: openrouter.tools.webSearch({
+                    engine: "perplexity",
+                    maxResults: 5,
+                    execute: ()=>{
+                        console.log("using search")
+                    }
+                }),
+            } as ToolSet : {}),
             searchDocuments: searchDocumentsTool(availableFiles.map(f => f.id)),
         },
         stopWhen: stepCountIs(5), // lets the model use tools and continue

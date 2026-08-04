@@ -2,7 +2,7 @@ import { streamText, Output } from 'ai';
 import { noteMetaSchema } from '../schema';
 import { auth } from '@/lib/auth';
 import { headers } from 'next/headers';
-import { chatModels } from '@/lib/utils/models';
+import { notebookModels } from '@/lib/utils/models';
 import { db } from '@/lib/db';
 import constructProvider from '@/lib/utils/constructProvider';
 
@@ -44,7 +44,7 @@ export async function POST(req: Request) {
 
 
     const result = streamText({
-        model: constructProvider(chatModels[0]).chat(chatModels[0].name),
+        model: constructProvider(notebookModels[0]).chat(notebookModels[0].name),
         output: Output.object({ schema: noteMetaSchema }),
         system: `
         ## Output Guidelines

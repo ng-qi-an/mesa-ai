@@ -107,6 +107,8 @@ export default function ChatMessageContent({message, isLastMessage, isStreaming}
                 </TaskContent>
               </> : groupedPart.type == "tool-getDocumentState" ? <>
                 <TaskTrigger title={lastPart.state ==  "output-available" ? `Read notebook` : "Reading notebook"} icon={lastPart.state== "output-available" ? <BookText className="size-4"/> : <Spinner className="size-4"/>} showChevron={false}/>
+              </> : groupedPart.type == "tool-getDocumentMarkdown" ? <>
+                <TaskTrigger title={lastPart.state ==  "output-available" ? `Read notebook content` : "Reading notebook content"} icon={lastPart.state== "output-available" ? <BookText className="size-4"/> : <Spinner className="size-4"/>} showChevron={false}/>
               </> : groupedPart.type == "tool-applyDocumentOperations" ? <>
                 <TaskTrigger title={lastPart.state ==  "output-available" ? `Edited notebook` : lastPart.state == "output-error" ? "Failed to edit notebook" : "Editing notebook"} icon={lastPart.state == "output-available" ? <PencilSparkles className="size-4"/> : lastPart.state == "output-error" ? <PenOff className="size-4"/> :  <Spinner className="size-4"/>} showChevron={lastPart.state == "output-error"}/>
                 {lastPart.state == "output-error" && <TaskContent>

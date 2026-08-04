@@ -49,7 +49,26 @@ export function convertEffortLevel(provider: string, model: string, level: Think
     }
 }
 
+export const notebookModels: Model[] = [
+    {
+        name: "google/gemini-3-flash-preview",
+        label: "Gemini 3 Flash",
+        provider: "openrouter",
+    },
+    {
+        name: "google/gemini-3.5-flash-lite",
+        label: "Gemini 3.5 Flash Lite",
+        provider: "openrouter",
+    },
+    {
+        name: "deepseek/deepseek-v4-flash",
+        label: "DeepSeek V4 Flash",
+        provider: "openrouter",
+    },
+]
+
 export const chatModels: Model[] = [
+   
     {
         name: "google/gemini-3-flash-preview",
         label: "Gemini 3 Flash",
@@ -75,6 +94,24 @@ export const chatModels: Model[] = [
         priceMultiplier: 4,
         provider: "openrouter",
     },
+     {
+        name: "openai/gpt-5.6-luna",
+        label: "GPT-5.6 Luna",
+        priceMultiplier: 0.5,
+        provider: "openrouter",
+    },
+    {
+        name: "openai/gpt-5.6-terra",
+        label: "GPT-5.6 Terra",
+        priceMultiplier: 2,
+        provider: "openrouter",
+    },
+    {
+        name: "openai/gpt-5.4-mini",
+        label: "GPT-5.4 Mini",
+        priceMultiplier: 1.5,
+        provider: "openrouter",
+    },
     {
         name: "anthropic/claude-haiku-4.5",
         label: "Claude Haiku 4.5",
@@ -94,24 +131,7 @@ export const chatModels: Model[] = [
         priceMultiplier: 9,
         provider: "openrouter",
     },
-    {
-        name: "openai/gpt-5.5",
-        label: "GPT-5.5",
-        priceMultiplier: 10,
-        provider: "openrouter",
-    },
-    {
-        name: "openai/gpt-5.4",
-        label: "GPT-5.4",
-        priceMultiplier: 5,
-        provider: "openrouter",
-    },
-    {
-        name: "openai/gpt-5.4-mini",
-        label: "GPT-5.4 Mini",
-        priceMultiplier: 1.5,
-        provider: "openrouter",
-    },
+    
     {
         name: "deepseek/deepseek-v4-flash",
         label: "DeepSeek V4 Flash",

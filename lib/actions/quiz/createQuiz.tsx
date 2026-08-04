@@ -3,7 +3,7 @@
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { quizResponses, quizzes } from "@/lib/schemas/schema";
-import { chatModels } from "@/lib/utils/models";
+import { notebookModels } from "@/lib/utils/models";
 import { generateText, Output } from "ai";
 import { generateId } from "better-auth";
 import { headers } from "next/headers";
@@ -27,10 +27,9 @@ export default async function createQuiz(classId: string, {noteId, fileIds, name
     }
     const files = await getNotebookFiles(noteId, true);
     console.log("Real files", files)
-    console.log("Sent files:", files.filter((f)=> f.markdown != null).map(f => ({type: "file" as const, data: f.markdown, mediaType: "text/markdown", fileName: f.name})))
 
     const { rawFinishReason, finishReason, output } = await generateText({
-        model: constructProvider(chatModels[0]).chat(chatModels[0].name),
+        model: constructProvider(notebookModels[0]).chat(notebookModels[0].name),
         output: Output.object({ schema: quizQuestionsSchema }),
         toolChoice: "required",
         system: `

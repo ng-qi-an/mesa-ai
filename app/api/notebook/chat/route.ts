@@ -21,6 +21,7 @@ import { openrouter } from '@openrouter/ai-sdk-provider';
 import z from 'zod';
 import { getDocumentStateTool } from '@/lib/actions/chat/tools/getDocumentState';
 import { compactChatHistory } from '@/lib/actions/chat/compactChatHistory';
+import { getDocumentMarkdown } from '@/lib/actions/chat/tools/getDocumentMarkdown';
 
 
 export type ChatRequestOptions = {
@@ -31,6 +32,7 @@ export type ChatRequestOptions = {
     subject: keyof typeof availableSubjects;
     selectedModel: string;
     documentState?: DocumentState<any>;
+    markdown: string;
 }
 type ChatRequestType = {
     messages: ChatUIMessage[];
@@ -73,11 +75,22 @@ export async function POST(req: Request) {
     const result = streamText({
         system: `
         ${availableSubjects[context.subject].instructions.chat}
+        # Accessing Notebook content
+        As you are an AI alongside with a text editor containing notes, you have access to the 
+        user's notebook content.
+        - Use the "getDocumentMarkdown" to get a markdown representation of the user's entire notebook content.
+        - You should only use the user's content for answering general queries like "summarise my notes", "explain [a particular section]", or "what are the key points in my notes". At no point should you use this tool as context to edit a user's notes.
+        - If the user's notes are insufficient, you may use the user's files to supplement your answers, and as a last resort use your general knowledge. You should always cite the source of your information, and if you use your general knowledge, you should indicate that it is not from the user's notes or files.
+        - Should the user refer to a specific section of their notes that is not named, such as "summarise this", "rephrase this sentence", "delete this section", you should use the "getDocumentState" tool to get the exact position of the user's cursor and selection. "getDocumentMarkdown" does not provide that information, and should not be used.
         ${context.toolDefinitions ? `
         # Notebook Editing
-        You manipulate the notebook with HTML blocks. Follow the provided JSON schema
+        You can also manipulate the notebook with HTML blocks. Follow the provided JSON schema
         exactly and use every block ID exactly as returned, including its trailing $.
-
+        - When manipulating notebook content, you should use "getDocumentState" instead of "getDocumentMarkdown" to get the latest blocknote editor document state.
+        - "getDocumentMarkdown" only contains the markdown representation of the notebook, and does not contain any information about the block IDs, selection, or cursor context.
+        - You should only use "getDocumentMarkdown" for general queries, and not for editing the notebook.
+        - "getDocumentState" contains block ids, exact html formatting, and cursor queries, which are all required when editing the notebook.
+        ## Formatting instructions
         - List items are one block per item:
         <ul><li>item1</li></ul> is valid;
         <ul><li>item1</li><li>item2</li></ul> is not.
@@ -157,6 +170,7 @@ export async function POST(req: Request) {
             ...(context.toolDefinitions && context.documentState ? {
                 getDocumentState: getDocumentStateTool(context.documentState),
             } : {}),
+                getDocumentMarkdown: getDocumentMarkdown(context.markdown),
                 searchDocuments: searchDocumentsTool(availableFiles.map(f => f.id)),
             ...(context.toolDefinitions && toolDefinitionsToToolSet(context.toolDefinitions)),
         },

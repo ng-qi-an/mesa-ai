@@ -4,8 +4,9 @@ import { buildNotebookAIRequest } from "./buildNotebookAIRequest";
 import { Chat, UIMessage } from "@ai-sdk/react";
 import { RefObject } from "react";
 import { FileUIPart } from "ai";
+import { BlockNoteEditor } from "@blocknote/core";
 
-export async function sendNotebookMessage({message, files, editor, notebookChat, activeAIRequest, setActiveAIRequest, setHasPendingAIChanges, notebookEditedRef, beforeNotebookEditRef, chatId, _class, thinkingLevel, noteId, selectedModel}:{message: PromptInputMessage, files: (FileUIPart & { id: string })[] | undefined, editor: any, notebookChat: any, activeAIRequest: AIRequest | null, setActiveAIRequest: (request: AIRequest | null) => void, setHasPendingAIChanges: (value: boolean) => void, notebookEditedRef: RefObject<boolean>, beforeNotebookEditRef: RefObject<any[] | null>, chatId: string, _class: any, thinkingLevel: string, noteId: string, selectedModel: string}) {
+export async function sendNotebookMessage({message, files, editor, notebookChat, activeAIRequest, setActiveAIRequest, setHasPendingAIChanges, notebookEditedRef, beforeNotebookEditRef, chatId, _class, thinkingLevel, noteId, selectedModel}:{message: PromptInputMessage, files: (FileUIPart & { id: string })[] | undefined, editor: BlockNoteEditor<any, any, any>, notebookChat: any, activeAIRequest: AIRequest | null, setActiveAIRequest: (request: AIRequest | null) => void, setHasPendingAIChanges: (value: boolean) => void, notebookEditedRef: RefObject<boolean>, beforeNotebookEditRef: RefObject<any[] | null>, chatId: string, _class: any, thinkingLevel: string, noteId: string, selectedModel: string}) {
     const aiExtension = editor.getExtension(AIExtension);
     console.log("Preparing to send message")
     if (!aiExtension) {
@@ -22,6 +23,7 @@ export async function sendNotebookMessage({message, files, editor, notebookChat,
             classId: _class.id,
             noteId: noteId,
             subject: _class.subject,
+            markdown: editor.blocksToMarkdownLossy(),
             thinkingLevel,
             selectedModel,
         }},
