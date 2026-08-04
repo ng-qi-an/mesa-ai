@@ -7,6 +7,6 @@ export function convertToCredits({totalTokens, modelName, plan}:{totalTokens:num
         console.warn(`Model ${modelName} not found in chatModels. Using default model.`);
         modelObject = chatModels[0];
     }
-    console.log("[Convert credits] Using model", modelObject.name, "with price multiplier", modelObject.priceMultiplier, "and plan base token credit multiplier", plan.baseTokenCreditMultiplier);
+    console.log("[Convert credits] Using model", modelObject.name, "with", totalTokens, "tokens along with price multiplier", modelObject.priceMultiplier, "and plan base token credit multiplier", plan.baseTokenCreditMultiplier);
     return totalTokens * parseFloat(plan.baseTokenCreditMultiplier) * (modelObject.priceMultiplier === undefined ? 1 : modelObject.priceMultiplier);
 }

@@ -329,3 +329,57 @@ a
     height: 120px;
   }
 }
+
+/* Custom styles for the ai cursor */
+[data-node-type="blockContainer"][data-mesa-ai-writing="true"] {
+  position: relative;
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--primary) 5%, transparent);
+}
+
+[data-node-type="blockContainer"][data-mesa-ai-writing="true"]::before {
+  content: "Mesa AI";
+  position: absolute;
+  top: -25px;
+  left: -0.5rem;
+  z-index: 20;
+  border-radius: var(--radius-sm);
+  background: var(--primary);
+  color: var(--primary-foreground);
+  padding: 0.125rem 0.45rem;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  line-height: 1.4;
+  pointer-events: none;
+  height: 20px;
+}
+
+[data-node-type="blockContainer"][data-mesa-ai-writing="true"]::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: -0.5rem;
+  z-index: 19;
+  width: 4px;
+  border-radius: 999px;
+  background: var(--primary);
+  pointer-events: none;
+}
+
+del {
+  border-radius: 0 !important;
+  background: color-mix(
+    in srgb,
+    var(--destructive) 22%,
+    transparent
+  )!important;
+  color: color-mix(in srgb, var(--destructive-foreground), transparent) !important;
+  border-bottom: 2px solid color-mix(in srgb, var(--destructive) 80%, transparent);
+}
+ins {
+  border-radius: 0 !important;
+  background: color-mix(in srgb, oklch(59.6% 0.145 163.225) 22%, transparent) !important;
+  border-bottom: 2px solid color-mix(in srgb, oklch(59.6% 0.145 163.225) 80%, transparent);
+  text-decoration: none;
+}

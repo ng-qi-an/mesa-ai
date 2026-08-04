@@ -2,7 +2,7 @@ import { streamText, Output } from 'ai';
 import { noteMetaSchema } from '../schema';
 import { auth } from '@/lib/auth';
 import { headers } from 'next/headers';
-import { chatModels, fileSearchMetaQuery } from '@/lib/utils/models';
+import { notebookModels } from '@/lib/utils/models';
 import { db } from '@/lib/db';
 import constructProvider from '@/lib/utils/constructProvider';
 
@@ -44,9 +44,9 @@ export async function POST(req: Request) {
 
 
     const result = streamText({
-        model: constructProvider(chatModels[0]).chat(chatModels[0].name),
+        model: constructProvider(notebookModels[0]).chat(notebookModels[0].name),
         output: Output.object({ schema: noteMetaSchema }),
-        instructions: `
+        system: `
         ## Output Guidelines
             ### Topic Naming Rules
             - Use noun phrases or short descriptive titles
@@ -91,7 +91,7 @@ export async function POST(req: Request) {
         Provided below are the files the user uploaded as soruces. Use them to ground your topic generation and ensure all topics are supported by the content in these files.
         ${files.map(f => `### ${f.name} (${f.contentType})\n\n${f.markdown}`).join("\n\n")}
         `,
-        reasoning: "minimal"
+        // reasoning: "minimal"
     });
     return result.toTextStreamResponse();
 }

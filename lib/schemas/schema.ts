@@ -17,7 +17,6 @@ export type UserMetaSelect = typeof userMeta.$inferSelect
 export const classes = pgTable("classes", {
     id: text("id").primaryKey(),
     userId: text("user_id").notNull().references(() => user.id, { onDelete: "cascade" }),
-    fileStoreId: text("file_store_id"),
     name: text("name").notNull(),
     subject: text("subject").notNull().$type<keyof typeof availableSubjects>(),
     theme: text("theme").notNull(),
@@ -80,7 +79,6 @@ export const notebook = pgTable("notebook", {
     length: text("length"),
     instructions: text("instructions"),
     sourceFiles: jsonb("source_files").$type<string[]>().default([]),
-    fileStoreId: text("file_store_id"),
     content: text("content"),
     blocks: jsonb("blocks").$type<any[]>(),
     dateCreated: timestamp("date_created").notNull().defaultNow(),

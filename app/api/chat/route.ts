@@ -1,4 +1,4 @@
-import { streamText, convertToModelMessages, createIdGenerator, gateway, isStepCount, createUIMessageStreamResponse, toUIMessageStream } from 'ai';
+import { streamText, convertToModelMessages, createIdGenerator, gateway, stepCountIs, ToolSet } from 'ai';
 import { chatModels, ChatUIMessage, ThinkingLevels } from '@/lib/utils/models';
 import { availableSubjects } from '@/lib/subjects/subjectsList';
 import saveToChat from '@/lib/actions/chat/saveToChat';
@@ -10,6 +10,7 @@ import { headers } from 'next/headers';
 import { searchDocumentsTool } from '@/lib/actions/chat/tools/searchDocumentsTool';
 import createChatUsageEvent from '@/lib/actions/billing/createChatUsageEvent';
 import checkCreditSufficient from '@/lib/actions/billing/checkCreditSufficient';
+import { openrouter } from '@openrouter/ai-sdk-provider';
 
 export type ChatRequestOptions = {
     chatId: string;
@@ -56,8 +57,10 @@ export async function POST(req: Request) {
     } else {
         availableFiles = await db.select({id: files.id, name: files.name, summary: files.summary}).from(files).where(and(eq(files.userId, session.user.id), eq(files.classId, context.classId), eq(files.status, "processed")));
     }
+
+    const selectedModelObject = chatModels.find((model) => model.name === context.selectedModel) || chatModels[0];
     const result = streamText({
-        instructions: `
+        system: `
         ${availableSubjects[context.subject].instructions.chat}
         # Custom tools
         ## File search
@@ -72,19 +75,35 @@ export async function POST(req: Request) {
             gateway: {
                 models: chatModels.filter((model) => model.name !== context.selectedModel).map((model) => model.name),
             },
+            openrouter: {
+                models: chatModels.filter((model) => model.name !== context.selectedModel).map((model) => model.name),
+                reasoning: {
+                    effort: context.thinkingLevel,
+                }
+            }
         },
         model: context.selectedModel || chatModels[0].name,
         messages: await convertToModelMessages(messages),
         tools: {
-            perplexity_search: gateway.tools.perplexitySearch({
-                maxResults: 5,
-                country: "SG",
-            }),
+            ...(selectedModelObject.provider == "gateway" ? { 
+                perplexity_search: gateway.tools.perplexitySearch({
+                    maxResults: 5,
+                    country: "SG",
+                })
+            } : selectedModelObject.provider == "openrouter" ? {
+                perplexity_search: openrouter.tools.webSearch({
+                    engine: "perplexity",
+                    maxResults: 5,
+                    execute: ()=>{
+                        console.log("using search")
+                    }
+                }),
+            } as ToolSet : {}),
             searchDocuments: searchDocumentsTool(availableFiles.map(f => f.id)),
         },
-        stopWhen: isStepCount(5), // lets the model use tools and continue
-        reasoning: context.thinkingLevel,
-        onEnd: async({usage})=>{
+        stopWhen: stepCountIs(5), // lets the model use tools and continue
+        // reasoning: context.thinkingLevel,
+        onFinish: async({totalUsage: usage})=>{
             if (usage.totalTokens && usage.totalTokens > 0) {
                 const usageEvent = await createChatUsageEvent({
                     totalTokens: usage.totalTokens,
@@ -99,40 +118,90 @@ export async function POST(req: Request) {
     });
 
     let finalModel = context.selectedModel || chatModels[0].name;
-    return createUIMessageStreamResponse({
-        stream: toUIMessageStream({
-            stream: result.stream,
-            sendReasoning: true,
-            sendSources: true,
+    return result.toUIMessageStreamResponse<ChatUIMessage>({
+        sendReasoning: true,
+        sendSources: true,
         originalMessages: messages,
         generateMessageId: createIdGenerator({
-            prefix: 'msg-assistant',
+            prefix: "msg-assistant",
             size: 16,
         }),
-        onEnd: async({messages, responseMessage}:{messages: ChatUIMessage[], responseMessage: ChatUIMessage})=>{
-            console.log("[CHAT STREAM] Stream finished! Saving chat to DB!")
+        onFinish: async ({
+            messages,
+            responseMessage,
+        }: {
+            messages: ChatUIMessage[];
+            responseMessage: ChatUIMessage;
+        }) => {
+            console.log("[CHAT STREAM] Stream finished! Saving chat to DB!");
+
             if (responseMessage.parts.length === 0) {
-                return;
+            return;
             }
+
             await saveToChat(context.chatId, { messages });
         },
-        messageMetadata: ({part})=>{
-            if (part.type == "finish-step"){
-                try {
-                    // console.log("Extracting model from provider metadata");
-                    finalModel = (part.providerMetadata as {gateway: {routing: {modelAttempts: Array<{canonicalSlug: string}>}}}).gateway.routing.modelAttempts.at(-1)!.canonicalSlug
-                    // const modelAttempts = (part.providerMetadata as {gateway: {routing: {modelAttempts: Array<{canonicalSlug: string}>}}}).gateway.routing.modelAttempts
-                    // console.log("Final model used:", finalModel, "attempts:", modelAttempts.map((attempt)=> JSON.stringify(attempt)));
-                } catch {
-                    console.log("Failed to extract model from provider metadata. Default to selected.");
+        messageMetadata: ({ part }) => {
+            if (part.type === "finish-step") {
+            try {
+                finalModel = (
+                part.providerMetadata as {
+                    gateway: {
+                    routing: {
+                        modelAttempts: Array<{ canonicalSlug: string }>;
+                    };
+                    };
                 }
+                ).gateway.routing.modelAttempts.at(-1)!.canonicalSlug;
+            } catch {
+                console.log(
+                "Failed to extract model from provider metadata. Default to selected.",
+                );
             }
-            if (part.type == "finish"){
-                return {
-                    model: finalModel,
-                    totalTokens: part.totalUsage.totalTokens,
-                }
             }
-        }})
-    })
+
+            if (part.type === "finish") {
+            return {
+                model: finalModel,
+                totalTokens: part.totalUsage.totalTokens,
+            };
+            }
+        },
+    });
+    // return createUIMessageStreamResponse({
+    //     stream: toUIMessageStream({
+    //         stream: result.stream,
+    //         sendReasoning: true,
+    //         sendSources: true,
+    //     originalMessages: messages,
+    //     generateMessageId: createIdGenerator({
+    //         prefix: 'msg-assistant',
+    //         size: 16,
+    //     }),
+    //     onEnd: async({messages, responseMessage}:{messages: ChatUIMessage[], responseMessage: ChatUIMessage})=>{
+    //         console.log("[CHAT STREAM] Stream finished! Saving chat to DB!")
+    //         if (responseMessage.parts.length === 0) {
+    //             return;
+    //         }
+    //         await saveToChat(context.chatId, { messages });
+    //     },
+    //     messageMetadata: ({part})=>{
+    //         if (part.type == "finish-step"){
+    //             try {
+    //                 // console.log("Extracting model from provider metadata");
+    //                 finalModel = (part.providerMetadata as {gateway: {routing: {modelAttempts: Array<{canonicalSlug: string}>}}}).gateway.routing.modelAttempts.at(-1)!.canonicalSlug
+    //                 // const modelAttempts = (part.providerMetadata as {gateway: {routing: {modelAttempts: Array<{canonicalSlug: string}>}}}).gateway.routing.modelAttempts
+    //                 // console.log("Final model used:", finalModel, "attempts:", modelAttempts.map((attempt)=> JSON.stringify(attempt)));
+    //             } catch {
+    //                 console.log("Failed to extract model from provider metadata. Default to selected.");
+    //             }
+    //         }
+    //         if (part.type == "finish"){
+    //             return {
+    //                 model: finalModel,
+    //                 totalTokens: part.totalUsage.totalTokens,
+    //             }
+    //         }
+    //     }})
+    // })
 }

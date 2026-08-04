@@ -13,6 +13,13 @@ import SaveToNotebook from "@/app/dashboard/class/[id]/notebooks/[noteId]/(actio
 import { useClass } from "./class-provider";
 import { availableSubjects } from "@/lib/subjects/subjectsList";
 import saveNotebookBlocks from "@/lib/actions/notebook/saveNotebookBlocks";
+import { useCreateBlockNote } from "@blocknote/react";
+import { notebookSchema } from "@/app/dashboard/class/[id]/notebooks/[noteId]/(components)/(notebook)/NotebookSchema";
+import { InlineMathInputRule } from "@/app/dashboard/class/[id]/notebooks/[noteId]/(components)/(notebook)/mathExtensionUtils";
+import { BlockNoteEditor } from "@blocknote/core";
+import { AIExtension } from "@blocknote/xl-ai";
+import { en } from "@blocknote/core/locales";
+import { en as aiEn } from "@blocknote/xl-ai/locales";
 
 export type NotebookContextType = {
     // Ui States
@@ -31,6 +38,7 @@ export type NotebookContextType = {
     mainChatId: string | null;
     setMainChatId: (id: string | null) => void;
     name: string;
+    editor: BlockNoteEditor<any, any, any>;
     blocks: any[];
     setBlocks: (blocks: any[]) => void;
     setName: (name: string) => void;
@@ -89,6 +97,24 @@ export default function NotebookProvider({children, data}: {children: React.Reac
     // UI States
     const {noteId}:{noteId: string} = useParams();
     const {_class} = useClass();
+    const editor = useCreateBlockNote({
+        schema: notebookSchema,
+        initialContent: data.blocks || undefined,
+        tables: {
+            splitCells: true,
+            cellBackgroundColor: true,
+            cellTextColor: true,
+            headers: true,
+        },
+        dictionary: {
+            ...en,
+            ai: aiEn, // add default translations for the AI extension
+        },
+        _tiptapOptions: {
+            extensions: [InlineMathInputRule],
+        },
+        extensions: [AIExtension()],
+    });
     const [collapseSections, setCollapseSections] = useState(data.content ? false :true);
     const [collapsedSources, setCollapsedSources] = useState(false);
     const [collapsedApps, setCollapsedApps] = useState(false);
@@ -156,7 +182,7 @@ export default function NotebookProvider({children, data}: {children: React.Reac
                     payload.name = res.object.header;
                 }
                 await SaveToNotebook(noteId, payload);
-                generateNotes({noteId, instructions: `${defaultNotesInstructions(resolvedLength, _class.subject, resolvedInstructions, Object.keys((weights)))}`, length: resolvedLength, fileIds: files.map(f=>f.id), topicWeights: weights, setCollapseSections, sendNotesFollowup, fileStoreId: _class.fileStoreId!});
+                generateNotes({noteId, instructions: `${defaultNotesInstructions(resolvedLength, _class.subject, resolvedInstructions, Object.keys((weights)))}`, length: resolvedLength, fileIds: files.map(f=>f.id), topicWeights: weights, setCollapseSections, sendNotesFollowup});
             }
         },
         onError: (err)=>{
@@ -173,7 +199,6 @@ export default function NotebookProvider({children, data}: {children: React.Reac
         transport: new DefaultChatTransport({
             api: '/api/notebook/generate-notes',
         }),
-        throttle: 100,
         onFinish: async (res)=>{
             console.log("Finished generating notes: ", res);
             if (res.isError){
@@ -263,6 +288,7 @@ export default function NotebookProvider({children, data}: {children: React.Reac
             mainChatId,
             setMainChatId,
             subject: _class.subject,
+            editor: editor,
             blocks: blocks,
             setBlocks: setBlocks,
             name,

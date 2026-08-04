@@ -49,81 +49,113 @@ export function convertEffortLevel(provider: string, model: string, level: Think
     }
 }
 
-export const chatModels: Model[] = [
+export const notebookModels: Model[] = [
     {
-        name: "google/gemini-3-flash",
+        name: "google/gemini-3-flash-preview",
+        label: "Gemini 3 Flash",
+        provider: "openrouter",
+    },
+    {
+        name: "google/gemini-3.5-flash-lite",
+        label: "Gemini 3.5 Flash Lite",
+        provider: "openrouter",
+    },
+    {
+        name: "deepseek/deepseek-v4-flash",
+        label: "DeepSeek V4 Flash",
+        provider: "openrouter",
+    },
+]
+
+export const chatModels: Model[] = [
+   
+    {
+        name: "google/gemini-3-flash-preview",
         label: "Gemini 3 Flash",
         priceMultiplier: 1,
-        provider: "gateway",
+        provider: "openrouter",
     },
     {
         name: "google/gemini-3.5-flash-lite",
         label: "Gemini 3.5 Flash Lite",
         noThinking: false,
         priceMultiplier: 0.5,
-        provider: "gateway",
+        provider: "openrouter",
     },
     {
         name: "google/gemini-3.6-flash",
         label: "Gemini 3.6 Flash",
         priceMultiplier: 2,
-        provider: "gateway",
+        provider: "openrouter",
     },
     {
-        name: "google/gemini-3.1-pro",
+        name: "google/gemini-3.1-pro-preview",
         label: "Gemini 3.1 Pro",
         priceMultiplier: 4,
-        provider: "gateway",
+        provider: "openrouter",
+    },
+     {
+        name: "openai/gpt-5.6-luna",
+        label: "GPT-5.6 Luna",
+        priceMultiplier: 0.5,
+        provider: "openrouter",
+    },
+    {
+        name: "openai/gpt-5.6-terra",
+        label: "GPT-5.6 Terra",
+        priceMultiplier: 2,
+        provider: "openrouter",
+    },
+    {
+        name: "openai/gpt-5.4-mini",
+        label: "GPT-5.4 Mini",
+        priceMultiplier: 1.5,
+        provider: "openrouter",
     },
     {
         name: "anthropic/claude-haiku-4.5",
         label: "Claude Haiku 4.5",
         noThinking: true,
         priceMultiplier: 2,
-        provider: "gateway",
+        provider: "openrouter",
     },
     {
         name: "anthropic/claude-sonnet-4.6",
         label: "Claude Sonnet 4.6",
         priceMultiplier: 4,
-        provider: "gateway",
+        provider: "openrouter",
     },
     {
         name: "anthropic/claude-opus-4.7",
         label: "Claude Opus 4.7",
         priceMultiplier: 9,
-        provider: "gateway",
+        provider: "openrouter",
     },
-    {
-        name: "openai/gpt-5.5",
-        label: "GPT-5.5",
-        priceMultiplier: 10,
-        provider: "gateway",
-    },
-    {
-        name: "openai/gpt-5.4",
-        label: "GPT-5.4",
-        priceMultiplier: 5,
-        provider: "gateway",
-    },
-    {
-        name: "openai/gpt-5.4-mini",
-        label: "GPT-5.4 Mini",
-        priceMultiplier: 1.5,
-        provider: "gateway",
-    },
+    
     {
         name: "deepseek/deepseek-v4-flash",
         label: "DeepSeek V4 Flash",
         priceMultiplier: 0,
         noFiles: true,
-        provider: "gateway",
+        provider: "openrouter",
     },
     {
         name: "deepseek/deepseek-v4-pro",
         label: "DeepSeek V4 Pro",
         priceMultiplier: 1.5,
-        provider: "gateway",
+        provider: "openrouter",
+    },
+    {
+        name: "x-ai/grok-4.5",
+        label: "Grok 4.5",
+        priceMultiplier: 3,
+        provider: "openrouter",
+    },
+    {
+        name: "qwen/qwen3.7-plus",
+        label: "Qwen 3.7 Plus",
+        priceMultiplier: 1,
+        provider: "openrouter",
     }
 ];
 

@@ -1,7 +1,6 @@
 'use server';
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
-import createFileStore from "@/lib/file-search-actions/createFileStore";
 import { classes } from "@/lib/schemas/schema";
 import { availableSubjects } from "@/lib/subjects/subjectsList";
 import { generateId } from "better-auth";
@@ -28,6 +27,5 @@ export default async function createClassServer( name: string, subject: keyof ty
         theme: theme,
         icon: icon,
         userId: session.user.id,
-        fileStoreId: "nothing"
     }).returning();
 }

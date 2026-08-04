@@ -108,11 +108,10 @@ export const defaultNotesInstructions = (length: string, subject: keyof typeof a
 `
 
         
-export async function generateNotes({noteId, instructions, fileIds, topicWeights, length, fileStoreId, setCollapseSections, sendNotesFollowup}: {
+export async function generateNotes({noteId, instructions, fileIds, topicWeights, length, setCollapseSections, sendNotesFollowup}: {
     noteId: string;
     instructions: string;
     fileIds: string[];
-    fileStoreId: string;
     topicWeights: Record<string, number>;
     length: string;
     setCollapseSections: (collapse: boolean) => void;
@@ -151,19 +150,14 @@ export async function generateNotes({noteId, instructions, fileIds, topicWeights
 
 export function useGenerateNotes(){
     const { setCollapseSections, files, instructions, topicWeights, sendNotesFollowup, length, noteId } = useNotebook();
-    const { _class: {fileStoreId} } = useClass();
 
     return {
         generateNotes: async(customProps?: Record<string, any>) => {
             const resolvedLength = customProps?.length ?? length;
             const resolvedInstructions = customProps?.instructions ?? instructions;
             const resolvedTopicWeights = customProps?.topicWeights ?? topicWeights;
-            if (!fileStoreId){
-                throw new Error("File store ID is required to generate notes");
-            }
             return await generateNotes({
                 noteId,
-                fileStoreId: fileStoreId,
                 fileIds: files.map(f=>f.id),
                 topicWeights: resolvedTopicWeights,
                 setCollapseSections,

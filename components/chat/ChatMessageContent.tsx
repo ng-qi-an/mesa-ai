@@ -3,7 +3,7 @@ import { Reasoning, ReasoningContent, ReasoningTrigger } from "@/components/ai-e
 import { generateId, TextUIPart, ToolUIPart } from "ai";
 import ChatAttachments from "./ChatAttachments";
 import { Source, Sources, SourcesContent, SourcesTrigger } from "../ai-elements/sources";
-import { ChartNoAxesColumn, CopyIcon, File, FileSearch, FileText, Globe, RefreshCcwIcon, Scroll, SearchIcon, TextSearch } from "lucide-react";
+import { ChartNoAxesColumn, CopyIcon, File, FileSearch, FileText, Globe, RefreshCcwIcon, Scroll, SearchIcon, TextSearch, PencilSparkles, BookText, PenOff } from "lucide-react";
 import { chatModels, ChatUIMessage } from "@/lib/utils/models";
 import { ModelSelectorLogo } from "../ai-elements/model-selector";
 import { Shimmer } from "../ai-elements/shimmer";
@@ -105,7 +105,20 @@ export default function ChatMessageContent({message, isLastMessage, isStreaming}
                     </React.Fragment>
                   })}
                 </TaskContent>
-              </> : <><p>Tool not recognised: {groupedPart.type}</p></>}
+              </> : groupedPart.type == "tool-getDocumentState" ? <>
+                <TaskTrigger title={lastPart.state ==  "output-available" ? `Read notebook` : "Reading notebook"} icon={lastPart.state== "output-available" ? <BookText className="size-4"/> : <Spinner className="size-4"/>} showChevron={false}/>
+              </> : groupedPart.type == "tool-getDocumentMarkdown" ? <>
+                <TaskTrigger title={lastPart.state ==  "output-available" ? `Read notebook content` : "Reading notebook content"} icon={lastPart.state== "output-available" ? <BookText className="size-4"/> : <Spinner className="size-4"/>} showChevron={false}/>
+              </> : groupedPart.type == "tool-applyDocumentOperations" ? <>
+                <TaskTrigger title={lastPart.state ==  "output-available" ? `Edited notebook` : lastPart.state == "output-error" ? "Failed to edit notebook" : "Editing notebook"} icon={lastPart.state == "output-available" ? <PencilSparkles className="size-4"/> : lastPart.state == "output-error" ? <PenOff className="size-4"/> :  <Spinner className="size-4"/>} showChevron={lastPart.state == "output-error"}/>
+                {lastPart.state == "output-error" && <TaskContent>
+                  <TaskItem className="flex items-start gap-2 mb-2">
+                    An error occured while trying to edit the notebook. Try breaking down your query into multiple messages, or try a different approach.
+                  </TaskItem>
+                </TaskContent>}
+                <div className="mb-2"></div>
+              </>
+              : <><p>Tool not recognised: {groupedPart.type}</p></>}
             </Task>
           }
         })}

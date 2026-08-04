@@ -5,7 +5,7 @@ import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/
 import { Separator } from "@/components/ui/separator";
 import { Spinner } from "@/components/ui/spinner";
 import { TypographyLead } from "@/components/ui/typography/lead";
-import { Cloud, CloudCheck, CloudSync, Moon, Notebook, Settings2, Sparkle, Sparkles, StopCircle, Sun, X } from "lucide-react";
+import { Cloud, CloudSync, Moon, Notebook, Settings2, Sparkle, Sparkles, StopCircle, Sun, X } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useRef, useState } from "react";
 import { slugify } from "./SectionsPanel";
@@ -20,7 +20,6 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import SoftAurora from "@/components/SoftAurora";
 // Blocknote
 import "@blocknote/core/fonts/inter.css";
-import { useCreateBlockNote } from "@blocknote/react";
 import { BlockNoteView } from "@blocknote/shadcn";
 import "@blocknote/shadcn/style.css";
 
@@ -28,12 +27,12 @@ import "@blocknote/shadcn/style.css";
 import 'katex/dist/katex.min.css'
 import saveNotebookBlocks from "@/lib/actions/notebook/saveNotebookBlocks";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { notebookSchema } from "./(notebook)/NotebookSchema";
-import { InlineMathInputRule, migrateDollarMathToInlineMath } from "./(notebook)/mathExtensionUtils";
-
+import { migrateDollarMathToInlineMath } from "./(notebook)/mathExtensionUtils";
+import {AIExtension} from "@blocknote/xl-ai";
 
 export default function NotebookPanel(){
     const noteCtx = useNotebook()
+    const editor = noteCtx.editor;
     const { generateNotes } = useGenerateNotes();
     const { resolvedTheme } = useTheme();
     const contentRef = useRef<HTMLDivElement>(null);
@@ -44,13 +43,6 @@ export default function NotebookPanel(){
     const [showOutdatedSources, setShowOutdatedSources] = useState(false);
     const [savingInterval, setSavingInterval] = useState<any>(null);
     const  [savingBlocks, setSavingBlocks] = useState(false);
-    const editorRef = useRef<HTMLDivElement>(null);
-    const editor = useCreateBlockNote({
-        schema: notebookSchema,
-        _tiptapOptions: {
-            extensions: [InlineMathInputRule],
-        },
-    });
     
     useEffect(() => {
         try {
@@ -64,6 +56,19 @@ export default function NotebookPanel(){
         if (!editor) return;
         if (noteCtx.isGenerating) return;
         const cleanupOnChange = editor.onChange((editor) => {
+            const aiMenuState = editor.getExtension(AIExtension)?.store.state.aiMenuState;
+            if (aiMenuState !== "closed") {
+                setSavingInterval((existingInterval: NodeJS.Timeout | null) => {
+                if (existingInterval) {
+                    clearTimeout(existingInterval);
+                }
+
+                return null;
+                });
+
+                setSavingBlocks(false);
+                return;
+            }
             setSavingBlocks(true);
             if (savingInterval){
                 clearTimeout(savingInterval);
@@ -108,13 +113,6 @@ export default function NotebookPanel(){
             cleanupOnChange();
         }
     }, [editor, noteCtx.isGenerating])
-    useEffect(()=>{
-        console.log("Editor is event is set");
-        console.log("Editor is mounted and ready");
-        editor.replaceBlocks(editor.document, noteCtx.blocks);
-        console.log("Set initial blocks!")
-    }, [editor])
-
     useEffect(() => {
         try {
             localStorage.setItem("notebook-force-light", forceLightNotebook ? "1" : "0");
@@ -257,13 +255,13 @@ export default function NotebookPanel(){
                     theme={useLightNotebookTheme ? "light" : "dark"}
                     className={useLightNotebookTheme ? "light" : "dark"}
                     editor={editor}
-                    ref={editorRef}
-                    editable={!noteCtx.isGenerating || !noteCtx.isEmbeddingImages}
+                    editable={!noteCtx.isGenerating && !noteCtx.isEmbeddingImages}
                     shadCNComponents={{
                         // Pass modified ShadCN components from your project here.
                         // Otherwise, the default ShadCN components will be used.
                     }}
-                />
+                >
+                </BlockNoteView>
             </div>
             <AnimatePresence>
                 {(noteCtx.notesStatus == "streaming") && <motion.div initial={{bottom: -400}} animate={{bottom: -200}} exit={{bottom: -400}} className="absolute left-0 z-[70] w-full h-[350px] rounded-b-lg overflow-hidden pointer-events-none">

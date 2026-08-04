@@ -7,13 +7,13 @@ export const quizQuestionsSchema = z.object({
         question: z.string(),
         type: z.enum(quizQuestionTypes.map(q => q.value)).describe("The format of the quiz question. Refer to instructions on which types are allowed."),
         difficulty: z.enum(["easy", "medium", "hard"]).describe("How difficult the question generated is compared to a rubric given."),
-        textualAnswer: z.string().optional().describe("The correct answer in textual form, used for evaluating **short-answer and long-answer questions**. For multiple-choice questions, this should be empty."),
-        trueFalseAnswer: z.boolean().optional().describe("The correct answer for **true-false** questions. For other question types, this should be empty."),
+        textualAnswer: z.string().describe("The correct answer in textual form, used for evaluating **short-answer and long-answer questions**. For multiple-choice questions, this should be empty."),
+        trueFalseAnswer: z.boolean().describe("The correct answer for **true-false** questions. For other question types, this should be empty."),
         options: z.array(z.object({
             value: z.string().describe("The text of the answer option. Must be unique and short among options for a given question."),
             answer: z.boolean().describe("Indicates whether this option is the correct answer. Only applicable for multiple-choice questions."),
             explanation: z.string().describe("A very brief 1-sentence explanation as to why the option is correct or incorrect.")
-        })).optional().describe("Only for **multiple-choice** questions. An array of strictly **4** answer options, including the correct answer. For other question types, this should be empty."),
+        })).describe("Only for **multiple-choice** questions. An array of strictly **4** answer options, including the correct answer. For other question types, this should be empty."),
         hint: z.string().describe("A hint to help the student answer the question, based on the content of the notes. Will also be used to mark textual answers.")
     }))
 })
