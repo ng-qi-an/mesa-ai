@@ -41,6 +41,7 @@ export default async function addUserFolder(name: string, parent: string, classI
             classId,
             name,
             contentType: "application/x-directory",
+            status: "processed",
             userId: session.user.id
         }).returning();
     } catch (error) {

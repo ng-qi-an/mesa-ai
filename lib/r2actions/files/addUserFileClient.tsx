@@ -20,9 +20,9 @@ export default async function addUserFileClient(files: File[], urls: {url: strin
                     const res2 = await addUserFile2Db(url.id,files[index].name, files[index].type, parent, classId);
                     if (res2){
                         // Begin RAG parsing process
-                        console.log("== Success! Begin rag parsing: ==");
-                        await ragFile(res2[0].id, res2[0].contentType);
-                        console.log("== Success! Finished rag parsing process for:", files[index].name, "==");
+                        //console.log("== Success! Begin rag parsing: ==");
+                        // await ragFile(res2[0].id, res2[0].contentType);
+                        //console.log("== Success! Finished rag parsing process for:", files[index].name, "==");
                         return { name: files[index].name, status: "uploaded" };
                     } else {
                         throw new Error("Failed to rag file to DB!");

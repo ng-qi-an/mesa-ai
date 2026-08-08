@@ -12,7 +12,7 @@ import deleteUserFolder from "@/lib/r2actions/folders/deleteUserFolder"
 import { FileSelect } from "@/lib/schemas/schema"
 import { MoreHorizontal } from "lucide-react"
 import { usePathname } from "next/navigation"
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { DeleteFileFolderDialog } from "./dialogs/DeleteFileFolderDialog"
 import RenameFileFolderDialog from "./dialogs/RenameFileFolderDialog"
 import MoveFileFolderDialog from "./dialogs/MoveFileFolderDialog"
@@ -21,36 +21,71 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip"
 import { ragFile } from "@/lib/rag-actions/ragFile"
 import { toast } from "sonner"
 import { useFileBrowser } from "../providers/file-browser-provider"
+import { useFileProcessing } from "@/lib/r2actions/files/useFileProcessing"
+import { Spinner } from "../ui/spinner"
 
 export default function FileRowActions({file}: {file: FileSelect}) {
-    const {_class} = useClass()
     const pathname = usePathname()
     const [count, setCount] = useState(0);
     const [openDelete, setOpenDelete] = useState(false);
     const [openRename, setOpenRename] = useState(false);
     const [openMove, setOpenMove] = useState(false);
-    const [indexing, setIndexing] = useState(false);
     const { revalidateData } = useFileBrowser();
+    const { status, start } = useFileProcessing(file.id, file.status, file.contentType, async (newStatus) => {
+        if (newStatus === "processed") {
+            await revalidateData(pathname);
+        } else if (newStatus === "error") {
+            toast.error("An error occurred while processing the file. Please try again.");
+            await revalidateData(pathname);
+        }
+    })
+    useEffect(()=>{
+        if (file.status == "uploaded"){
+            console.log("File is uploaded but not processed. Starting processing for file:", file.id);
+            start();
+        }
+    }, [])
     return <>
     <div className="flex items-center">
-        {file.status != "processed" && file.contentType != "application/x-directory" && (indexing ? 
-            <Badge className="ml-auto" variant="secondary">Indexing...</Badge>
-        : 
-        <Tooltip>
-            <TooltipContent>
-                <p>This file can&apos;t be used yet. Click the dots to begin indexing. May take a few minutes.</p>
-            </TooltipContent>
-            <TooltipTrigger asChild>
-                <span className="ml-auto">
-                        <Badge variant="destructive" className="">Not indexed</Badge>
-                </span>
-            </TooltipTrigger>
-        </Tooltip>)}
+        {status != "processed" && file.contentType != "application/x-directory" && (status == "uploaded" ? 
+            <Tooltip>
+                <TooltipContent>
+                    <p>This file can&apos;t be used yet. Click the dots to begin indexing. May take a few minutes.</p>
+                </TooltipContent>
+                <TooltipTrigger asChild>
+                    <span className="ml-auto">
+                            <Badge variant="destructive" className="">Not indexed</Badge>
+                    </span>
+                </TooltipTrigger>
+            </Tooltip>
+        : status == "error" ?
+            <Tooltip>
+                <TooltipContent>
+                    <p>An error occurred while indexing this file. Click the dots to try indexing again.</p>
+                </TooltipContent>
+                <TooltipTrigger asChild>
+                    <span className="ml-auto">
+                            <Badge variant="destructive" className="">Indexing failed</Badge>
+                    </span>
+                </TooltipTrigger>
+            </Tooltip>
+        :
+            <Tooltip>
+                <TooltipContent>
+                    <p>{status == "extracting" ? "Extracting file content..." : status == "chunking" ? "Chunking file content..." : status == "embedding" ? "Embedding file content..." : status == "summarizing" ? "Generating file summary..." : "Processing file: "+status+"..."}</p>
+                </TooltipContent>
+                <TooltipTrigger asChild>
+                    <span className="ml-auto">
+                        <Badge variant="secondary">Processing <Spinner className="size-3" /></Badge>
+                    </span>
+                </TooltipTrigger>
+            </Tooltip>
+        )}
         <DropdownMenu>
             <DropdownMenuTrigger asChild>
                 <Button
                     variant="ghost"
-                    className={`h-8 w-8 p-0 block ml-2 ${(file.status == "processed" || file.contentType == "application/x-directory") ? "ml-auto" : ""}`}
+                    className={`h-8 w-8 p-0 block ml-2 ${(status == "processed" || file.contentType == "application/x-directory") ? "ml-auto" : ""}`}
                 >
                     <span className="sr-only">Open menu</span>
                     <MoreHorizontal className="h-4 w-4 ml-1.5" />
@@ -58,30 +93,10 @@ export default function FileRowActions({file}: {file: FileSelect}) {
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
                 <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                {file.contentType != "application/x-directory" && !indexing && file.status != "processed" && <>
+                {file.contentType != "application/x-directory" && status == "uploaded" && <>
                     <DropdownMenuItem onClick={()=>{
-                        setIndexing(true);
-                        const indexPromise = new Promise<void>(async (resolve, reject) => {
-                            try {
-                                await ragFile(file.id, file.contentType);
-                                resolve();
-                            } catch (error) {
-                                setIndexing(false);
-                                reject("Error indexing file:" + error);
-                            }
-                        });
-                        toast.promise(indexPromise, {
-                            loading: "Indexing file...",
-                            success: async() => {
-                                await revalidateData(pathname)
-                                return `File indexed successfully`;
-                            },
-                            error: async (e) => {
-                                setIndexing(false);
-                                return `Error indexing file: ${e}`;
-                            },
-                        })
-                    }}>Start index</DropdownMenuItem>
+                        start();
+                    }}>Retry index</DropdownMenuItem>
                     <DropdownMenuSeparator/>
                 </>}
                 <DropdownMenuItem onClick={()=>{

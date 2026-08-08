@@ -1,6 +1,6 @@
 
 import { FileSelect } from "@/lib/schemas/schema"
-import { mimeToReadable } from "@/lib/utils"
+import { cn, mimeToReadable } from "@/lib/utils"
 import { ColumnDef } from "@tanstack/react-table"
 import { ArrowDown, ArrowUp, File, Folder } from "lucide-react"
  
@@ -15,6 +15,7 @@ export const checkboxColumn:ColumnDef<FileBrowserItem> = {
         const file = row.original    
         return file.contentType != "application/x-directory" && <Checkbox
             checked={meta.selected?.includes(file.id)}
+            disabled={file.status !== "processed"}
             onCheckedChange={(value) => meta.setSelected && (value ? meta.setSelected([...meta.selected || [], file.id]) : meta.setSelected(meta.selected?.filter(id => id !== file.id) || []))}
             aria-label="Select row"
         />
@@ -42,8 +43,8 @@ export const fileColumns: ColumnDef<FileBrowserItem>[] = [
         },
         cell: ({ row }) => {
             const file = row.original
-            return <div className="flex items-center gap-3 pl-2">
-                {file.contentType == "application/x-directory" ? <Folder className="size-4" fill="var(--foreground)"/> : <File className="size-4" fill="var(--foreground)"/>}
+            return <div className={cn("flex items-center gap-3 pl-2", file.status !== "processed" && "text-muted-foreground")}>
+                {file.contentType == "application/x-directory" ? <Folder className="size-4" fill={file.status === "processed" ? "var(--foreground)" : undefined}/> : <File className="size-4" fill={file.status === "processed" ? "var(--foreground)" : undefined}/>}
                 {file.name}
             </div>
         }
@@ -89,6 +90,6 @@ export const fileColumns: ColumnDef<FileBrowserItem>[] = [
     }
 ]
 
-export type FileBrowserItem =  FileSelect & {
+export type FileBrowserItem = FileSelect & {
     key: string,
 }

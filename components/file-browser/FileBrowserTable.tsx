@@ -97,7 +97,7 @@ export function FileBrowserTable<TData, TValue>({
             table.getRowModel().rows.map((row) => (
               <TableRow
                 key={row.id}
-                className="cursor-pointer"
+                className={(row.original as FileBrowserItem).status === "processed" ? "cursor-pointer" : "cursor-default"}
                 // onClick={()=> row.toggleSelected()}
                 // data-state={row.getIsSelected() && "selected"}
                 data-state={selected?.includes((row.original as FileBrowserItem).id) ? "selected" : undefined}
