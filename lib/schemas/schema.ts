@@ -45,10 +45,11 @@ export const files = pgTable("files", {
     parentId: text("parent_id").references(():AnyPgColumn => files.id, { onDelete: "cascade"}),
     classId: text("class_id").notNull().references(() => classes.id, { onDelete: "cascade" }),
     name: text("name").notNull(),
+    status: text("status").notNull().default("uploaded"),
+    streamId: text("stream_id"),
     contentType: text("content_type").notNull(),
     summary: text("summary"),
     markdown: text("markdown"),
-    status: text("status").notNull().default("uploaded"),
     dateCreated: timestamp("date_created").notNull().defaultNow(),
     dateModified: timestamp("date_modified").notNull().defaultNow(),
 })
