@@ -29,20 +29,22 @@ import saveNotebookBlocks from "@/lib/actions/notebook/saveNotebookBlocks";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { migrateDollarMathToInlineMath } from "./(notebook)/mathExtensionUtils";
 import {AIExtension} from "@blocknote/xl-ai";
+import CustomFormattingToolbar from "@/components/editor/CustomFormattingToolbar";
+import { FormattingToolbarController, LinkToolbarController } from "@blocknote/react";
+import CustomLinkToolbar from "@/components/editor/CustomLinkToolbar";
+import BottomActionToolbar from "@/components/editor/BottomActionToolbar";
 
 export default function NotebookPanel(){
     const noteCtx = useNotebook()
     const editor = noteCtx.editor;
-    const { generateNotes } = useGenerateNotes();
     const { resolvedTheme } = useTheme();
     const contentRef = useRef<HTMLDivElement>(null);
-    const [showNoteSettings, setShowNoteSettings] =  useState(false);
     const [forceLightNotebook, setForceLightNotebook] = useState(false);
     const {currentTour, setCurrentStep} = useNextStep();
-    const isMobile = useIsMobile();
     const [showOutdatedSources, setShowOutdatedSources] = useState(false);
     const [savingInterval, setSavingInterval] = useState<any>(null);
-    const  [savingBlocks, setSavingBlocks] = useState(false);
+    const [savingBlocks, setSavingBlocks] = useState(false);
+    const [editorMode, setEditorMode] = useState<"editing" | "commenting" | "viewing">("editing");
     
     useEffect(() => {
         try {
@@ -140,9 +142,7 @@ export default function NotebookPanel(){
             console.error("Error occurred while updating blocks:", error);
         }
     }, [noteCtx?.notesHistory, editor])
-    useEffect(()=>{
-        setShowOutdatedSources(noteCtx.sourceFiles.length > 0 && !checkFileStoreMatch(noteCtx.sourceFiles, noteCtx.files.map(f=> f.id)))
-    },[noteCtx.sourceFiles, noteCtx.files])
+    
     useEffect(()=>{
         if (noteCtx.isMetaLoading && editor){
             console.log("Loading meta and resetting editor")
@@ -154,7 +154,6 @@ export default function NotebookPanel(){
         }
     }, [noteCtx.isMetaLoading, editor])
     return  noteCtx && <> 
-        <NoteSettingsDialog open={showNoteSettings} onOpenChange={setShowNoteSettings}/>
         <div className="h-full gap-2 flex flex-col w-full overflow-hidden relative bg-card">
             { showOutdatedSources && <Card size="sm" className={`absolute right-0 bottom-[-110px] hover:bottom-0 transition-all z-[60] bg-card/90 backdrop-blur-lg rounded-b-none border-b-0 border-l-0 w-[300px]`}>
                 <CardHeader>
@@ -174,77 +173,6 @@ export default function NotebookPanel(){
                     </Button>
                 </CardFooter>
             </Card>}
-            <div className="absolute left-0 bottom-0 bg-card p-1 pb-2 border-t border-r rounded-tr-lg flex flex-col z-[60] items-center gap-2">
-                <Tooltip>
-                    <TooltipTrigger asChild>
-                        <span>
-                            <Popover>
-                                <PopoverTrigger asChild>
-                                    <Button size={'icon-sm'} className={`${savingBlocks ? "text-muted-foreground" : "text-muted-foreground"}`} variant={'ghost'}>
-                                        {savingBlocks ? <CloudSync/> : <Cloud/>}
-                                    </Button>
-                                </PopoverTrigger>
-                                <PopoverContent side="right" align="start" sideOffset={10}>
-                                    <p className="text-sm text-muted-foreground">{savingBlocks ? "Saving blocks..." : "All changes saved"}</p>
-                                </PopoverContent>
-                            </Popover>
-                        </span>
-                    </TooltipTrigger>
-                    <TooltipContent side="right">
-                        {savingBlocks ? "Saving..." : "All changes saved"}
-                    </TooltipContent>
-                </Tooltip>
-                <Tooltip>
-                    <TooltipTrigger asChild>
-                        <span className="inline-block w-fit">
-                            <Button disabled={noteCtx?.isGenerating || noteCtx?.isEmbeddingImages} onClick={()=> {
-                                noteCtx?.setShowGenerateNotesDialog(true);
-                            }} size={'icon-sm'} className={`text-muted-foreground ${showOutdatedSources ? 'text-primary hover:text-primary' : ''}`} variant={'ghost'}>
-                                {(noteCtx?.isGenerating || noteCtx?.isEmbeddingImages) ? <Spinner/> : <Sparkle/>}
-                            </Button>
-                        </span>
-                    </TooltipTrigger>
-                    <TooltipContent side="right" align="end">
-                        <p>{noteCtx?.isMetaLoading ?
-                                "Generating topics..."
-                            : noteCtx?.isNotesLoading ?
-                                "Writing notes..."
-                            : noteCtx?.isEmbeddingImages ?
-                                "Embedding images..."
-                            : showOutdatedSources ?
-                                "Generate notes from new sources"
-                            : "Regenerate notes"
-                            }
-                        </p>
-                    </TooltipContent>
-                </Tooltip>
-                <Tooltip>
-                    <TooltipTrigger asChild>
-                        <span className="inline-block w-fit">
-                            <Button disabled={noteCtx.blocks.length === 0 || noteCtx?.isGenerating} onClick={()=> {
-                                setShowNoteSettings(true);
-                            }} size={'icon-sm'} className="text-muted-foreground" variant={'ghost'}>
-                                <Settings2/>
-                            </Button>
-                        </span>
-                    </TooltipTrigger>
-                    <TooltipContent side="right" align="end">
-                        {noteCtx.isGenerating ? "Can't edit while generating" : "Customize content"}
-                    </TooltipContent>
-                </Tooltip>
-                <Tooltip>
-                    <TooltipTrigger asChild>
-                        <div className="flex items-center gap-2">
-                            <span className="text-xs text-muted-foreground select-none">
-                                <Button onClick={()=> setForceLightNotebook(!forceLightNotebook)} disabled={resolvedTheme !== "dark"} variant={"ghost"} size={"icon-sm"}>{forceLightNotebook && resolvedTheme === "dark" ? <Moon/> : <Sun/>}</Button>
-                            </span>
-                        </div>
-                    </TooltipTrigger>
-                    <TooltipContent side="right" align="end">
-                        <p>{resolvedTheme === "dark" ? "Force light colors in notebook." : "Available only while dark mode is active."}</p>
-                    </TooltipContent>
-                </Tooltip>
-            </div>
             <div ref={contentRef} className={`h-full overflow-auto pb-4 pt-4  ${useLightNotebookTheme ? "light" : "dark"} min-w-full`}>
                 <div className="px-10 pt-4 pb-4">
                     <h1 className="text-4xl font-bold mb-6" id={slugify(noteCtx?.metaObject?.header || "")}>{noteCtx?.metaObject?.header}</h1>
@@ -255,15 +183,21 @@ export default function NotebookPanel(){
                     theme={useLightNotebookTheme ? "light" : "dark"}
                     className={useLightNotebookTheme ? "light" : "dark"}
                     editor={editor}
-                    editable={!noteCtx.isGenerating && !noteCtx.isEmbeddingImages}
+                    editable={!noteCtx.isGenerating && !noteCtx.isEmbeddingImages && editorMode === "editing"}
                     shadCNComponents={{
                         // Pass modified ShadCN components from your project here.
                         // Otherwise, the default ShadCN components will be used.
                     }}
+                    formattingToolbar={false}
+                    linkToolbar={false}
                 >
+                    <FormattingToolbarController formattingToolbar={CustomFormattingToolbar}/>
+                    <LinkToolbarController linkToolbar={CustomLinkToolbar}/>
                 </BlockNoteView>
+                <BottomActionToolbar editor={editor} savingBlocks={savingBlocks} forceLightNotebook={forceLightNotebook} setForceLightNotebook={setForceLightNotebook} editorMode={editorMode} setEditorMode={setEditorMode}/>
             </div>
-            <AnimatePresence>
+            {/* DISABLED FOR NOW. The glow effect needs to be much more optimised for a simple animation. Perhaps a video is better. */}
+            {/* <AnimatePresence>
                 {(noteCtx.notesStatus == "streaming") && <motion.div initial={{bottom: -400}} animate={{bottom: -200}} exit={{bottom: -400}} className="absolute left-0 z-[70] w-full h-[350px] rounded-b-lg overflow-hidden pointer-events-none">
                     <div className="relative w-full blur-sm h-full overflow-hidden rounded-b-lg">
                         <SoftAurora
@@ -282,7 +216,7 @@ export default function NotebookPanel(){
                         />
                     </div>
                 </motion.div>}
-            </AnimatePresence>
+            </AnimatePresence> */}
             {/* {(noteCtx.notesStatus == "streaming") && <>
             <div className="absolute bottom-0 left-0 w-full bg-gradient-to-t from-primary/50 via-primary/0 to-primary/0 animate-movingGradient z-[70] items-end pb-18 flex justify-center pointer-events-none">
             </div>

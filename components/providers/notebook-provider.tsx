@@ -110,6 +110,9 @@ export default function NotebookProvider({children, data}: {children: React.Reac
             ...en,
             ai: aiEn, // add default translations for the AI extension
         },
+        links: {
+            onClick: () => true,
+        },
         _tiptapOptions: {
             extensions: [InlineMathInputRule],
         },

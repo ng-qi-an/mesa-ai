@@ -383,3 +383,13 @@ ins {
   border-bottom: 2px solid color-mix(in srgb, oklch(59.6% 0.145 163.225) 80%, transparent);
   text-decoration: none;
 }
+
+.bn-container .bn-inline-content a,
+.bn-container .bn-inline-content a:visited {
+  color: oklch(58.8% 0.158 241.966);
+}
+
+.dark .bn-container .bn-inline-content a,
+.dark .bn-container .bn-inline-content a:visited {
+  color: oklch(71.5% 0.143 215.221);
+}
