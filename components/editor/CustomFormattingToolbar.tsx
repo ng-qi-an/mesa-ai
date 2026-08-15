@@ -1,17 +1,23 @@
-import { BasicTextStyleButton, BlockTypeSelect, ColorStyleButton, FileCaptionButton, FileReplaceButton, FormattingToolbar, NestBlockButton, TableCellMergeButton, TextAlignButton, UnnestBlockButton, useBlockNoteEditor, useComponentsContext } from "@blocknote/react";
+import { BasicTextStyleButton, BlockTypeSelect, blockTypeSelectItems, ColorStyleButton, FileCaptionButton, FileReplaceButton, FormattingToolbar, NestBlockButton, TableCellMergeButton, TextAlignButton, UnnestBlockButton, useBlockNoteEditor, useComponentsContext } from "@blocknote/react";
 import LinkDialog from "./LinkDialog";
 import { useState } from "react";
 import { Link, Sparkle } from "lucide-react";
+import { notebookSchema } from "@/app/dashboard/class/[id]/notebooks/[noteId]/(components)/(notebook)/NotebookSchema";
 
 export default function CustomFormattingToolbar() {
     const Components = useComponentsContext();
-    const editor = useBlockNoteEditor();
+    const editor = useBlockNoteEditor(notebookSchema);
     const [showLinkDialog, setShowLinkDialog] = useState(false);
     if (!Components) {
         throw new Error("Comoponents context is not available. Please ensure that you have wrapped your application with the ShadCNComponentsProvider.");
     }
+    const blockTypeItems = blockTypeSelectItems(editor.dictionary).map((item) =>
+        item.type === "heading" && item.props?.level === 6 && item.props?.isToggleable === false
+            ? { ...item, name: "Subtitle" }
+            : item,
+    );
     return <FormattingToolbar>
-        <BlockTypeSelect key={"blockTypeSelect"} />
+        <BlockTypeSelect key={"blockTypeSelect"} items={blockTypeItems} />
         <TableCellMergeButton key={"tableCellMergeButton"} />
 
         <FileCaptionButton key={"fileCaptionButton"} />

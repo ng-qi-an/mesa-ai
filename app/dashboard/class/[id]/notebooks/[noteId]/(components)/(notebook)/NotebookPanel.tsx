@@ -5,19 +5,13 @@ import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/
 import { Separator } from "@/components/ui/separator";
 import { Spinner } from "@/components/ui/spinner";
 import { TypographyLead } from "@/components/ui/typography/lead";
-import { Cloud, CloudSync, Moon, Notebook, Settings2, Sparkle, Sparkles, StopCircle, Sun, X } from "lucide-react";
+import { Notebook, Sparkles, StopCircle, X } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useRef, useState } from "react";
-import { slugify } from "./SectionsPanel";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { slugify } from "../SectionsPanel";
 import { useNotebook } from "@/components/providers/notebook-provider";
-import { useGenerateNotes } from "../(actions)/generateNotes";
-import NoteSettingsDialog from "./(modals)/NoteSettingsDialog";
 import { useTheme } from "next-themes";
-import checkFileStoreMatch from "../(actions)/checkFileStoreMatch";
 import { useNextStep } from "nextstepjs";
-import { useIsMobile } from "@/hooks/use-mobile";
-import SoftAurora from "@/components/SoftAurora";
 // Blocknote
 import "@blocknote/core/fonts/inter.css";
 import { BlockNoteView } from "@blocknote/shadcn";
@@ -26,13 +20,13 @@ import "@blocknote/shadcn/style.css";
 // Tiptap
 import 'katex/dist/katex.min.css'
 import saveNotebookBlocks from "@/lib/actions/notebook/saveNotebookBlocks";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { migrateDollarMathToInlineMath } from "./(notebook)/mathExtensionUtils";
+import { migrateDollarMathToInlineMath } from "./mathExtensionUtils";
 import {AIExtension} from "@blocknote/xl-ai";
 import CustomFormattingToolbar from "@/components/editor/CustomFormattingToolbar";
 import { FormattingToolbarController, LinkToolbarController } from "@blocknote/react";
 import CustomLinkToolbar from "@/components/editor/CustomLinkToolbar";
 import BottomActionToolbar from "@/components/editor/BottomActionToolbar";
+import NewNotebookDialog from "../(modals)/NewNotebookModal";
 
 export default function NotebookPanel(){
     const noteCtx = useNotebook()
@@ -154,6 +148,7 @@ export default function NotebookPanel(){
         }
     }, [noteCtx.isMetaLoading, editor])
     return  noteCtx && <> 
+        <NewNotebookDialog/>
         <div className="h-full gap-2 flex flex-col w-full overflow-hidden relative bg-card">
             { showOutdatedSources && <Card size="sm" className={`absolute right-0 bottom-[-110px] hover:bottom-0 transition-all z-[60] bg-card/90 backdrop-blur-lg rounded-b-none border-b-0 border-l-0 w-[300px]`}>
                 <CardHeader>
@@ -174,14 +169,10 @@ export default function NotebookPanel(){
                 </CardFooter>
             </Card>}
             <div ref={contentRef} className={`h-full overflow-auto pb-4 pt-4  ${useLightNotebookTheme ? "light" : "dark"} min-w-full`}>
-                <div className="px-10 pt-4 pb-4">
-                    <h1 className="text-4xl font-bold mb-6" id={slugify(noteCtx?.metaObject?.header || "")}>{noteCtx?.metaObject?.header}</h1>
-                    <TypographyLead>{noteCtx?.metaObject?.subtitle}</TypographyLead>
-                    <Separator className="mt-4"/>
-                </div>
                 <BlockNoteView
                     theme={useLightNotebookTheme ? "light" : "dark"}
                     className={useLightNotebookTheme ? "light" : "dark"}
+                    autoFocus
                     editor={editor}
                     editable={!noteCtx.isGenerating && !noteCtx.isEmbeddingImages && editorMode === "editing"}
                     shadCNComponents={{
@@ -223,7 +214,7 @@ export default function NotebookPanel(){
             <div className="absolute bottom-0 left-0 w-full bg-gradient-to-t from-card to-card/0 animate-movingGradient z-[60] items-end pb-6 flex justify-center pointer-events-none">
             </div>
             </>} */}
-            {(noteCtx.isMetaLoading || noteCtx.notesStatus == "submitted" || noteCtx.blocks.length == 0 || !noteCtx.metaObject?.header) && <div className="h-full overflow-hidden absolute top-0 left-0 w-full bg-card z-[50]">
+            {(noteCtx.isMetaLoading || noteCtx.notesStatus == "submitted" || noteCtx.showNotebookCreate) && <div className="h-full overflow-hidden absolute top-0 left-0 w-full bg-card z-[50]">
                 {noteCtx?.metaObject && noteCtx.isGenerating && <div className="flex flex-col absolute items-center justify-center top-0 left-0 h-full w-full">
                     <p className="w-[80%] gap-10 text-justify leading-10 overflow-hidden">
                         {noteCtx.metaObject.topics?.filter((topic): topic is string => topic !== undefined).map((topic:string, index:number)=> {
@@ -255,7 +246,7 @@ export default function NotebookPanel(){
                                 <Notebook className="text-muted-foreground" />
                             </EmptyMedia>
                             <EmptyTitle className="text-foreground/90">No notes yet</EmptyTitle>
-                            <EmptyDescription>Press the generate button to create notes using your sources.</EmptyDescription>
+                            <EmptyDescription>Interact with the create new dialog.</EmptyDescription>
                         </EmptyHeader>
                     }
                 </Empty>
@@ -263,21 +254,12 @@ export default function NotebookPanel(){
             <AnimatePresence mode="wait">
                 <motion.div key={noteCtx?.isContentGenerating ? 'stopGeneratingButton' : 'generateButton'} initial={{scale: 0.95, opacity: 0}} animate={{scale: 1, opacity: 1}} exit={{scale: 0.95, opacity: 0}} className="absolute bottom-2 left-0 w-full flex px-4 justify-center z-[80] pb-4">
                     
-                    {noteCtx?.isGenerating ? (noteCtx?.isContentGenerating ?
+                    {noteCtx?.isGenerating && (noteCtx?.isContentGenerating ?
                         <Button variant={noteCtx.notesStatus == "streaming" ? 'raised' : "secondaryRaised"} size="lg" className="px-4" onClick={() => noteCtx?.stopGeneration()}>
                             <StopCircle/>
                             Stop generating
                         </Button>
                     : <></>)
-                    : (!noteCtx?.metaObject || !noteCtx.metaObject.header || !noteCtx.isGenerating && noteCtx.blocks.length === 0) && <Button variant={'raised'} disabled={noteCtx!.files.length < 1} size={'lg'} className="px-4" onClick={() => {
-                        noteCtx?.setShowGenerateNotesDialog(true);
-                        if (currentTour == "onboarding"){
-                            setCurrentStep(10, 100);
-                        }
-                    }}>
-                        <Sparkles/>
-                        Generate notes
-                    </Button>
                     }
                 </motion.div>
             </AnimatePresence>

@@ -8,7 +8,10 @@ import { and, eq } from "drizzle-orm";
 import { headers } from "next/headers";
 
 
-export default async function saveNotebookBlocks(noteId: string, {markdown, blocks}: {markdown?: string, blocks?: any[]}) {
+export default async function saveNotebookBlocks(
+    noteId: string,
+    {markdown, blocks}: {markdown?: string, blocks?: unknown[]},
+) {
     const session  =  await auth.api.getSession({
         headers: await headers()
     });
@@ -21,7 +24,8 @@ export default async function saveNotebookBlocks(noteId: string, {markdown, bloc
     const editor = ServerBlockNoteEditor.create({
         schema: notebookSchemaServer
     })
-    var finalBlocks = blocks || [];
+    let finalBlocks: Parameters<typeof editor.blocksToMarkdownLossy>[0] =
+        (blocks as Parameters<typeof editor.blocksToMarkdownLossy>[0]) || [];
     if (markdown){
         finalBlocks = await editor.tryParseMarkdownToBlocks(markdown) || [];
     }

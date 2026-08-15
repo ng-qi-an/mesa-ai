@@ -38,6 +38,8 @@ export type NotebookContextType = {
     mainChatId: string | null;
     setMainChatId: (id: string | null) => void;
     name: string;
+    showNotebookCreate: boolean;
+    setShowNotebookCreate: (show: boolean) => void;
     editor: BlockNoteEditor<any, any, any>;
     blocks: any[];
     setBlocks: (blocks: any[]) => void;
@@ -138,6 +140,7 @@ export default function NotebookProvider({children, data}: {children: React.Reac
     //     _setCache({name, fileIds});
     // };
     const [name, setName] = useState(data.name);
+    const [showNotebookCreate, setShowNotebookCreate] = useState(data.showNotebookCreate);
     const [files, setFiles] = useState<FileSelect[]>(data.files || []);
     const [blocks, setBlocks] = useState<any[]>(data.blocks || []);
     const [mainChatId, setMainChatId] = useState<string | null>(null);
@@ -291,6 +294,8 @@ export default function NotebookProvider({children, data}: {children: React.Reac
             mainChatId,
             setMainChatId,
             subject: _class.subject,
+            showNotebookCreate,
+            setShowNotebookCreate,
             editor: editor,
             blocks: blocks,
             setBlocks: setBlocks,

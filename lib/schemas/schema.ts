@@ -76,6 +76,7 @@ export const notebook = pgTable("notebook", {
     name: text("name").notNull(),
     title: text("title"),
     subtitle: text("subtitle"),
+    showNotebookCreate: boolean("show_notebook_create").notNull().default(true),
     topicWeights: jsonb("topic_weights").$type<{[key: string]: number}>(),
     length: text("length"),
     instructions: text("instructions"),

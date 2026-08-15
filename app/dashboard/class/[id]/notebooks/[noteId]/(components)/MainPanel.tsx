@@ -2,7 +2,7 @@
 import { useTabs } from "@/components/providers/tabs-provider";
 import { TabItem } from "./(tabbar)/TabItem";
 import { TabList } from "./(tabbar)/TabList";
-import NotebookPanel from "./NotebookPanel";
+import NotebookPanel from "./(notebook)/NotebookPanel";
 import { Button } from "@/components/ui/button";
 import { Sidebar } from "lucide-react";
 import { useSidebar } from "@/components/ui/sidebar";

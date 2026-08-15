@@ -52,9 +52,12 @@ export const defaultNotesInstructions = (length: string, subject: keyof typeof a
     ## Subject specific guidelines
     ${availableSubjects[subject].instructions.notebook}
     ## Formatting Guidelines
-    ### No title!
-    - The title and summary of the note is already provided and should not be repeated in the content.
-    - Start directly with the first topic heading. Do not provide a summary or introduction paragraph.
+    ###  Title
+    - Start off your notes with a title, formatted as a Heading 1, and a subtitle, formatted as a heading 4. After the header, add a horizontal divider, denoted by "---".
+    - How to write a header: 3-7 words capturing the core subject. Be specific: "Cell Division Mechanisms" not "Biology Notes",
+    - How to write a subtitle: One sentence describing what the reader will learn (Under 20 words)
+    - Do not provide a summary or introduction paragraph after this.
+    
     ### Length-specific guidelines
     ${lengthModeGuidelines(length)}
     ### Writing Style

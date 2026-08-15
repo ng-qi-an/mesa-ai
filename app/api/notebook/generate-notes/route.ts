@@ -4,6 +4,7 @@ import { headers } from 'next/headers';
 import { notebookModels } from '@/lib/utils/models';
 import { db } from '@/lib/db';
 import constructProvider from '@/lib/utils/constructProvider';
+import SaveToNotebook from '@/app/dashboard/class/[id]/notebooks/[noteId]/(actions)/saveToNotebook';
 
 // Allow streaming responses up to 5 minutes
 export const maxDuration = 300;
@@ -31,7 +32,7 @@ export async function POST(req: Request) {
     }
     const topicWeights = context.topicWeights!
     const raw = await db.query.notebook.findFirst({
-        columns: {},
+        columns: {title: true, subtitle: true },
         where: (notebook, {eq, and})=> and(eq(notebook.id, context.id), eq(notebook.userId, session.user.id)),
         with: {
             files: {
@@ -44,13 +45,12 @@ export async function POST(req: Request) {
         }
     })
     const files = raw ? raw.files.map(f => f.file) : [];
-
     console.log("Using topic weights:", topicWeights);
     console.log("Using notebook:", context.id);
     console.log("Generating notes for user:", session.user.id);
     const result = streamText({
         model: constructProvider(notebookModels[0]).chat(notebookModels[0].name), // "google/gemini-3-flash-preview",
-        system: `You are an intelligent note-taking assistant that will generate structured notes. To guide your notes, you will be provided with files. You will use those files, in conjunction with the user's instructions, to generate a set of content-guided structred notes.
+        system: `You are an intelligent note-taking assistant that will generate structured notes. To guide your notes, you will be provided with files. You will use those files, in conjunction with the user's instructions, to generate a set of content-guided structured notes.
         ## File sources
         Below are the files the user uploaded as sources. Use them to ground your note generation and ensure all notes are supported by the content in these files.
         ${files.map(f => `### ${f.name} (${f.contentType})\n\n${f.markdown}`).join("\n\n")}
@@ -58,6 +58,10 @@ export async function POST(req: Request) {
         messages: await convertToModelMessages(context.messages),
         // reasoning: "minimal"
     });
-    return result.toUIMessageStreamResponse();
+    return result.toUIMessageStreamResponse({
+        onFinish: async()=>{
+            await SaveToNotebook(context.id, {showNotebookCreate: false});
+        }
+    });
 
 }
