@@ -12,6 +12,7 @@ import { fileChunks, FileChunkSelect } from "@/lib/schemas/schema";
 import constructProvider from "@/lib/utils/constructProvider";
 import { summaryModels } from "@/lib/utils/models";
 import { generateText } from "ai";
+import extractImages from "@/lib/rag-actions/extractImages";
 
 export async function POST(req: Request, { params }: { params: Promise<{ fileId: string }> }) {
     const { fileId } = await params;
@@ -50,7 +51,7 @@ export function createProcessingStream(fileId: string, streamId: string) {
             await db.update(files).set({ status, streamId: (status == "processed" || status == "error") ? null : streamId }).where(eq(files.id, fileId));
             controller.enqueue(`data: ${JSON.stringify({ status })}\n\n`); // plain string now
         };
-        const file = await db.select({contentType: files.contentType}).from(files).where(eq(files.id, fileId)).then((res) => res[0]);
+        const file = await db.select({contentType: files.contentType, userId: files.userId}).from(files).where(eq(files.id, fileId)).then((res) => res[0]);
         console.log("[FILE PROCESSING] Starting processing for file:", fileId, "with content type:", file.contentType);
         try {
           // Begin embedding files
@@ -60,6 +61,11 @@ export function createProcessingStream(fileId: string, streamId: string) {
             throw new Error("Failed to parse markdown from file");
           }
           markdown = markdown.replace(/\u0000/g, "");
+          var images: { summary: string, id: string }[] = [];
+          if (file.contentType === "application/pdf") {
+            console.log("[FILE PROCESSING] Extracting embedded images from PDF file");
+            images = await extractImages({contentType: file.contentType, fileId, userId: file.userId});
+          }
           
           // After getting the markdown, split the text into chunks
           await send("chunking");
@@ -102,7 +108,7 @@ export function createProcessingStream(fileId: string, streamId: string) {
             },
           });
           console.log("📝 Generated file summary,", `${summary.text.split(" ").length} words`);
-          await db.update(files).set({summary: summary.text, markdown: markdown }).where(eq(files.id, fileId));
+          await db.update(files).set({summary: summary.text, markdown: markdown, images: images }).where(eq(files.id, fileId));
           console.log("⭐ Finished processing file:", fileId, "and saved summary!");
           await send("processed");
         } catch (err) {

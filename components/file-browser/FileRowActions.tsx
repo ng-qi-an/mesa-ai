@@ -93,7 +93,7 @@ export default function FileRowActions({file}: {file: FileSelect}) {
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
                 <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                {file.contentType != "application/x-directory" && status == "uploaded" && <>
+                {file.contentType != "application/x-directory" && (status == "uploaded" || status == "error") && <>
                     <DropdownMenuItem onClick={()=>{
                         start();
                     }}>Retry index</DropdownMenuItem>

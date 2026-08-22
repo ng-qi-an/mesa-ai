@@ -24,7 +24,7 @@ export default function QuizCreateDialog({ open, setOpen, onCreated }: { open: b
     const [creating, setCreating] = useState(false);
     const dialogContentRef = useRef<HTMLDivElement | null>(null);
     const [name, setName] = useState("");
-    const [selectedTopics, setSelectedTopics] = useState<string[]>(Object.keys(noteCtx.topicWeights));
+    const [selectedTopics, setSelectedTopics] = useState<string[]>([]);
     const [focusTopicCombobox, setFocusTopicCombobox] = useState(false);
     const [topicComboboxInputValue, setTopicComboboxInputValue] = useState("");
     const [difficulty, setDifficulty] = useState("normal");
@@ -66,8 +66,8 @@ export default function QuizCreateDialog({ open, setOpen, onCreated }: { open: b
                         </Field>
                         <Field>
                             <FieldLabel>Topics</FieldLabel>
-                            <Combobox required onOpenChange={(x)=> setFocusTopicCombobox(x)} inputValue={focusTopicCombobox ? topicComboboxInputValue : (selectedTopics.length == Object.keys(noteCtx.topicWeights).length ? "All" : selectedTopics.length == 0 ? "None" : `${selectedTopics.length} selected`)} onInputValueChange={setTopicComboboxInputValue} value={selectedTopics} onValueChange={setSelectedTopics} multiple autoHighlight defaultValue={Object.keys(noteCtx.topicWeights)} items={Object.keys(noteCtx.topicWeights)}>
-                                <ComboboxInput aria-invalid={selectedTopics.length === 0} placeholder={(selectedTopics.length == Object.keys(noteCtx.topicWeights).length ? "All" : selectedTopics.length == 0 ? "None" : `${selectedTopics.length} selected`)} />
+                            <Combobox required onOpenChange={(x)=> setFocusTopicCombobox(x)} inputValue={focusTopicCombobox ? topicComboboxInputValue : (selectedTopics.length == Object.keys([]).length ? "All" : selectedTopics.length == 0 ? "None" : `${selectedTopics.length} selected`)} onInputValueChange={setTopicComboboxInputValue} value={selectedTopics} onValueChange={setSelectedTopics} multiple autoHighlight defaultValue={Object.keys([])} items={Object.keys([])}>
+                                <ComboboxInput aria-invalid={selectedTopics.length === 0} placeholder={(selectedTopics.length == Object.keys([]).length ? "All" : selectedTopics.length == 0 ? "None" : `${selectedTopics.length} selected`)} />
                                 <ComboboxContent portalContainer={dialogContentRef.current ?? undefined}>
                                     <ComboboxEmpty>No items found.</ComboboxEmpty>
                                     <ComboboxList>

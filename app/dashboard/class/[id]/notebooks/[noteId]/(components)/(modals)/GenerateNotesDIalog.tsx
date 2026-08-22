@@ -1,17 +1,14 @@
 import { useNotebook } from "@/components/providers/notebook-provider";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Textarea } from "@/components/ui/textarea";
 import { useState } from "react";
-import { useGenerateMeta } from "../../(actions)/useGenerateMeta";
-import { Field, FieldContent, FieldDescription, FieldLabel, FieldSet, FieldTitle } from "@/components/ui/field";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useNextStep } from "nextstepjs";
 import GenerateNotesDialogContent from "./GenerateNotesDialogContent";
+import { useGenerateNotes } from "../../(actions)/generateNotes";
 
 export default function GenerateNotesDialog(){
     const noteCtx = useNotebook();
-    const {generateMeta} = useGenerateMeta();
+    const { generateNotes } = useGenerateNotes();
     const [instructions, setInstructions] = useState(noteCtx?.instructions || "");
     const [length, setLength] = useState(noteCtx?.length || "balanced");
     const {currentTour, setCurrentStep} = useNextStep();
@@ -36,7 +33,7 @@ export default function GenerateNotesDialog(){
                         noteCtx.setInstructions(instructions);
                         noteCtx.setLength(length);
                         noteCtx.setShowGenerateNotesDialog(false);
-                        generateMeta({instructions, files: noteCtx.files, length});
+                        generateNotes({instructions, length});
                         if (currentTour == "onboarding"){
                             setCurrentStep(11);
                         }

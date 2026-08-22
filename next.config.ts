@@ -10,6 +10,9 @@ const nextConfig: NextConfig = {
   serverExternalPackages: [
     "@blocknote/react",
     "@blocknote/server-util",
+    "@napi-rs/canvas",
+    "pdf-parse",
+    "pdfjs-dist",
   ],
   experimental: {
     serverActions: {

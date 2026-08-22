@@ -8,7 +8,6 @@ import { useNotebook } from "../providers/notebook-provider";
 import { Button } from "../ui/button";
 import { useEffect, useState } from "react";
 import checkFileStoreMatch from "@/app/dashboard/class/[id]/notebooks/[noteId]/(actions)/checkFileStoreMatch";
-import NoteSettingsDialog from "@/app/dashboard/class/[id]/notebooks/[noteId]/(components)/(modals)/NoteSettingsDialog";
 import { useTheme } from "next-themes";
 import { Spinner } from "../ui/spinner";
 import { AnimatePresence, motion } from "framer-motion";
@@ -23,7 +22,6 @@ export default function BottomActionToolbar({editor, savingBlocks, forceLightNot
         {label: "Viewing", value: "viewing", description: "Read the content without editing.", icon: Eye},
     ]
     const [showOutdatedSources, setShowOutdatedSources] = useState(false);
-    const [showNoteSettings, setShowNoteSettings] = useState(false);
     const { resolvedTheme } = useTheme();
     const {_class} = useClass();
     useEffect(()=>{
@@ -32,7 +30,6 @@ export default function BottomActionToolbar({editor, savingBlocks, forceLightNot
     editor.isEditable
 
     return <>
-    <NoteSettingsDialog open={showNoteSettings} onOpenChange={setShowNoteSettings}/>
     <AnimatePresence>
         <div className={cn(_class.theme, "flex justify-center absolute z-20 bottom-2 left-0 w-full px-2")}>
             {!noteCtx.isGenerating && <motion.div initial={{y: 50, scale: 0.9, opacity: 0}} animate={{y: 0, scale: 1, opacity: 1}} exit={{y: 50, scale: 0.9, opacity: 0}} className="bg-card/80 backdrop-blur-lg rounded-lg border p-1 px-2 w-max max-w-[600px] flex items-center gap-2">
@@ -49,20 +46,6 @@ export default function BottomActionToolbar({editor, savingBlocks, forceLightNot
                     </TooltipTrigger>
                     <TooltipContent side="top">
                         <p>Generate new notes</p>
-                    </TooltipContent>
-                </Tooltip>
-                <Tooltip>
-                    <TooltipTrigger asChild>
-                        <span className="inline-block w-fit">
-                            <Button disabled={noteCtx.blocks.length === 0 || noteCtx?.isGenerating} onClick={()=> {
-                                setShowNoteSettings(true);
-                            }} size={'icon-sm'} className="text-muted-foreground" variant={'ghost'}>
-                                <Settings2/>
-                            </Button>
-                        </span>
-                    </TooltipTrigger>
-                    <TooltipContent side="top">
-                        {noteCtx.isGenerating ? "Can't edit while generating" : "Customize content"}
                     </TooltipContent>
                 </Tooltip>
                 <Tooltip>

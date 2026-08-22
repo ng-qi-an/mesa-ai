@@ -68,7 +68,12 @@ export const notebookModels: Model[] = [
 ]
 
 export const chatModels: Model[] = [
-   
+    {
+        name: "google/gemini-3.7-flash",
+        label: "Gemini 3.7 Flash",
+        priceMultiplier: 1,
+        provider: "openrouter",
+    },
     {
         name: "google/gemini-3-flash-preview",
         label: "Gemini 3 Flash",

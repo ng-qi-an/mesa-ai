@@ -1,18 +1,15 @@
-import { useClass } from "@/components/providers/class-provider";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Field, FieldLabel } from "@/components/ui/field";
 import { ArrowRight, ChevronLeft, PenLine, Sparkles } from "lucide-react";
-import { Dosis } from "next/font/google";
-import { VisuallyHidden } from "radix-ui";
 import { useState } from "react";
 import { addNotebookFiles } from "../../(actions)/addNotebookFiles";
 import { useNotebook } from "@/components/providers/notebook-provider";
 import FileSelectorDialog from "@/components/file-browser/dialogs/FileSelectorDialog";
 import GenerateNotesDialogContent from "./GenerateNotesDialogContent";
-import { useGenerateMeta } from "../../(actions)/useGenerateMeta";
 import saveToNotebook from "../../(actions)/saveToNotebook";
+import { useGenerateNotes } from "../../(actions)/generateNotes";
 
 export default function NewNotebookDialog(){
     const [choice, setChoice] = useState("generate");
@@ -21,7 +18,7 @@ export default function NewNotebookDialog(){
     const [length, setLength] = useState("balanced");
     const [instructions, setInstructions] = useState("");
     const noteCtx = useNotebook();
-    const {generateMeta} = useGenerateMeta();
+    const { generateNotes } = useGenerateNotes();
     return <>
         <FileSelectorDialog open={showFileSelector} setOpen={setShowFileSelector} onConfirm={async(files) => {
             const finalFiles = files.filter((file)=> noteCtx.files.every((f) => f.id !== file.id))
@@ -72,7 +69,7 @@ export default function NewNotebookDialog(){
                         if (pickedFiles){
                             noteCtx.setInstructions(instructions);
                             noteCtx.setLength(length);
-                            generateMeta({instructions, files: noteCtx.files, length});
+                            generateNotes({instructions, length});
                             noteCtx.setShowNotebookCreate(false);
                         } else if (choice === "generate"){
                             setShowFileSelector(true);

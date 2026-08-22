@@ -50,6 +50,7 @@ export const files = pgTable("files", {
     contentType: text("content_type").notNull(),
     summary: text("summary"),
     markdown: text("markdown"),
+    images: jsonb("images").$type<{summary: string, id: string}[]>(),
     dateCreated: timestamp("date_created").notNull().defaultNow(),
     dateModified: timestamp("date_modified").notNull().defaultNow(),
 })

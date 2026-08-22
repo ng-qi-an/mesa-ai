@@ -121,9 +121,9 @@ export default function NotebookPanel(){
 
     // Track which heading is visible using IntersectionObserver
     useEffect(() => {
-        if (noteCtx?.notesHistory.length <= 1 || !contentRef.current || !editor) return;
+        if (!noteCtx.notesObject || !contentRef.current || !editor) return;
         try {
-            const markdown = noteCtx?.getActualNotes(noteCtx.notesHistory)
+            const markdown = noteCtx.notesObject.notes;
             if (!markdown) return;
             console.log("Turning markdown into blocks")
             const blocks = editor.tryParseMarkdownToBlocks(markdown);
@@ -135,18 +135,18 @@ export default function NotebookPanel(){
         } catch (error) {
             console.error("Error occurred while updating blocks:", error);
         }
-    }, [noteCtx?.notesHistory, editor])
+    }, [noteCtx.notesObject, editor])
     
-    useEffect(()=>{
-        if (noteCtx.isMetaLoading && editor){
-            console.log("Loading meta and resetting editor")
-            try {
-                editor.replaceBlocks(editor.document, []);
-            } catch (error) {
-                console.error("Error occurred while resetting editor:", error);
-            }
-        }
-    }, [noteCtx.isMetaLoading, editor])
+    // useEffect(()=>{
+    //     if (noteCtx.isMetaLoading && editor){
+    //         console.log("Loading meta and resetting editor")
+    //         try {
+    //             editor.replaceBlocks(editor.document, []);
+    //         } catch (error) {
+    //             console.error("Error occurred while resetting editor:", error);
+    //         }
+    //     }
+    // }, [noteCtx.isMetaLoading, editor])
     return  noteCtx && <> 
         <NewNotebookDialog/>
         <div className="h-full gap-2 flex flex-col w-full overflow-hidden relative bg-card">
@@ -214,14 +214,7 @@ export default function NotebookPanel(){
             <div className="absolute bottom-0 left-0 w-full bg-gradient-to-t from-card to-card/0 animate-movingGradient z-[60] items-end pb-6 flex justify-center pointer-events-none">
             </div>
             </>} */}
-            {(noteCtx.isMetaLoading || noteCtx.notesStatus == "submitted" || noteCtx.showNotebookCreate) && <div className="h-full overflow-hidden absolute top-0 left-0 w-full bg-card z-[50]">
-                {noteCtx?.metaObject && noteCtx.isGenerating && <div className="flex flex-col absolute items-center justify-center top-0 left-0 h-full w-full">
-                    <p className="w-[80%] gap-10 text-justify leading-10 overflow-hidden">
-                        {noteCtx.metaObject.topics?.filter((topic): topic is string => topic !== undefined).map((topic:string, index:number)=> {
-                            return <motion.span layout initial={{opacity: 0}} animate={{opacity: index % 2 == 0 ? 0.15 : 0.3}} key={index} className={`sm:text-2xl md:text-3xl lg:text-4xl xl:text-5xl 2xl:text-6xl text-muted-foreground font-bold break-all ${(index % 2 ? "pulse-darker" : "pulse-lighter")} `}> {topic}</motion.span>
-                        })}
-                    </p>    
-                </div>}
+            {(noteCtx.notesStatus == "submitted" || noteCtx.showNotebookCreate) && <div className="h-full overflow-hidden absolute top-0 left-0 w-full bg-card z-[50]">
                 <Empty className="h-full absolute z-10 top-0 left-0 w-full bg-card/80">
                     {noteCtx?.isStoringFiles ?
                         <EmptyHeader className="">
@@ -229,13 +222,7 @@ export default function NotebookPanel(){
                             <EmptyTitle className="text-foreground/90 mt-2">Uploading files..</EmptyTitle>
                             <EmptyDescription>Extracting text and images...</EmptyDescription>
                         </EmptyHeader>
-                    : noteCtx?.isMetaLoading ?
-                        <EmptyHeader className="">
-                            <Spinner className="text-muted-foreground size-6" />
-                            <EmptyTitle className="text-foreground/90 mt-2">Generating topics..</EmptyTitle>
-                            <EmptyDescription>{(!noteCtx.metaObject || !noteCtx.metaObject.topics) ? "Hang tight while we analyze your sources and come up with relevant topics." : `Generated ${Object.keys(noteCtx.metaObject.topics).length}/${Math.max(8, Object.keys(noteCtx.metaObject.topics).length)} topics`}</EmptyDescription>
-                        </EmptyHeader>
-                    : noteCtx?.isNotesLoading ?
+                    : noteCtx.notesStatus == "submitted" ?
                         <EmptyHeader>
                             <Spinner className="text-muted-foreground size-6" />
                             <EmptyTitle className="text-foreground/90 mt-2">Writing notes..</EmptyTitle>
@@ -253,9 +240,8 @@ export default function NotebookPanel(){
             </div>}
             <AnimatePresence mode="wait">
                 <motion.div key={noteCtx?.isContentGenerating ? 'stopGeneratingButton' : 'generateButton'} initial={{scale: 0.95, opacity: 0}} animate={{scale: 1, opacity: 1}} exit={{scale: 0.95, opacity: 0}} className="absolute bottom-2 left-0 w-full flex px-4 justify-center z-[80] pb-4">
-                    
                     {noteCtx?.isGenerating && (noteCtx?.isContentGenerating ?
-                        <Button variant={noteCtx.notesStatus == "streaming" ? 'raised' : "secondaryRaised"} size="lg" className="px-4" onClick={() => noteCtx?.stopGeneration()}>
+                        <Button variant={noteCtx.isContentGenerating ? 'raised' : "secondaryRaised"} size="lg" className="px-4" onClick={() => noteCtx.notesStop()}>
                             <StopCircle/>
                             Stop generating
                         </Button>
