@@ -1,7 +1,13 @@
 // schema.server.ts — used by ServerBlockNoteEditor
-import { createInlineContentSpec, BlockNoteSchema, defaultInlineContentSpecs } from "@blocknote/core";
+import {
+  createInlineContentSpec,
+  BlockNoteSchema,
+  defaultInlineContentSpecs,
+  defaultStyleSpecs,
+} from "@blocknote/core";
 import katex from "katex";
 import { InlineMathContentSpec } from "./contentSpecs";
+import { typographySubtitleServerStyle } from "./TypographySubtitleServerStyle";
 
 export const InlineMathServer = createInlineContentSpec(
   InlineMathContentSpec,    
@@ -24,4 +30,8 @@ export const InlineMathServer = createInlineContentSpec(
 
 export const notebookSchemaServer = BlockNoteSchema.create({
   inlineContentSpecs: { ...defaultInlineContentSpecs, inlineMath: InlineMathServer },
+  styleSpecs: {
+    ...defaultStyleSpecs,
+    typographySubtitle: typographySubtitleServerStyle,
+  },
 });

@@ -46,7 +46,7 @@ export default function TabsProvider({children}: {children: React.ReactNode}) {
         side: [],
     });
     const [selectedMainTab, setSelectedMainTab] = useState<string>("notebook");
-    const [selectedSideTab, setSelectedSideTab] = useState<string>("library");
+    const [selectedSideTab, setSelectedSideTab] = useState<string>("chat");
 
     function getFallbackTab(group: "main" | "side", items: TabItemType[]) {
         return items.length > 0 ? items[items.length - 1].id : group === "main" ? "notebook" : "library";

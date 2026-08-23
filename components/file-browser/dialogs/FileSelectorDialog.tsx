@@ -13,6 +13,7 @@ import { useClass } from "@/components/providers/class-provider";
 import revalidateBrowserInnerAction from "./revalidateMoveAction";
 import CreateNewButton from "../CreateNewButton";
 import { useNextStep } from "nextstepjs";
+import { toast } from "sonner";
 
 export default function FileSelectorDialog({ open, setOpen, onConfirm }: { open: boolean, setOpen: (open: boolean) => void, onConfirm: (files: FileBrowserItem[]) => void }) {
     const [nests, setNests] = useState<FileSelect[]>([]);
@@ -74,6 +75,9 @@ export default function FileSelectorDialog({ open, setOpen, onConfirm }: { open:
                                 if (file.contentType == "application/x-directory") {
                                     setNests([...nests, file])
                                 } else {
+                                    if (file.status !== "processed"){
+                                        return toast.error("File cannot be selected until processed.")
+                                    }
                                     if (selectedFiles.some(f=>f.id == file.id)){
                                         setSelectedFiles(selectedFiles.filter(f=>f.id != file.id && f.contentType != "application/x-directory"));
                                     } else {

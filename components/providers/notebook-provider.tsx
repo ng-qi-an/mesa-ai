@@ -1,15 +1,12 @@
 'use client';
-import { noteMetaSchema } from "@/app/api/notebook/schema";
+import { generateNoteSchema, GenerateNoteSchemaType } from "@/app/api/notebook/schema";
 import { embedImages } from "@/app/dashboard/class/[id]/notebooks/[noteId]/(actions)/embedImages";
-import { defaultNotesInstructions, generateNotes } from "@/app/dashboard/class/[id]/notebooks/[noteId]/(actions)/generateNotes";
-import { experimental_useObject, useChat } from "@ai-sdk/react";
-import { ChatStatus, DeepPartial, DefaultChatTransport, generateId, UIMessage } from "ai";
+import { experimental_useObject } from "@ai-sdk/react";
+import { DeepPartial } from "ai";
 import { useContext, useEffect, useRef, useState } from "react";
-import { NoteMetaType } from "@/app/api/notebook/schema";
 import { createContext } from "react";
 import { FileSelect, NotebookSelect } from "@/lib/schemas/schema";
 import { useParams } from "next/navigation";
-import SaveToNotebook from "@/app/dashboard/class/[id]/notebooks/[noteId]/(actions)/saveToNotebook";
 import { useClass } from "./class-provider";
 import { availableSubjects } from "@/lib/subjects/subjectsList";
 import saveNotebookBlocks from "@/lib/actions/notebook/saveNotebookBlocks";
@@ -38,6 +35,8 @@ export type NotebookContextType = {
     mainChatId: string | null;
     setMainChatId: (id: string | null) => void;
     name: string;
+    showNotebookCreate: boolean;
+    setShowNotebookCreate: (show: boolean) => void;
     editor: BlockNoteEditor<any, any, any>;
     blocks: any[];
     setBlocks: (blocks: any[]) => void;
@@ -46,8 +45,6 @@ export type NotebookContextType = {
     files: FileSelect[];
     sourceFiles: string[];
     setSourceFiles: (fileIds: string[]) => void;
-    // setCache: (name: string, fileIds: string[]) => void;
-    // cache: {name: string, fileIds: string[]} | null;
     setFiles: (files: FileSelect[] | ((files: FileSelect[]) => FileSelect[])) => void;
     activeSection: string | null;
     setActiveSection: (section: string | null) => void;
@@ -55,28 +52,18 @@ export type NotebookContextType = {
     setLength: (length: string) => void;
     instructions: string;
     setInstructions: (instructions: string) => void;
-    topicWeights: Record<string, number>;
-    setTopicWeights: (weights: Record<string, number>) => void;
-    getActualNotes: (history: UIMessage[]) => string;
-    stopGeneration: () => void;
     // AI States
-    metaObject: DeepPartial<NoteMetaType> | undefined;
-    setMetaObject: (metaObject: DeepPartial<NoteMetaType> | undefined) => void;
-    metaSubmit: (input: any) => void;
-    metaStop: () => void;
-    notesHistory: UIMessage[],
-    setNotesHistory: (messages: UIMessage[]) => void
-    sendNotesFollowup: (message: { text: string }, options?: { body?: { topicWeights?: Record<string, number>, cacheName?: string } }) => void;
-    notesStop: () => Promise<void>;
+    notesObject: DeepPartial<GenerateNoteSchemaType> | undefined;
+    setNotesObject: (object: DeepPartial<GenerateNoteSchemaType> | undefined) => void;
+    notesStatus: "submitted" | "generating" | "error" | "idle";
+    notesSubmit: (data: {id: string, length: string, instructions: string}) => void;
+    notesStop: () => void;
+    notesClear: () => void;
+    setNotesStatus: (status: "submitted" | "generating" | "error" | "idle") => void;
     // Loading
-    isNotesLoading: boolean;
-    isMetaLoading: boolean;
     isEmbeddingImages: boolean;
     isStoringFiles: boolean;
     setIsStoringFiles: (storing: boolean) => void;
-    // isCacheLoading: boolean;
-    // setIsCacheLoading: (loading: boolean) => void;
-    notesStatus: ChatStatus;
     isContentGenerating: boolean;    
     isGenerating: boolean;
 };
@@ -110,6 +97,9 @@ export default function NotebookProvider({children, data}: {children: React.Reac
             ...en,
             ai: aiEn, // add default translations for the AI extension
         },
+        links: {
+            onClick: () => true,
+        },
         _tiptapOptions: {
             extensions: [InlineMathInputRule],
         },
@@ -120,25 +110,14 @@ export default function NotebookProvider({children, data}: {children: React.Reac
     const [collapsedApps, setCollapsedApps] = useState(false);
     const [collapsedRightSidebar, setCollapsedRightSidebar] = useState(false);
     const [activeSection, setActiveSection] = useState<string | null>(null);
-    // const [isCacheLoading, setIsCacheLoading] = useState(false);
     const [isStoringFiles, setIsStoringFiles] = useState(false);
     const [isEmbeddingImages, setIsEmbeddingImages] = useState(false);
     const [showGenerateNotesDialog, setShowGenerateNotesDialog] = useState(false);
-    // Content States
-    // const [cache, _setCache] = useState<{
-    //     name: string;
-    //     fileIds: string[];
-    // } | null>(data.cache);
-    // const cacheRef = useRef<{name: string, fileIds: string[]} | null>(null);
-    // const setCache = (name: string, fileIds: string[]) => {
-    //     cacheRef.current = {name, fileIds};
-    //     _setCache({name, fileIds});
-    // };
     const [name, setName] = useState(data.name);
+    const [showNotebookCreate, setShowNotebookCreate] = useState(data.showNotebookCreate);
     const [files, setFiles] = useState<FileSelect[]>(data.files || []);
     const [blocks, setBlocks] = useState<any[]>(data.blocks || []);
     const [mainChatId, setMainChatId] = useState<string | null>(null);
-    const [retryCount, setRetryCount] = useState(0);
     const [sourceFiles, setSourceFiles] = useState<string[]>(data.sourceFiles || []);
     const instructionsRef = useRef<string>(data.instructions || "");
     const [instructionsState, setInstructionsState] = useState<string>(data.instructions || "");
@@ -154,122 +133,59 @@ export default function NotebookProvider({children, data}: {children: React.Reac
     };
     const instructions = instructionsState;
     const length = lengthState;
-    const [topicWeights, setTopicWeights] = useState<Record<string, number>>(data.topicWeights ||{});
+    const [notesStatus, setNotesStatus] = useState<"submitted" | "generating" | "error" | "idle">("idle");
+    const [notesObject, setNotesObject] = useState<DeepPartial<GenerateNoteSchemaType> | undefined>(data.content ? {notes: data.content, topics: []} : undefined);
 
-    // AI States
-    const [metaObject, setMetaObject] = useState<DeepPartial<NoteMetaType> | undefined>(data.topicWeights && data.title && data.subtitle ? {topics: Object.keys(data.topicWeights), header: data.title, subtitle: data.subtitle} : undefined);
-    const { object:internalMetaObject, submit:metaSubmit, isLoading:isMetaLoading, stop:metaStop } = experimental_useObject({
-        api: '/api/notebook/generate-meta',
-        schema: noteMetaSchema,
-        onFinish: async(res)=>{
-            console.log("Finished generating meta: ", res);
-            if (res.error){
-                console.error("Error generating meta: ", res.error);
-                return;
-            } else if (res.object && res.object.topics){
-                const weights: Record<string, number> = {};
-                res.object.topics.forEach((topic: string)=>{
-                    weights[topic] = 100;
-                })
-                setTopicWeights(weights);
-                const resolvedInstructions = instructionsRef.current;
-                const resolvedLength = lengthRef.current;
-                // console.log("Generating notes with instructions:", resolvedInstructions, "files:", files.map(f=>f.name), "and weights:", weights, "and cache:", cacheRef.current);
-                // /cache: cacheRef.current, 
-                const payload:Record<string, any> = {instructions: resolvedInstructions, length: resolvedLength, topicWeights: weights, title: res.object.header, subtitle: res.object.subtitle}
-                if (name == "New Notebook"){
-                    setName(res.object.header);
-                    payload.name = res.object.header;
-                }
-                await SaveToNotebook(noteId, payload);
-                generateNotes({noteId, instructions: `${defaultNotesInstructions(resolvedLength, _class.subject, resolvedInstructions, Object.keys((weights)))}`, length: resolvedLength, fileIds: files.map(f=>f.id), topicWeights: weights, setCollapseSections, sendNotesFollowup});
-            }
-        },
-        onError: (err)=>{
-            console.error("Error generating meta: ", err);
-        }
-    });
-    useEffect(()=>{
-        if (internalMetaObject){
-            setMetaObject(internalMetaObject);
-        }
-    }, [internalMetaObject])
-    const { messages:notesHistory, setMessages: setNotesHistory, sendMessage:sendNotesFollowup, status:notesStatus, stop: notesStop, regenerate } = useChat({
-        messages: [],
-        transport: new DefaultChatTransport({
-            api: '/api/notebook/generate-notes',
-        }),
+    const { submit: notesSubmit, object: rawNotesObject, stop: notesStop, clear: notesClear } = experimental_useObject({
+        api: '/api/notebook/generate-notes',
+        schema: generateNoteSchema,
         onFinish: async (res)=>{
-            console.log("Finished generating notes: ", res);
-            if (res.isError){
-                console.error("Error generating notes: ", res);
-                return;
-            }
-            if (res.finishReason == "other"){
-                if (retryCount >= 2){
-                    return
+            (async ()=>{
+                console.log("Finished generating notes: ", res);
+                if (res.error){
+                    console.error("Error generating notes: ", res);
+                    setNotesStatus("error");
+                    return;
                 }
-                console.warn("Generation stopped unexpectedly, retrying... Reattempt ", retryCount + 1);
-                regenerate();
-                setRetryCount(retryCount + 1);
-            }
-            setIsEmbeddingImages(true);
-            const parts = await Promise.all(
-                res.message.parts.map(async (part) => 
-                    part.type == "text" 
-                        ? { ...part, text: await embedImages(part.text) } 
-                        : part
-                )
-            );
-            const finalMessage = { ...res.message, parts };
-            const updatedMessages = [...notesHistory];
-            updatedMessages[updatedMessages.length - 1] = finalMessage;
-            setNotesHistory(updatedMessages);
-            const markdown = finalMessage.parts.map((part) => part.type === "text" ? part.text : "").join("");
-            if (markdown.trim().length === 0) {
-                console.warn("No markdown content generated, skipping embedding images and saving.");
+                if (!res.object){
+                    console.error("No object returned from generate-notes API");
+                    setNotesStatus("error");
+                    return;
+                }
+                setNotesStatus("idle")
+                setIsEmbeddingImages(true);
+                if (res.object.notes.trim().length === 0) {
+                    console.warn("No markdown content generated, skipping embedding images and saving.");
+                    setIsEmbeddingImages(false);
+                    return;
+                }
+                console.log("Starting to embed images in generated notes");
+                const embeddedNotes = await embedImages(res.object.notes);
+                console.log("Finished embedding images, saving to notebook blocks");
+                const finalBlocks = await saveNotebookBlocks(noteId, {markdown: embeddedNotes});
+                setBlocks(finalBlocks.blocks);
+                setNotesObject({notes: embeddedNotes, topics: res.object.topics});
                 setIsEmbeddingImages(false);
-                return;
-            }
-            const finalBlocks = await saveNotebookBlocks(noteId, {markdown});
-            setBlocks(finalBlocks.blocks);
-            setIsEmbeddingImages(false);
-            console.log("Finished embedding images");
+                console.log("Finished embedding images");
+            })();
         },
         onError: (err)=>{
             console.error("Error generating notes: ", err);
         }
     });
-
-
     useEffect(()=>{
-        if (notesStatus == "streaming"){
-            setCollapseSections(false);
+        if (rawNotesObject?.notes){
+            console.log("raw notes updated")
+            if (notesStatus == "submitted"){
+                if (rawNotesObject.notes.trim().length > 0) {
+                    setNotesStatus("generating")
+                }
+            }
         }
-    }, [notesStatus])
-
-    // Actions
-    
-    function getActualNotes(history: UIMessage[]){
-        if (!history){
-            return "";
+        if (rawNotesObject){
+            setNotesObject(rawNotesObject);
         }
-        const assistantMessages = history.filter((x)=> x.role == "assistant");
-        if (assistantMessages.length === 0) {
-            return ""
-        }
-        return assistantMessages[assistantMessages.length - 1].parts.map((part)=> part.type == "text" ? part.text : null).join("");
-    }
-    function stopGeneration(){
-        if (isMetaLoading) {
-            metaStop();
-            console.log("Stopped meta generation");
-        }
-        if (notesStatus == "streaming") {
-            notesStop();
-            console.log("Stopped notes generation");
-        }
-    }
+    }, [rawNotesObject, notesStatus])
 
     return <NotebookContext.Provider value={{
         // UI States
@@ -288,6 +204,8 @@ export default function NotebookProvider({children, data}: {children: React.Reac
             mainChatId,
             setMainChatId,
             subject: _class.subject,
+            showNotebookCreate,
+            setShowNotebookCreate,
             editor: editor,
             blocks: blocks,
             setBlocks: setBlocks,
@@ -299,36 +217,24 @@ export default function NotebookProvider({children, data}: {children: React.Reac
             setSourceFiles,
             activeSection, 
             setActiveSection, 
-            topicWeights, 
-            setTopicWeights, 
             length,
             setLength,
             instructions,
             setInstructions,
-            // setCache,
-            // cache: cache ?? null,
         // AI States
-            metaObject,
-            metaSubmit, 
-            setMetaObject, 
-            metaStop,
-            notesHistory, 
-            setNotesHistory,
-            sendNotesFollowup,
+            notesObject,
+            setNotesObject,
             notesStop,
+            notesClear,
+            notesSubmit,
         // Actions
-            isMetaLoading, 
-            notesStatus,
             isEmbeddingImages,
-            // isCacheLoading,
-            // setIsCacheLoading,
             isStoringFiles,
             setIsStoringFiles,
-            isNotesLoading: notesStatus == "streaming" || notesStatus == "submitted",
-            isContentGenerating: isMetaLoading || notesStatus == "streaming" || notesStatus == "submitted",
-            isGenerating: isStoringFiles || isMetaLoading || notesStatus == "streaming" || notesStatus == "submitted",
-            getActualNotes,
-            stopGeneration, 
+            notesStatus,
+            setNotesStatus,
+            isContentGenerating: notesStatus != "idle" && notesStatus != "error",
+            isGenerating: isStoringFiles || (notesStatus != "idle" && notesStatus != "error"),
         }}>
         {children}
     </NotebookContext.Provider>

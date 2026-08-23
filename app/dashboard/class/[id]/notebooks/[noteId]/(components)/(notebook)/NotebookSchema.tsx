@@ -1,8 +1,13 @@
 import { createReactInlineContentSpec } from "@blocknote/react";
-import { BlockNoteSchema, defaultInlineContentSpecs } from "@blocknote/core";
+import {
+  BlockNoteSchema,
+  defaultInlineContentSpecs,
+  defaultStyleSpecs,
+} from "@blocknote/core";
 import katex from "katex";
 import MathExtensionBlock from "./MathExtensionBlock";
 import { InlineMathContentSpec } from "./contentSpecs";
+import { typographySubtitleStyle } from "./TypographySubtitleStyle";
 
 export const InlineMath = createReactInlineContentSpec(
   InlineMathContentSpec,
@@ -23,5 +28,9 @@ export const notebookSchema = BlockNoteSchema.create({
     inlineContentSpecs: {
         ...defaultInlineContentSpecs,
         inlineMath: InlineMath
-    }
+    },
+    styleSpecs: {
+        ...defaultStyleSpecs,
+        typographySubtitle: typographySubtitleStyle,
+    },
 })

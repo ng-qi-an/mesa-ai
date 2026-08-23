@@ -55,6 +55,7 @@ export default function CreateNewButton({nests, children}: {nests: FileSelect[],
                             await revalidateData(pathname)
                             return `Error uploading files: ${e}`;
                         },
+                        duration: 1500,
                     })
                 }
             }}

@@ -35,6 +35,16 @@ export default async function deleteUserFile(fileId: string){
             Key: `user-files/${session!.user.id!}/${fileId}`,
         })
         const res = await r2.send(command)
+        fileRecord.images?.map(async (image) => {
+            const imageCommand = new DeleteObjectCommand({
+                Bucket: process.env.R2_BUCKET_NAME!,
+                Key: `user-files/${session!.user.id!}/${fileId}/${image.id}`,
+            })
+            const imageRes = await r2.send(imageCommand)
+            if (imageRes.DeleteMarker){
+                console.log("Image deleted from R2:", image.id);
+            }
+        });
         if (res.DeleteMarker){
             console.log("File deleted from R2:", fileId);
         }
