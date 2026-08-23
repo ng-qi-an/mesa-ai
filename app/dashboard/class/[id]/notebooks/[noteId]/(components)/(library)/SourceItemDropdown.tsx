@@ -21,12 +21,12 @@ export default function SourceItemDropdown({id, noteId}: {id: string, noteId: st
                         await deleteNotebookFile(noteId, id);
                         setFiles((x) => x.filter((f) => f.id != id));
                     }}><X/> Remove</DropdownMenuItem>
-                    <DropdownMenuSeparator/>
+                    {/* <DropdownMenuSeparator/>
                     <DropdownMenuItem variant="destructive" onClick={async()=>{
                         await deleteNotebookFile(noteId, id);
                         setFiles((x) => x.filter((f) => f.id != id));
                         await deleteUserFile(id);
-                    }}><Trash2/> Delete</DropdownMenuItem>
+                    }}><Trash2/> Delete</DropdownMenuItem> */}
                 </DropdownMenuContent>
             </DropdownMenu>
         </TooltipTrigger>

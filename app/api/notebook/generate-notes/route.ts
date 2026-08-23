@@ -163,7 +163,7 @@ export async function POST(req: Request) {
         ![<short description of alt text for image>](<imageUrl>)
         **Images in the source files**:
         ${raw.files.map(f => f.file.images?.map((image)=>{
-            return `- http://localhost:3000/api/files/${f.file.id}/image/${image.id}: ${image.summary}\n`
+            return `- https://mesa-ai.vercel.app/api/files/${f.file.id}/image/${image.id}: ${image.summary}\n`
         }))}
         ### Text Formatting
         - Use > blockquotes for important formulas, quotes, or critical points

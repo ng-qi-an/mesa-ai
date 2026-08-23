@@ -96,7 +96,7 @@ export function FileBrowserTable<TData, TValue>({
           {table.getRowModel().rows?.length ? (
             table.getRowModel().rows.map((row) => (
               <TableRow
-                key={row.id}
+                key={(row.original as FileBrowserItem).id}
                 className={(row.original as FileBrowserItem).status === "processed" ? "cursor-pointer" : "cursor-default"}
                 // onClick={()=> row.toggleSelected()}
                 // data-state={row.getIsSelected() && "selected"}
@@ -143,4 +143,3 @@ export function FileBrowserTable<TData, TValue>({
     </div>
   )
 }
-
