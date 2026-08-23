@@ -2,13 +2,10 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardAction, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty";
-import { Separator } from "@/components/ui/separator";
 import { Spinner } from "@/components/ui/spinner";
-import { TypographyLead } from "@/components/ui/typography/lead";
-import { Notebook, Sparkles, StopCircle, X } from "lucide-react";
+import { Notebook, StopCircle, X } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useRef, useState } from "react";
-import { slugify } from "../SectionsPanel";
 import { useNotebook } from "@/components/providers/notebook-provider";
 import { useTheme } from "next-themes";
 import { useNextStep } from "nextstepjs";
