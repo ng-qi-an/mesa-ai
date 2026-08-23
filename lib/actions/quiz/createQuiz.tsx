@@ -39,7 +39,6 @@ export default async function createQuiz(classId: string, {noteId, fileIds, name
         # Content guidelines
         - Generate questions only of the following types: ${questionTypes.join(", ")}. This setting takes highest prority, all other types MUST NOT be generated.
         - Use the files provided by the user to generate questions and answers. You may use your general knowledge to supplement answers, but it must be supported by the sources. 
-        - Only make notes based on these topics: ${topics.join(", ")}.
         - Generate only ${length == "short" ? "7 questions for quick reviews" : length == "medium" ? "12 questions for a standard quiz" : "20 questions for comprehensive quizzes that test understanding of topics"}.
         
         # Question types

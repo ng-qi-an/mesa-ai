@@ -36,7 +36,7 @@ export default function QuizCreateDialog({ open, setOpen, onCreated }: { open: b
         setCreating(true);
         console.log("Creating a quiz!!")
         try {
-            const result = await createQuiz(id as string, {noteId: noteCtx.noteId!, subject: _class.subject, fileIds: noteCtx.files.map((f) => f.id), name, topics: selectedTopics, difficulty, questionTypes: selectedQuestionTypes.map((t) => t.value), length, instructions});
+            const result = await createQuiz(id as string, {noteId: noteCtx.noteId!, subject: _class.subject, fileIds: noteCtx.files.map((f) => f.id), name, topics: [], difficulty, questionTypes: selectedQuestionTypes.map((t) => t.value), length, instructions});
             console.log("Created quiz:", result);
             onCreated(result[0]);
         } catch (error) {
@@ -64,7 +64,7 @@ export default function QuizCreateDialog({ open, setOpen, onCreated }: { open: b
                             <Input value={name} onChange={(e)=> setName(e.target.value)} placeholder="New Quiz"/>
                             <FieldDescription>Leave blank to auto-generate a name.</FieldDescription>
                         </Field>
-                        <Field>
+                        {/* <Field>
                             <FieldLabel>Topics</FieldLabel>
                             <Combobox required onOpenChange={(x)=> setFocusTopicCombobox(x)} inputValue={focusTopicCombobox ? topicComboboxInputValue : (selectedTopics.length == Object.keys([]).length ? "All" : selectedTopics.length == 0 ? "None" : `${selectedTopics.length} selected`)} onInputValueChange={setTopicComboboxInputValue} value={selectedTopics} onValueChange={setSelectedTopics} multiple autoHighlight defaultValue={Object.keys([])} items={Object.keys([])}>
                                 <ComboboxInput aria-invalid={selectedTopics.length === 0} placeholder={(selectedTopics.length == Object.keys([]).length ? "All" : selectedTopics.length == 0 ? "None" : `${selectedTopics.length} selected`)} />
@@ -80,7 +80,7 @@ export default function QuizCreateDialog({ open, setOpen, onCreated }: { open: b
                                 </ComboboxContent>
                             </Combobox>
                             {selectedTopics.length === 0 ? <FieldError>At least 1 topic has to be selected.</FieldError> : <FieldDescription>Topics used for formulating quiz questions.</FieldDescription>}
-                        </Field>
+                        </Field> */}
                     </div>
                     <Separator className="my-0"/>
                     <Field>
